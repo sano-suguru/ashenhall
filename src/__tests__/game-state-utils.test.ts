@@ -158,6 +158,37 @@ describe("formatActionAsText", () => {
     expect(result).toContain("《destroyed_card》破壊");
     expect(result).toContain("(戦闘により)");
   });
+
+  it("should NOT include trigger text in effect_trigger logs to avoid redundancy", () => {
+    const triggerAction: GameAction = {
+      sequence: 8,
+      playerId: "player1",
+      type: "trigger_event",
+      data: { triggerType: "on_play", targetCardId: "some_card" },
+      timestamp: 0,
+    };
+    const effectAction: GameAction = {
+      sequence: 9,
+      playerId: "player1",
+      type: "effect_trigger",
+      data: {
+        sourceCardId: "some_card",
+        effectType: "damage",
+        effectValue: 1,
+        targets: {},
+      },
+      timestamp: 0,
+    };
+    
+    const gameStateWithContext = {
+      actionLog: [triggerAction, effectAction],
+    } as unknown as GameState;
+
+    const result = formatActionAsText(effectAction, gameStateWithContext);
+    
+    // 「(プレイされた時)」というテキストが含まれないことを確認
+    expect(result).not.toContain("(プレイされた時)");
+  });
 });
 
 describe("findDecisiveAction", () => {

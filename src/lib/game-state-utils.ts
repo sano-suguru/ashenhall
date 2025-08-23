@@ -277,12 +277,6 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         return `${targetName} ${changes.join(', ')}`;
       });
 
-      const triggerAction = gameState.actionLog.find(a => a.sequence === action.sequence - 1 && a.type === 'trigger_event');
-      let triggerText: string | undefined;
-      if (triggerAction && triggerAction.type === 'trigger_event') {
-        triggerText = TRIGGER_TYPE_NAMES[triggerAction.data.triggerType];
-      }
-
       return {
         type: 'effect_trigger',
         iconName: 'Sparkles',
@@ -290,7 +284,6 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         message: `《${sourceCardName}》の効果`,
         details: detailsParts.join('; '),
         cardIds: [data.sourceCardId, ...Object.keys(data.targets)],
-        triggerText,
       };
     }
     case "phase_change": {
