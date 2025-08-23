@@ -561,6 +561,14 @@ function processBattlePhase(state: GameState): void {
       const targetHealthBefore = target.currentHealth;
       target.currentHealth -= damage;
       const targetHealthAfter = target.currentHealth;
+
+      // ダメージを受けたという事実をログに記録
+      addTriggerEventAction(state, currentPlayer.id, {
+        triggerType: 'on_damage_taken',
+        sourceCardId: attacker.id,
+        targetCardId: target.id,
+      });
+
       processEffectTrigger(
         state,
         "on_damage_taken",
@@ -599,6 +607,14 @@ function processBattlePhase(state: GameState): void {
           const attackerHealthBefore = attacker.currentHealth;
           attacker.currentHealth -= defenderDamage;
           const attackerHealthAfter = attacker.currentHealth;
+
+          // 反撃ダメージを受けたという事実をログに記録
+          addTriggerEventAction(state, opponent.id, {
+            triggerType: 'on_damage_taken',
+            sourceCardId: target.id,
+            targetCardId: attacker.id,
+          });
+          
           processEffectTrigger(
             state,
             "on_damage_taken",
