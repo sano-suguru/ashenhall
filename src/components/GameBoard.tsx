@@ -19,8 +19,10 @@ import { getCardById } from '@/data/cards/base-cards';
 import { 
   reconstructStateAtSequence, 
   generateBattleReport, 
-  generateShareableText 
+  generateShareableText,
+  getLogDisplayParts,
 } from '@/lib/game-state-utils';
+import CardNameWithTooltip from './CardNameWithTooltip';
 import { 
   CreditCard, 
   Zap, 
@@ -59,6 +61,14 @@ import {
   Layers,
   WalletCards as Wallet, // WalletCards is not available, using Wallet as an alias
 } from 'lucide-react';
+
+// アイコンのマッピングオブジェクトを作成（BattleLogModal.tsxから流用）
+const ICONS = {
+  CreditCard, Zap, Target, Swords, Flag,
+  TrendingUp, TrendingDown, Heart, Shield, ArrowDown, Users, Sparkles,
+  RotateCcw, MicOff, Ban, Skull, Repeat, Trash2, Sunrise,
+  AlertTriangle,
+} as const;
 
 // StatusDisplayコンポーネント
 interface StatusDisplayProps {
@@ -107,165 +117,37 @@ const PHASE_DATA = {
   end: { name: '終了', icon: Flag, color: 'text-purple-400' },
 } as const;
 
-// 効果アイコンマッピング（lucide-react）
-const EFFECT_ICONS: Record<EffectAction, React.ComponentType<{ size?: number; className?: string }>> = {
-  damage: Swords,
-  heal: Heart,
-  buff_attack: TrendingUp,
-  buff_health: Shield,
-  debuff_attack: TrendingDown,
-  debuff_health: ArrowDown,
-  summon: Users,
-  draw_card: CreditCard,
-  resurrect: Sunrise,
-  silence: MicOff,
-  guard: Shield,
-  stun: Ban,
-  destroy_deck_top: Trash2,
-  swap_attack_health: Repeat,
-  hand_discard: Trash2,
-  destroy_all_creatures: Skull,
-};
+// 共通関数を利用した新しいアクション表示関数
+function formatAction(action: GameAction, gameState: GameState): React.ReactElement {
+  const parts = getLogDisplayParts(action, gameState);
+  const IconComponent = ICONS[parts.iconName as keyof typeof ICONS] || AlertTriangle;
 
-// 効果名マッピング
-const EFFECT_NAMES: Record<EffectAction, string> = {
-  damage: 'ダメージ',
-  heal: '回復',
-  buff_attack: '攻撃力強化',
-  buff_health: '体力強化',
-  debuff_attack: '攻撃力低下',
-  debuff_health: '体力低下',
-  summon: '召喚',
-  draw_card: 'ドロー',
-  resurrect: '蘇生',
-  silence: '沈黙',
-  guard: '守護',
-  stun: 'スタン',
-  destroy_deck_top: 'デッキ破壊',
-  swap_attack_health: '攻/体入替',
-  hand_discard: '手札破壊',
-  destroy_all_creatures: '全体破壊',
-};
-
-// フェーズ名マッピング
-const PHASE_NAMES = {
-  draw: 'ドロー',
-  energy: 'エネルギー',
-  deploy: '配置',
-  battle: '戦闘',
-  end: '終了',
-} as const;
-
-// ユーティリティ関数
-function getCardName(cardId: string): string {
-  const card = getCardById(cardId);
-  return card?.name || cardId;
-}
-
-function getPlayerName(playerId: PlayerId): string {
-  return playerId === 'player1' ? 'あなた' : '相手';
-}
-
-// 改善されたアクション表示用の関数（JSX版）
-function formatAction(action: GameAction): React.ReactElement {
-  const playerName = getPlayerName(action.playerId);
-  
-  switch (action.type) {
-    case 'card_play': {
-      const card = getCardById(action.data.cardId);
-      return (
-        <span className="flex items-center space-x-1">
-          <CreditCard size={14} className="text-blue-400" />
-          <span>[{playerName}] {card?.name || action.data.cardId}を配置 (コスト{card?.cost || '?'})</span>
-        </span>
-      );
-    }
-    
-    case 'card_attack': {
-      const attackerName = getCardName(action.data.attackerCardId);
-      const targetName = action.data.target === 'player' 
-        ? 'プレイヤー' 
-        : getCardName(action.data.target);
-      return (
-        <span className="flex items-center space-x-1">
-          <Swords size={14} className="text-red-400" />
-          <span>[{playerName}] {attackerName} → {targetName} ({action.data.damage}ダメージ)</span>
-        </span>
-      );
-    }
-    
-    case 'effect_trigger': {
-      const { data } = action;
-      const EffectIcon = EFFECT_ICONS[data.effectType] || Sparkles;
-      const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
-      const sourceCard = getCardName(data.sourceCardId);
-
-      // 特殊ケース: デッキ切れ
-      if (data.sourceCardId === 'deck_empty') {
-        const prev = data.previousValues?.[action.playerId]?.health;
-        const next = data.newValues?.[action.playerId]?.health;
-        const detail = prev !== undefined && next !== undefined ? ` (${prev} → ${next})` : '';
+  // メッセージ内のカード名をツールチップ付きコンポーネントに置換
+  const messageWithTooltips = parts.message.split(/(《.*?》)/g).map((segment, index) => {
+    if (segment.startsWith('《') && segment.endsWith('》')) {
+      const cardName = segment.substring(1, segment.length - 1);
+      // getLogDisplayPartsが返すcardIdsから対応するIDを探す
+      const cardId = parts.cardIds.find(id => getCardById(id)?.name === cardName);
+      if (cardId) {
         return (
-          <span className="flex items-center space-x-1">
-            <AlertTriangle size={14} className="text-orange-400" />
-            <span>[{playerName}] デッキ切れ: {data.effectValue}ダメージ{detail}</span>
-          </span>
+          <CardNameWithTooltip key={index} cardId={cardId} showBrackets={true}>
+            {cardName}
+          </CardNameWithTooltip>
         );
       }
-      
-      const targetDetails = data.targetCardIds.map(id => {
-        const targetName = id.startsWith('player') ? getPlayerName(id as PlayerId) : getCardName(id);
-        const prev = data.previousValues?.[id];
-        const next = data.newValues?.[id];
-        
-        if (prev?.health !== undefined && next?.health !== undefined) {
-          return `${targetName}の体力 (${prev.health} → ${next.health})`;
-        }
-        if (prev?.attack !== undefined && next?.attack !== undefined) {
-          return `${targetName}の攻撃力 (${prev.attack} → ${next.attack})`;
-        }
-        return targetName;
-      }).join(', ');
+    }
+    return segment;
+  });
 
-      return (
-        <span className="flex items-center space-x-1">
-          <EffectIcon size={14} className="text-purple-400" />
-          <span>
-            [効果] {sourceCard}: {effectName} ({data.effectValue}) → {targetDetails}
-          </span>
-        </span>
-      );
-    }
-    
-    case 'phase_change': {
-      const toPhase = PHASE_NAMES[action.data.toPhase as keyof typeof PHASE_NAMES] || action.data.toPhase;
-      
-      // フェーズ変更はより簡潔に表示
-      if (action.data.toPhase === 'draw') {
-        return (
-          <span className="flex items-center space-x-1">
-            <RotateCcw size={14} className="text-green-400" />
-            <span>ターン{Math.floor((action.sequence + 1) / 5) + 1}開始</span>
-          </span>
-        );
-      }
-      const PhaseIcon = PHASE_DATA[action.data.toPhase as keyof typeof PHASE_DATA]?.icon || Flag;
-      return (
-        <span className="flex items-center space-x-1">
-          <PhaseIcon size={14} className="text-gray-400" />
-          <span>{toPhase}フェーズ</span>
-        </span>
-      );
-    }
-    
-    default:
-      return (
-        <span className="flex items-center space-x-1">
-          <AlertTriangle size={14} className="text-yellow-400" />
-          <span>不明なアクション</span>
-        </span>
-      );
-  }
+  return (
+    <span className="flex items-center space-x-1.5">
+      <IconComponent size={14} />
+      <span>
+        <span className="font-semibold">[{parts.playerName}]</span> {messageWithTooltips}
+        {parts.details && <span className="text-gray-400 ml-1">{parts.details}</span>}
+      </span>
+    </span>
+  );
 }
 
 export default function GameBoard({ 
@@ -512,10 +394,11 @@ export default function GameBoard({
                   {recentActions.length === 0 ? (
                     <div className="text-gray-500">ログがありません</div>
                   ) : (
-                    recentActions.map((action, index) => (
-                      <div key={action.sequence} className="text-gray-300">
-                        <span className="text-gray-500">#{action.sequence}</span>
-                        <span className="ml-2">{formatAction(action)}</span>
+                    recentActions.map((action) => (
+                      <div key={action.sequence} className="text-gray-300 flex items-center space-x-2">
+                        <span className="text-xs font-mono text-gray-500">#{action.sequence.toString().padStart(3, '0')}</span>
+                        {/* gameStateを渡すように変更 */}
+                        {formatAction(action, gameState)}
                       </div>
                     ))
                   )}

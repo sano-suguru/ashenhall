@@ -53,6 +53,15 @@ function getCardName(cardId: string): string {
   return card?.name || cardId;
 }
 
+const SPECIAL_SOURCE_NAMES: Record<string, string> = {
+  poison_effect: "毒",
+  deck_empty: "デッキ切れ",
+};
+
+function getSourceDisplayName(sourceId: string): string {
+  return SPECIAL_SOURCE_NAMES[sourceId] || `《${getCardName(sourceId)}》`;
+}
+
 function getPlayerName(playerId: PlayerId): string {
   return playerId === "player1" ? "あなた" : "相手";
 }
@@ -229,7 +238,7 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
       const { destroyedCardId, source, sourceCardId } = action.data;
       let sourceText = "";
       if (source === 'combat') sourceText = "戦闘";
-      else if (source === 'effect' && sourceCardId) sourceText = `《${getCardName(sourceCardId)}》の効果`;
+      else if (source === 'effect' && sourceCardId) sourceText = `${getSourceDisplayName(sourceCardId)}の効果`;
       return {
         type: 'creature_destroyed',
         iconName: 'ShieldOff',
@@ -241,18 +250,7 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
     }
     case "effect_trigger": {
       const { data } = action;
-      const sourceCardName = getCardName(data.sourceCardId);
-
-      if (data.sourceCardId === "deck_empty") {
-        return {
-          type: 'effect_trigger',
-          iconName: 'AlertTriangle',
-          playerName,
-          message: `デッキ切れ`,
-          details: `${data.effectValue}ダメージ`,
-          cardIds: [],
-        };
-      }
+      const sourceCardName = getSourceDisplayName(data.sourceCardId);
 
       const detailsParts = Object.entries(data.targets).map(([targetId, valueChange]) => {
         const targetName = (targetId === 'player1' || targetId === 'player2') ? getPlayerName(targetId as PlayerId) : `《${getCardName(targetId)}》`;
@@ -281,7 +279,7 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         type: 'effect_trigger',
         iconName: 'Sparkles',
         playerName,
-        message: `《${sourceCardName}》の効果`,
+        message: `${sourceCardName}の効果`,
         details: detailsParts.join('; '),
         cardIds: [data.sourceCardId, ...Object.keys(data.targets)],
       };

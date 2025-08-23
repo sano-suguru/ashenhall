@@ -189,6 +189,43 @@ describe("formatActionAsText", () => {
     // 「(プレイされた時)」というテキストが含まれないことを確認
     expect(result).not.toContain("(プレイされた時)");
   });
+
+  it("should correctly display non-card source names like poison", () => {
+    const action: GameAction = {
+      sequence: 10,
+      playerId: "player2",
+      type: "creature_destroyed",
+      data: {
+        destroyedCardId: "some_creature",
+        source: "effect",
+        sourceCardId: "poison_effect",
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("《some_creature》破壊");
+    expect(result).toContain("(毒の効果により)");
+    expect(result).not.toContain("《poison_effect》");
+  });
+
+  it("should correctly display non-card source names like deck_empty", () => {
+    const action: GameAction = {
+      sequence: 11,
+      playerId: "player1",
+      type: "effect_trigger",
+      data: {
+        sourceCardId: "deck_empty",
+        effectType: "damage",
+        effectValue: 1,
+        targets: { player1: { life: { before: 10, after: 9 } } },
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("デッキ切れの効果");
+    expect(result).toContain("あなた ライフ 10→9 (-1)");
+    expect(result).not.toContain("《deck_empty》");
+  });
 });
 
 describe("findDecisiveAction", () => {
