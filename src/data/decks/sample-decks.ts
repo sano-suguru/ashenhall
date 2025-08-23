@@ -23,6 +23,7 @@ export const sampleDecks: SampleDeck[] = [
       'necro_wraith', 'necro_wraith',
       'necro_grave_master',
       'necro_soul_vortex',
+      'necro_soul_offering', 'necro_soul_offering',
     ],
   },
   // 2. 戦狂い「逆境の栄光」
@@ -40,6 +41,7 @@ export const sampleDecks: SampleDeck[] = [
       'ber_bomber', 'ber_bomber',
       'ber_champion',
       'ber_blood_awakening_spell',
+      'ber_craver', 'ber_craver',
     ],
   },
   // 3. 魔導士「星詠みの儀式」
@@ -57,6 +59,7 @@ export const sampleDecks: SampleDeck[] = [
       'mag_torrent', 'mag_torrent',
       'mag_reality_collapse',
       'mag_arcane_lightning',
+      'mag_chant_avatar', 'mag_chant_avatar',
     ],
   },
   // 4. 騎士「鉄壁のファランクス」
@@ -74,6 +77,7 @@ export const sampleDecks: SampleDeck[] = [
       'kni_templar', 'kni_templar',
       'kni_banneret',
       'kni_galleon',
+      'kni_vindicator', 'kni_vindicator',
     ],
   },
   // 5. 審問官「静寂の法廷」
@@ -89,8 +93,9 @@ export const sampleDecks: SampleDeck[] = [
       'inq_venomtongue', 'inq_venomtongue',
       'inq_executor', 'inq_executor',
       'inq_purifier', 'inq_purifier',
-      'inq_inquisitor',
+      'inq_inquisitor', 'inq_inquisitor',
       'inq_purifying_flame',
+      'inq_witch_hunter',
     ],
   },
 ];
