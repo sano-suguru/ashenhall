@@ -234,7 +234,7 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         type: 'creature_destroyed',
         iconName: 'ShieldOff',
         playerName,
-        message: `《${getCardName(destroyedCardId)}》が破壊された`,
+        message: `《${getCardName(destroyedCardId)}》破壊`,
         details: `(${sourceText}により)`,
         cardIds: [destroyedCardId],
       };
@@ -316,10 +316,9 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
     case "trigger_event": {
       const { triggerType, sourceCardId, targetCardId } = action.data;
       const triggerName = TRIGGER_TYPE_NAMES[triggerType] || '不明なトリガー';
-      let message = '';
-      if (sourceCardId) message += `《${getCardName(sourceCardId)}》のアクションにより、`;
-      if (targetCardId) message += `《${getCardName(targetCardId)}》の効果が発動`;
-      else message += `効果が発動`;
+      const message = targetCardId
+        ? `《${getCardName(targetCardId)}》の効果が発動`
+        : `効果が発動`;
       
       return {
         type: 'trigger_event',

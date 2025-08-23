@@ -124,6 +124,40 @@ describe("formatActionAsText", () => {
     expect(result).toContain("《some_attacker》 → 相手");
     expect(result).toContain("(2ダメージ) ライフ 15→13");
   });
+
+  it("should format trigger_event log concisely", () => {
+    const action: GameAction = {
+      sequence: 7,
+      playerId: "player2",
+      type: "trigger_event",
+      data: {
+        triggerType: "on_damage_taken",
+        sourceCardId: "attacker_card",
+        targetCardId: "defender_card",
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("《defender_card》の効果が発動");
+    expect(result).toContain("(ダメージを受けた時)");
+    expect(result).not.toContain("のアクションにより");
+  });
+
+  it("should format creature_destroyed log concisely", () => {
+    const action: GameAction = {
+      sequence: 8,
+      playerId: "player1",
+      type: "creature_destroyed",
+      data: {
+        destroyedCardId: "destroyed_card",
+        source: "combat",
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("《destroyed_card》破壊");
+    expect(result).toContain("(戦闘により)");
+  });
 });
 
 describe("findDecisiveAction", () => {
