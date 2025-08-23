@@ -131,6 +131,82 @@ const SIZE_CLASSES = {
   },
 } as const;
 
+const getTargetText = (target: Card['effects'][0]['target']): string => {
+  const targetMap: { [key: string]: string } = {
+    self: '自身',
+    ally_all: '味方全体',
+    enemy_all: '敵全体',
+    ally_random: 'ランダムな味方1体',
+    enemy_random: 'ランダムな敵1体',
+    player: '相手プレイヤー',
+  };
+  return targetMap[target] || '';
+};
+
+const getEffectText = (effect: Card['effects'][0], cardType: 'creature' | 'spell'): string => {
+  const triggerMap: { [key: string]: string } = {
+    on_play: cardType === 'creature' ? '召喚時' : '使用時',
+    on_death: '死亡時',
+    turn_start: 'ターン開始時',
+    turn_end: 'ターン終了時',
+    passive: '常時',
+    on_spell_play: 'あなたが呪文を使用した後',
+    on_ally_death: '味方のクリーチャーが死亡するたび',
+    on_damage_taken: 'このクリーチャーがダメージを受けた時',
+    on_attack: 'このクリーチャーが攻撃する時',
+  };
+
+  const triggerText = triggerMap[effect.trigger] || '';
+
+  let effectDescription = '';
+  switch (effect.action) {
+    case 'damage':
+      effectDescription = `${getTargetText(effect.target)}に${effect.value}ダメージを与える。`;
+      break;
+    case 'heal':
+      effectDescription = `${getTargetText(effect.target)}を${effect.value}回復する。`;
+      break;
+    case 'buff_attack':
+      effectDescription = `${getTargetText(effect.target)}の攻撃力を+${effect.value}する。`;
+      break;
+    case 'buff_health':
+      effectDescription = `${getTargetText(effect.target)}の体力を+${effect.value}する。`;
+      break;
+    case 'debuff_attack':
+      effectDescription = `${getTargetText(effect.target)}の攻撃力を-${effect.value}する。`;
+      break;
+    case 'debuff_health':
+      effectDescription = `${getTargetText(effect.target)}の体力を-${effect.value}する。`;
+      break;
+    case 'summon':
+      effectDescription = `1/1の骸骨トークンを${effect.value}体召喚する。`;
+      break;
+    case 'draw_card':
+      effectDescription = `カードを${effect.value}枚引く。`;
+      break;
+    case 'resurrect':
+      effectDescription = `あなたの墓地からコスト${effect.value}以下のクリーチャーを1体戦場に戻す。`;
+      break;
+    case 'silence':
+      effectDescription = `${getTargetText(effect.target)}を沈黙させる。`;
+      break;
+    case 'stun':
+      effectDescription = `${getTargetText(effect.target)}を1ターンスタンさせる。`;
+      break;
+    case 'destroy_deck_top':
+      effectDescription = `相手はデッキの上から${effect.value}枚のカードを墓地に置く。`;
+      break;
+    case 'swap_attack_health':
+      effectDescription = `${getTargetText(effect.target)}の攻撃力と体力を入れ替える。`;
+      break;
+    case 'hand_discard':
+      effectDescription = `相手は手札からランダムに${effect.value}枚のカードを捨てる。`;
+      break;
+  }
+
+  return `${triggerText}: ${effectDescription}`;
+};
+
 const Tooltip = ({ card, isFieldCard, fieldCard, tooltipStyle }: { card: Card, isFieldCard: boolean, fieldCard: FieldCard | null, tooltipStyle: React.CSSProperties }) => {
   return (
     <div style={tooltipStyle} className="fixed transition-opacity duration-300 pointer-events-none z-50">
@@ -214,32 +290,7 @@ const Tooltip = ({ card, isFieldCard, fieldCard, tooltipStyle }: { card: Card, i
             <div className="grid grid-cols-1 gap-1">
               {card.effects.map((effect, index) => (
                 <div key={index} className="bg-gray-800 bg-opacity-50 px-2 py-1 rounded text-xs">
-                  <span className="text-purple-300 font-semibold">
-                    {effect.trigger === 'on_play' && (card.type === 'creature' ? '召喚時' : '使用時')}
-                    {effect.trigger === 'on_death' && '死亡時'}
-                    {effect.trigger === 'turn_start' && 'ターン開始時'}
-                    {effect.trigger === 'turn_end' && 'ターン終了時'}
-                    {effect.trigger === 'passive' && '常時効果'}
-                    {effect.trigger === 'on_spell_play' && '呪文使用時'}
-                  </span>
-                  <span className="text-gray-200 ml-2">
-                    {effect.action === 'damage' && `${effect.value}ダメージを`}
-                    {effect.action === 'heal' && `${effect.value}回復を`}
-                    {effect.action === 'buff_attack' && `攻撃力+${effect.value}を`}
-                    {effect.action === 'buff_health' && `体力+${effect.value}を`}
-                    {effect.action === 'debuff_attack' && `攻撃力-${effect.value}を`}
-                    {effect.action === 'debuff_health' && `体力-${effect.value}を`}
-                    {effect.action === 'summon' && `トークン×${effect.value}を`}
-                    {effect.action === 'draw_card' && `カード×${effect.value}を`}
-                    {effect.action === 'resurrect' && `クリーチャー×${effect.value}を蘇生`}
-                    {effect.action === 'silence' && `クリーチャー×${effect.value}を沈黙`}
-                    {effect.target === 'self' && '自分に与える'}
-                    {effect.target === 'ally_all' && '味方全体に与える'}
-                    {effect.target === 'enemy_all' && '敵全体に与える'}
-                    {effect.target === 'ally_random' && '味方ランダム1体に与える'}
-                    {effect.target === 'enemy_random' && '敵ランダム1体に与える'}
-                    {effect.target === 'player' && 'プレイヤーに与える'}
-                  </span>
+                  {getEffectText(effect, card.type)}
                 </div>
               ))}
             </div>
