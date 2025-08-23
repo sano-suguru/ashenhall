@@ -232,10 +232,7 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
     }
     case "effect_trigger": {
       const { data } = action;
-      const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
-      const sourceCard = getCardName(data.sourceCardId);
-      const targetIds = Object.keys(data.targets);
-      const targetNames = targetIds.map(id => id === 'player1' || id === 'player2' ? getPlayerName(id as PlayerId) : `《${getCardName(id)}》`).join(', ');
+      const sourceCardName = getCardName(data.sourceCardId);
 
       if (data.sourceCardId === "deck_empty") {
         return {
@@ -247,16 +244,44 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
           cardIds: [],
         };
       }
-      
-      const message = targetNames
-        ? `[効果] 《${sourceCard}》: ${effectName}(${data.effectValue}) → ${targetNames}`
-        : `[効果] 《${sourceCard}》: ${effectName}(${data.effectValue})`;
+
+      const detailsParts = Object.entries(data.targets).map(([targetId, valueChange]) => {
+        const targetName = (targetId === 'player1' || targetId === 'player2') ? getPlayerName(targetId as PlayerId) : `《${getCardName(targetId)}》`;
+        const changes = [];
+        if (valueChange.attack) {
+          const diff = valueChange.attack.after - valueChange.attack.before;
+          changes.push(`攻撃力 ${valueChange.attack.before}→${valueChange.attack.after} (${diff >= 0 ? '+' : ''}${diff})`);
+        }
+        if (valueChange.health) {
+          const diff = valueChange.health.after - valueChange.health.before;
+          changes.push(`体力 ${valueChange.health.before}→${valueChange.health.after} (${diff >= 0 ? '+' : ''}${diff})`);
+        }
+        if (valueChange.life) {
+          const diff = valueChange.life.after - valueChange.life.before;
+          changes.push(`ライフ ${valueChange.life.before}→${valueChange.life.after} (${diff >= 0 ? '+' : ''}${diff})`);
+        }
+        
+        if (changes.length === 0) {
+          const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
+          return `${targetName}に${effectName}(${data.effectValue})`;
+        }
+        return `${targetName} ${changes.join(', ')}`;
+      });
+
+      const triggerAction = gameState.actionLog.find(a => a.sequence === action.sequence - 1 && a.type === 'trigger_event');
+      let triggerText: string | undefined;
+      if (triggerAction && triggerAction.type === 'trigger_event') {
+        triggerText = TRIGGER_TYPE_NAMES[triggerAction.data.triggerType];
+      }
+
       return {
         type: 'effect_trigger',
         iconName: 'Sparkles',
         playerName,
-        message,
-        cardIds: [data.sourceCardId, ...targetIds],
+        message: `《${sourceCardName}》の効果`,
+        details: detailsParts.join('; '),
+        cardIds: [data.sourceCardId, ...Object.keys(data.targets)],
+        triggerText,
       };
     }
     case "phase_change": {

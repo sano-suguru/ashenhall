@@ -14,11 +14,10 @@ jest.mock("@/data/cards/base-cards", () => ({
 
 describe("formatActionAsText", () => {
   const mockGameState = {
-    // ... minimal required gameState properties
     actionLog: [],
   } as unknown as GameState;
 
-  it("should format health change correctly", () => {
+  it("should format health change correctly with before/after values", () => {
     const action: GameAction = {
       sequence: 1,
       playerId: "player1",
@@ -32,10 +31,11 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("[効果] 《秘術の連雷》: ダメージ(3) → 《骸骨剣士》");
+    expect(result).toContain("《秘術の連雷》の効果");
+    expect(result).toContain("《骸骨剣士》 体力 5→2 (-3)");
   });
 
-  it("should format attack change correctly", () => {
+  it("should format attack change correctly with before/after values", () => {
     const action: GameAction = {
       sequence: 2,
       playerId: "player1",
@@ -49,7 +49,8 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("[効果] 《秘術の連雷》: 攻撃力強化(2) → 《骸骨剣士》");
+    expect(result).toContain("《秘術の連雷》の効果");
+    expect(result).toContain("《骸骨剣士》 攻撃力 1→3 (+2)");
   });
 
   it("should format log without value changes gracefully", () => {
@@ -66,8 +67,8 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("(1)");
-    expect(result).toContain("→ あなた");
+    expect(result).toContain("《秘術の連雷》の効果");
+    expect(result).toContain("あなたにドロー(1)");
   });
 
   it("should format effect log gracefully when there is no target", () => {
@@ -84,8 +85,8 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).not.toContain("→");
-    expect(result).toContain("[効果] 《some_card》: ダメージ(1)");
+    expect(result).toContain("《some_card》の効果");
+    expect(result).not.toContain(":");
   });
 });
 
