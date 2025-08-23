@@ -61,7 +61,36 @@ export type EffectTrigger =
   | 'on_attack'   // 攻撃する時
   | 'on_spell_play'; // 呪文をプレイした時
 
-/** カード効果の対象選択 */
+/** 動的値計算の種類 */
+export type DynamicValueType = 
+  | 'static'           // 固定値
+  | 'graveyard_creatures' // 墓地のクリーチャー数
+  | 'field_allies'     // 場の味方数
+  | 'field_enemies'    // 場の敵数
+  | 'life_difference'  // ライフ差（自分-相手）
+  | 'hand_size'        // 手札数
+  | 'deck_size';       // デッキ数
+
+/** 動的値計算設定 */
+export interface DynamicValue {
+  type: DynamicValueType;
+  base?: number;      // 基準値（デフォルト0）
+  multiplier?: number; // 乗数（デフォルト1）
+  max?: number;       // 上限値
+}
+
+/** 対象フィルター */
+export interface TargetFilter {
+  exclude_self?: boolean;    // 自分自身を除外
+  min_health?: number;       // 最小体力
+  max_health?: number;       // 最大体力
+  has_keyword?: Keyword;     // 指定キーワード所持
+  card_type?: CardType;      // カード種別
+  min_cost?: number;         // 最小コスト
+  max_cost?: number;         // 最大コスト
+}
+
+/** カード効果の対象選択（拡張版） */
 export type EffectTarget = 
   | 'self'         // 自分自身
   | 'ally_all'     // 味方全体
@@ -69,6 +98,12 @@ export type EffectTarget =
   | 'ally_random'  // 味方ランダム1体
   | 'enemy_random' // 敵ランダム1体
   | 'player';      // プレイヤー直接
+
+/** 拡張対象選択（フィルター機能付き） */
+export interface EnhancedEffectTarget {
+  base: EffectTarget;
+  filters?: TargetFilter;
+}
 
 /** カード効果のアクション */
 export type EffectAction =
@@ -108,6 +143,17 @@ export interface TargetFilter {
   value: 'spell' | 'creature' | number | Faction;
 }
 
+/** 特殊効果ハンドラーの型 */
+export type SpecialEffectHandler = (
+  state: GameState,
+  effect: CardEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  targets: FieldCard[],
+  calculatedValue: number,
+  random: { choice: <T>(array: T[]) => T | undefined; next: () => number }
+) => void;
+
 export interface CardEffect {
   /** 発動タイミング */
   trigger: EffectTrigger;
@@ -121,6 +167,12 @@ export interface CardEffect {
   condition?: EffectCondition;
   /** ターゲットを絞り込むための条件 */
   targetFilter?: TargetFilter;
+  /** 動的値計算（拡張機能） */
+  dynamicValue?: DynamicValue;
+  /** 拡張対象選択（拡張機能） */
+  enhancedTarget?: EnhancedEffectTarget;
+  /** 特殊効果ハンドラー名（拡張機能） */
+  specialHandler?: string;
 }
 
 /** カード種別 */

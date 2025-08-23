@@ -28,6 +28,32 @@ import {
   addTriggerEventAction,
   addCreatureDestroyedAction,
 } from "./action-logger";
+import {
+  executeDamageEffect,
+  executeHealEffect,
+} from "./effects/base-effects";
+import {
+  executeBuffAttackEffect,
+  executeBuffHealthEffect,
+  executeDebuffAttackEffect,
+  executeDebuffHealthEffect,
+} from "./effects/modifier-effects";
+import {
+  executeSummonEffect,
+  executeResurrectEffect,
+} from "./effects/summon-effects";
+import {
+  executeSilenceEffect,
+  executeReadyEffect,
+  executeStunEffect,
+  executeDrawCardEffect,
+} from "./effects/status-effects";
+import {
+  executeDestroyDeckTopEffect,
+  executeSwapAttackHealthEffect,
+  executeHandDiscardEffect,
+  executeDestroyAllCreaturesEffect,
+} from "./effects/special-effects";
 
 /**
  * 効果ログを追加（既存コードとの互換性を保つ）
@@ -173,447 +199,7 @@ function applyDamage(
   });
 }
 
-/**
- * 回復効果の処理
- */
-function applyHeal(
-  state: GameState,
-  targets: FieldCard[],
-  targetPlayerId: PlayerId | null,
-  healing: number,
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
 
-  targets.forEach((target) => {
-    const maxHealth =
-      target.health + target.healthModifier + target.passiveHealthModifier;
-    const before = target.currentHealth;
-    target.currentHealth = Math.min(maxHealth, target.currentHealth + healing);
-    const after = target.currentHealth;
-    valueChanges[target.id] = { health: { before, after } };
-  });
-
-  if (targetPlayerId) {
-    const player = state.players[targetPlayerId];
-    const before = player.life;
-    player.life += healing;
-    const after = player.life;
-    valueChanges[targetPlayerId] = { life: { before, after } };
-  }
-
-  addEffectTriggerAction(state, sourceCardId, "heal", healing, valueChanges);
-}
-
-/**
- * バフ効果の処理
- */
-function applyBuff(
-  state: GameState,
-  targets: FieldCard[],
-  buffType: "attack" | "health",
-  value: number,
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-
-  targets.forEach((target) => {
-    if (buffType === "attack") {
-      const before =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
-      target.attackModifier += value;
-      const after =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
-      valueChanges[target.id] = { attack: { before, after } };
-    } else {
-      const before = target.currentHealth;
-      target.healthModifier += value;
-      target.currentHealth += value;
-      const after = target.currentHealth;
-      valueChanges[target.id] = { health: { before, after } };
-    }
-  });
-
-  const effectType = buffType === "attack" ? "buff_attack" : "buff_health";
-  addEffectTriggerAction(state, sourceCardId, effectType, value, valueChanges);
-}
-
-/**
- * デバフ効果の処理
- */
-function applyDebuff(
-  state: GameState,
-  targets: FieldCard[],
-  debuffType: "attack" | "health",
-  value: number,
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-
-  targets.forEach((target) => {
-    if (debuffType === "attack") {
-      const before =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
-      target.attackModifier = Math.max(
-        -target.attack,
-        target.attackModifier - value
-      );
-      const after =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
-      valueChanges[target.id] = { attack: { before, after } };
-    } else {
-      const before = target.currentHealth;
-      target.healthModifier -= value;
-      const maxHealth =
-        target.health + target.healthModifier + target.passiveHealthModifier;
-      if (target.currentHealth > maxHealth) {
-        target.currentHealth = maxHealth;
-      }
-      const after = target.currentHealth;
-      valueChanges[target.id] = { health: { before, after } };
-    }
-  });
-
-  const effectType =
-    debuffType === "attack" ? "debuff_attack" : "debuff_health";
-  addEffectTriggerAction(state, sourceCardId, effectType, value, valueChanges);
-}
-
-/**
- * トークン召喚効果の処理
- */
-function applySummon(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  sourceCardId: string,
-  random: SeededRandom, // 決定論的乱数生成器を追加
-  tokenStats?: { name?: string; attack: number; health: number }
-): void {
-  const player = state.players[sourcePlayerId];
-
-  // 場が満杯の場合は召喚できない
-  if (player.field.length >= 5) {
-    return;
-  }
-
-  // 基本的なトークン（スケルトン・ウォリアー風）を召喚
-  const token: FieldCard = {
-    id: `token-${state.turnNumber}-${random.next()}`, // 決定論的なID生成
-    owner: sourcePlayerId,
-    name: tokenStats?.name || "トークン",
-    type: "creature",
-    faction: player.faction,
-    cost: 0,
-    attack: tokenStats?.attack ?? 1,
-    health: tokenStats?.health ?? 1,
-    keywords: [],
-    currentHealth: tokenStats?.health ?? 1,
-    attackModifier: 0,
-    healthModifier: 0,
-    passiveAttackModifier: 0,
-    passiveHealthModifier: 0,
-    effects: [],
-    summonTurn: state.turnNumber,
-    position: player.field.length,
-    hasAttacked: false,
-    isStealthed: false,
-    isSilenced: false,
-    statusEffects: [],
-    readiedThisTurn: false,
-  };
-
-  player.field.push(token);
-  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.id]: {} });
-}
-
-/**
- * カードドロー効果の処理
- */
-function applyDrawCard(
-  state: GameState,
-  targetPlayerId: PlayerId,
-  drawCount: number,
-  sourceCardId: string
-): void {
-  const player = state.players[targetPlayerId];
-
-  for (let i = 0; i < drawCount; i++) {
-    // 手札上限チェック
-    if (player.hand.length >= 7) {
-      break;
-    }
-
-    // デッキからドロー
-    if (player.deck.length > 0) {
-      const drawnCard = player.deck.pop()!;
-      player.hand.push(drawnCard);
-    } else {
-      // デッキ切れダメージ
-      player.life = Math.max(0, player.life - 1);
-    }
-  }
-
-  addEffectTriggerAction(state, sourceCardId, "draw_card", drawCount, {
-    [targetPlayerId]: {},
-  });
-}
-
-/**
- * 蘇生効果の処理
- */
-function applyResurrect(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  targetCardIds: string[],
-  sourceCardId: string,
-  random: SeededRandom
-): void {
-  const player = state.players[sourcePlayerId];
-
-  for (const cardId of targetCardIds) {
-    if (player.field.length >= 5) break;
-
-    const graveyardIndex = player.graveyard.findIndex((c) => c.id === cardId);
-    if (graveyardIndex === -1) continue;
-
-    const [resurrectedCard] = player.graveyard.splice(graveyardIndex, 1);
-    if (resurrectedCard.type !== "creature") continue;
-
-    const newFieldCard: FieldCard = {
-      ...resurrectedCard,
-      owner: sourcePlayerId,
-      currentHealth: resurrectedCard.health,
-      attackModifier: 0,
-      healthModifier: 0,
-      passiveAttackModifier: 0,
-      passiveHealthModifier: 0,
-      summonTurn: state.turnNumber,
-      position: player.field.length,
-      hasAttacked: true,
-      isStealthed: false,
-      isSilenced: false,
-      statusEffects: [],
-      readiedThisTurn: false,
-    };
-
-    player.field.push(newFieldCard);
-    addEffectTriggerAction(state, sourceCardId, "resurrect", 1, {
-      [newFieldCard.id]: {},
-    });
-  }
-}
-
-/**
- * 沈黙効果の処理
- */
-function applySilence(
-  state: GameState,
-  targets: FieldCard[],
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-  targets.forEach((target) => {
-    target.isSilenced = true;
-    valueChanges[target.id] = {};
-  });
-  addEffectTriggerAction(state, sourceCardId, "silence", 1, valueChanges);
-}
-
-/**
- * 再攻撃準備効果の処理
- */
-function applyReady(
-  state: GameState,
-  targets: FieldCard[],
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-  targets.forEach((target) => {
-    if (!target.readiedThisTurn) {
-      target.hasAttacked = false;
-      target.readiedThisTurn = true;
-      valueChanges[target.id] = {}; // Just log that the effect happened
-    }
-  });
-
-  if (Object.keys(valueChanges).length > 0) {
-    addEffectTriggerAction(state, sourceCardId, "ready", 1, valueChanges);
-  }
-}
-
-/**
- * スタン効果の処理
- */
-function applyStun(
-  state: GameState,
-  targets: FieldCard[],
-  duration: number,
-  sourceCardId: string
-): void {
-  targets.forEach((target) => {
-    const existingStun = target.statusEffects.find((e) => e.type === "stun");
-    if (existingStun) {
-      existingStun.duration = Math.max(existingStun.duration, duration);
-    } else {
-      target.statusEffects.push({ type: "stun", duration });
-    }
-  });
-  const valueChanges: Record<string, ValueChange> = {};
-  targets.forEach((target) => {
-    valueChanges[target.id] = {};
-  });
-  addEffectTriggerAction(state, sourceCardId, "stun", duration, valueChanges);
-}
-
-/**
- * デッキトップ破壊効果の処理
- */
-function applyDestroyDeckTop(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  costThreshold: number,
-  sourceCardId: string
-): void {
-  const opponentId: PlayerId =
-    sourcePlayerId === "player1" ? "player2" : "player1";
-  const opponent = state.players[opponentId];
-
-  if (opponent.deck.length > 0) {
-    const topCard = opponent.deck[opponent.deck.length - 1];
-    if (topCard.cost >= costThreshold) {
-      const destroyedCard = opponent.deck.pop()!;
-      opponent.graveyard.push(destroyedCard);
-      addEffectTriggerAction(
-        state,
-        sourceCardId,
-        "destroy_deck_top",
-        destroyedCard.cost,
-        { [opponentId]: {} }
-      );
-    }
-  }
-}
-
-/**
- * 攻撃力と体力を入れ替える効果の処理
- */
-function applySwapAttackHealth(
-  state: GameState,
-  targets: FieldCard[],
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-  targets.forEach((target) => {
-    const oldAttack =
-      target.attack + target.attackModifier + target.passiveAttackModifier;
-    const oldHealth =
-      target.health + target.healthModifier + target.passiveHealthModifier;
-    const oldCurrentHealth = target.currentHealth;
-
-    // Swap base stats
-    const tempBaseAttack = target.attack;
-    target.attack = target.health;
-    target.health = tempBaseAttack;
-
-    // Reset modifiers and apply new ones to match the swapped values
-    target.attackModifier = 0;
-    target.healthModifier = 0;
-    target.passiveAttackModifier = 0;
-    target.passiveHealthModifier = 0;
-
-    const newBaseAttack = target.attack;
-    const newBaseHealth = target.health;
-
-    target.attackModifier = oldHealth - newBaseAttack;
-    target.healthModifier = oldAttack - newBaseHealth;
-
-    // Adjust current health proportionally
-    const healthRatio = oldHealth > 0 ? oldCurrentHealth / oldHealth : 0;
-    target.currentHealth = Math.ceil(
-      (newBaseHealth + target.healthModifier) * healthRatio
-    );
-
-    const newAttack =
-      target.attack + target.attackModifier + target.passiveAttackModifier;
-    const newCurrentHealth = target.currentHealth;
-
-    valueChanges[target.id] = {
-      attack: { before: oldAttack, after: newAttack },
-      health: { before: oldCurrentHealth, after: newCurrentHealth },
-    };
-  });
-  addEffectTriggerAction(
-    state,
-    sourceCardId,
-    "swap_attack_health",
-    1,
-    valueChanges
-  );
-}
-
-/**
- * 手札破壊効果の処理
- */
-function applyHandDiscard(
-  state: GameState,
-  targetPlayerId: PlayerId,
-  count: number,
-  sourceCardId: string,
-  random: SeededRandom,
-  filter?: import("@/types/game").TargetFilter
-): void {
-  const player = state.players[targetPlayerId];
-  if (player.hand.length === 0) return;
-
-  for (let i = 0; i < count; i++) {
-    let potentialTargets = player.hand;
-
-    if (filter) {
-      potentialTargets = potentialTargets.filter((card) => {
-        // @ts-expect-error: filter.property is a dynamic key, but it's safe because CardProperty type ensures it exists on Card.
-        return card[filter.property] === filter.value;
-      });
-    }
-
-    if (potentialTargets.length === 0) return;
-
-    const cardToDiscard = random.choice(potentialTargets);
-    if (cardToDiscard) {
-      player.hand = player.hand.filter((c) => c.id !== cardToDiscard.id);
-      player.graveyard.push(cardToDiscard);
-      addEffectTriggerAction(state, sourceCardId, "hand_discard", 1, {
-        [targetPlayerId]: {},
-      });
-    }
-  }
-}
-
-/**
- * 全クリーチャー破壊効果の処理
- */
-function applyDestroyAllCreatures(
-  state: GameState,
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-  const targets: FieldCard[] = [];
-  state.players.player1.field.forEach((c) => targets.push(c));
-  state.players.player2.field.forEach((c) => targets.push(c));
-
-  targets.forEach((target) => {
-    const before = target.currentHealth;
-    target.currentHealth = 0;
-    valueChanges[target.id] = { health: { before, after: 0 } };
-  });
-
-  addEffectTriggerAction(
-    state,
-    sourceCardId,
-    "destroy_all_creatures",
-    1,
-    valueChanges
-  );
-}
 
 /**
  * 効果の発動条件を判定する
@@ -688,7 +274,7 @@ export function executeCardEffect(
     const opponentId: PlayerId =
       sourcePlayerId === "player1" ? "player2" : "player1";
 
-    // --- 動的な効果値や対象を解決 ---
+    // --- 動的な効果値や対象を解決（既存ID分岐を維持）---
     if (
       sourceCard.id === "necro_grave_giant" &&
       effect.action === "buff_attack"
@@ -718,154 +304,71 @@ export function executeCardEffect(
 
     switch (effect.action) {
       case "damage":
-        // 特殊効果: 秘術の連雷
-        if (sourceCard.id === "mag_arcane_lightning") {
-          const initialTarget = random.choice(
-            state.players[opponentId].field.filter((c) => c.currentHealth > 0)
-          );
-          if (initialTarget) {
-            const initialHealth = initialTarget.currentHealth;
-            applyDamage(state, [initialTarget], null, value, sourceCard.id);
-            if (initialTarget.currentHealth <= 0 && initialHealth > 0) {
-              // 死亡した場合
-              const secondaryTarget = random.choice(
-                state.players[opponentId].field.filter(
-                  (c) => c.currentHealth > 0 && c.id !== initialTarget.id
-                )
-              );
-              if (secondaryTarget) {
-                applyDamage(state, [secondaryTarget], null, 2, sourceCard.id);
-              }
-            }
-          }
-        } else if (effect.target === "player") {
-          applyDamage(state, [], opponentId, value, sourceCard.id);
+        if (effect.target === "player") {
+          executeDamageEffect(state, [], opponentId, value, sourceCard.id, sourceCard, random);
         } else {
-          applyDamage(state, targets, null, value, sourceCard.id);
+          executeDamageEffect(state, targets, null, value, sourceCard.id, sourceCard, random);
         }
         break;
 
       case "heal":
         if (effect.target === "player") {
-          applyHeal(state, [], sourcePlayerId, value, sourceCard.id);
+          executeHealEffect(state, [], sourcePlayerId, value, sourceCard.id);
         } else {
-          applyHeal(state, targets, null, value, sourceCard.id);
+          executeHealEffect(state, targets, null, value, sourceCard.id);
         }
         break;
 
       case "buff_attack":
-        if (effect.trigger === "passive") {
-          targets.forEach((target) => {
-            target.passiveAttackModifier += value;
-          });
-          // パッシブ効果のログ記録を削除
-        } else {
-          applyBuff(state, targets, "attack", value, sourceCard.id);
-        }
+        executeBuffAttackEffect(state, targets, value, sourceCard.id, effect);
         break;
 
       case "buff_health":
-        if (effect.trigger === "passive") {
-          targets.forEach((target) => {
-            target.passiveHealthModifier += value;
-            target.currentHealth += value;
-          });
-          // パッシブ効果のログ記録を削除
-        } else {
-          applyBuff(state, targets, "health", value, sourceCard.id);
-        }
+        executeBuffHealthEffect(state, targets, value, sourceCard.id, effect);
         break;
 
       case "debuff_attack":
-        applyDebuff(state, targets, "attack", value, sourceCard.id);
+        executeDebuffAttackEffect(state, targets, value, sourceCard.id);
         break;
 
       case "debuff_health":
-        applyDebuff(state, targets, "health", value, sourceCard.id);
+        executeDebuffHealthEffect(state, targets, value, sourceCard.id);
         break;
 
       case "summon":
-        if (sourceCard.id === "necro_soul_vortex") {
-          // 効果解決前に、自身を墓地から一時的に除外してカウントする
-          const spellCardIndex = sourcePlayer.graveyard.findIndex(
-            (c) => c.id === sourceCard.id
-          );
-          if (spellCardIndex > -1) {
-            sourcePlayer.graveyard.splice(spellCardIndex, 1);
-          }
-          const graveyardSize = sourcePlayer.graveyard.length;
-          sourcePlayer.graveyard = []; // 残りの墓地をゲームから除外
-          applySummon(state, sourcePlayerId, sourceCard.id, random, {
-            name: "魂の集合体",
-            attack: graveyardSize,
-            health: graveyardSize,
-          });
-        } else {
-          applySummon(state, sourcePlayerId, sourceCard.id, random);
-        }
+        executeSummonEffect(state, sourcePlayerId, sourceCard, random, value);
         break;
 
       case "draw_card":
-        applyDrawCard(state, sourcePlayerId, value, sourceCard.id);
+        executeDrawCardEffect(state, sourcePlayerId, value, sourceCard.id);
         break;
 
       case "silence":
-        applySilence(state, targets, sourceCard.id);
+        executeSilenceEffect(state, targets, sourceCard.id);
         break;
 
       case "resurrect":
-        // 特殊効果: 魂の供物
-        if (sourceCard.id === "necro_soul_offering") {
-          const allies = sourcePlayer.field.filter((c) => c.currentHealth > 0);
-          if (allies.length > 0) {
-            const sacrifice = random.choice(allies)!;
-            sacrifice.currentHealth = 0; // 死亡させる
-          }
-          const resurrectTargets = sourcePlayer.graveyard.filter(
-            (c) => c.type === "creature" && c.cost <= value
-          );
-          if (resurrectTargets.length > 0) {
-            const toResurrect = random.choice(resurrectTargets)!;
-            applyResurrect(
-              state,
-              sourcePlayerId,
-              [toResurrect.id],
-              sourceCard.id,
-              random
-            );
-          }
-        } else {
-          // 通常の蘇生
-          const resurrectTargets = sourcePlayer.graveyard.filter(
-            (c) => c.type === "creature"
-          );
-          const chosen = random.choice(resurrectTargets);
-          if (chosen) {
-            applyResurrect(
-              state,
-              sourcePlayerId,
-              [chosen.id],
-              sourceCard.id,
-              random
-            );
-          }
-        }
+        executeResurrectEffect(state, sourcePlayerId, sourceCard, random, value);
         break;
 
       case "stun":
-        applyStun(state, targets, value, sourceCard.id);
+        executeStunEffect(state, targets, value, sourceCard.id);
+        break;
+
+      case "ready":
+        executeReadyEffect(state, targets, sourceCard.id);
         break;
 
       case "destroy_deck_top":
-        applyDestroyDeckTop(state, sourcePlayerId, value, sourceCard.id);
+        executeDestroyDeckTopEffect(state, sourcePlayerId, value, sourceCard.id);
         break;
 
       case "swap_attack_health":
-        applySwapAttackHealth(state, targets, sourceCard.id);
+        executeSwapAttackHealthEffect(state, targets, sourceCard.id);
         break;
 
       case "hand_discard":
-        applyHandDiscard(
+        executeHandDiscardEffect(
           state,
           opponentId,
           value,
@@ -876,11 +379,7 @@ export function executeCardEffect(
         break;
 
       case "destroy_all_creatures":
-        applyDestroyAllCreatures(state, sourceCard.id);
-        break;
-
-      case "ready":
-        applyReady(state, targets, sourceCard.id);
+        executeDestroyAllCreaturesEffect(state, sourceCard.id);
         break;
 
       default:
