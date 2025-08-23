@@ -32,7 +32,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《骸骨剣士》 体力(5→2)");
+    expect(result).toContain("[効果] 《秘術の連雷》: ダメージ(3) → 《骸骨剣士》");
   });
 
   it("should format attack change correctly", () => {
@@ -49,7 +49,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《骸骨剣士》 攻撃力(1→3)");
+    expect(result).toContain("[効果] 《秘術の連雷》: 攻撃力強化(2) → 《骸骨剣士》");
   });
 
   it("should format log without value changes gracefully", () => {

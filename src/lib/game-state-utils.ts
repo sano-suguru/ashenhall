@@ -248,11 +248,14 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         };
       }
       
+      const message = targetNames
+        ? `[効果] 《${sourceCard}》: ${effectName}(${data.effectValue}) → ${targetNames}`
+        : `[効果] 《${sourceCard}》: ${effectName}(${data.effectValue})`;
       return {
         type: 'effect_trigger',
         iconName: 'Sparkles',
         playerName,
-        message: `[効果] 《${sourceCard}》: ${effectName}(${data.effectValue}) → ${targetNames}`,
+        message,
         cardIds: [data.sourceCardId, ...targetIds],
       };
     }
