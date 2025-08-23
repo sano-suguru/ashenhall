@@ -67,8 +67,8 @@ export function createInitialGameState(
     return {
       id,
       life: GAME_CONSTANTS.INITIAL_LIFE,
-      energy: 1, // 初期エネルギー1
-      maxEnergy: 1,
+      energy: GAME_CONSTANTS.INITIAL_ENERGY,
+      maxEnergy: GAME_CONSTANTS.INITIAL_MAX_ENERGY,
       faction,
       tacticsType: tactics,
       deck: remainingDeck,
@@ -293,6 +293,7 @@ function playCardToField(
       isStealthed: card.keywords.includes("stealth"),
       isSilenced: false,
       statusEffects: [],
+      readiedThisTurn: false,
     };
     player.field.splice(position, 0, fieldCard);
     player.field.forEach((c, i) => (c.position = i));
@@ -517,15 +518,28 @@ function processBattlePhase(state: GameState): void {
     return;
   }
 
-  attackers.forEach((attacker) => {
-    if (attacker.currentHealth <= 0) return;
+  // whileループで再攻撃可能なクリーチャーに対応
+  while (true) {
+    const nextAttacker = currentPlayer.field.find(
+      (card) =>
+        ((!card.isSilenced && card.keywords.includes("rush")) ||
+          card.summonTurn < state.turnNumber) &&
+        !card.hasAttacked &&
+        !card.statusEffects.some((e) => e.type === "stun")
+    );
 
-    // 背水の狂戦士の攻撃条件チェック
-    if (attacker.id === "ber_desperate_berserker") {
-      if (currentPlayer.life >= opponent.life) {
-        return; // 攻撃できずに次のアタッカーへ
-      }
+    if (!nextAttacker) {
+      break; // 攻撃可能なクリーチャーがいなければループ終了
     }
+
+    const attacker = nextAttacker;
+    if (attacker.currentHealth <= 0) {
+      attacker.hasAttacked = true; // 念のため
+      continue;
+    }
+
+    // 攻撃前にhasAttackedをtrueに設定
+    attacker.hasAttacked = true;
 
     processEffectTrigger(
       state,
@@ -534,13 +548,42 @@ function processBattlePhase(state: GameState): void {
       currentPlayer.id,
       attacker
     );
-    if (attacker.currentHealth <= 0) return;
+    if (attacker.currentHealth <= 0) continue;
 
-    const { targetCard: target, targetPlayer } = chooseAttackTarget(
+    let { targetCard: target, targetPlayer } = chooseAttackTarget(
       attacker,
       state,
       random
     );
+
+    // 守護キーワードの強制処理
+    const opponentGuardCreatures = getGuardCreatures(opponent.field);
+    if (opponentGuardCreatures.length > 0) {
+      let mustRetarget = false;
+      if (targetPlayer) {
+        // 守護がいる場合、プレイヤーへの攻撃は許可されない
+        mustRetarget = true;
+      } else if (target) {
+        // クリーチャーを対象にしている場合、それが守護かどうかを確認
+        // 注記: else if (target) 条件内なので target は null ではないことが保証されている
+        // そのため非nullアサーション演算子 (!) の使用は安全
+        const targetIsGuard = opponentGuardCreatures.some(guard => guard.id === target!.id);
+        if (!targetIsGuard) {
+          mustRetarget = true;
+        }
+      } else {
+        // chooseAttackTarget が守護がいる時に必ずターゲットを返すなら発生しないケース
+        // しかし安全のため、ターゲットがない場合は守護を選択
+        mustRetarget = true;
+      }
+      
+      if (mustRetarget) {
+        // 守護クリーチャーの中からランダムに選択
+        // 注記: opponentGuardCreatures.length > 0 が確認済みなので ! の使用は安全
+        target = random.choice(opponentGuardCreatures)!;
+        targetPlayer = false;
+      }
+    }
 
     const totalAttack =
       attacker.attack +
@@ -563,7 +606,22 @@ function processBattlePhase(state: GameState): void {
       target.currentHealth -= damage;
       const targetHealthAfter = target.currentHealth;
 
-      // ダメージを受けたという事実をログに記録
+      // Trample (貫通) ダメージ処理
+      if (!attacker.isSilenced && attacker.keywords.includes("trample")) {
+        const excessDamage = damage - targetHealthBefore;
+        if (excessDamage > 0) {
+          const playerLifeBefore = opponent.life;
+          opponent.life -= excessDamage;
+          const playerLifeAfter = opponent.life;
+          addKeywordTriggerAction(state, currentPlayer.id, {
+            keyword: 'trample',
+            sourceCardId: attacker.id,
+            targetId: opponent.id,
+            value: excessDamage,
+          });
+        }
+      }
+
       addTriggerEventAction(state, currentPlayer.id, {
         triggerType: 'on_damage_taken',
         sourceCardId: attacker.id,
@@ -611,7 +669,6 @@ function processBattlePhase(state: GameState): void {
           attacker.currentHealth -= defenderDamage;
           const attackerHealthAfter = attacker.currentHealth;
 
-          // 反撃ダメージを受けたという事実をログに記録
           addTriggerEventAction(state, opponent.id, {
             triggerType: 'on_damage_taken',
             sourceCardId: target.id,
@@ -651,8 +708,7 @@ function processBattlePhase(state: GameState): void {
         targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
       });
     }
-    attacker.hasAttacked = true;
-  });
+  }
 
   advancePhase(state);
 }
@@ -694,6 +750,7 @@ function processEndPhase(state: GameState): void {
       // 潜伏解除と状態異常のクリーンアップ
       card.isStealthed = false;
       card.hasAttacked = false;
+      card.readiedThisTurn = false; // 再攻撃準備フラグをリセット
       card.statusEffects = card.statusEffects.filter((e) => e.duration > 0);
     });
 

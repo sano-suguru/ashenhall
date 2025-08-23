@@ -390,6 +390,7 @@ function applySummon(
     isStealthed: false,
     isSilenced: false,
     statusEffects: [],
+    readiedThisTurn: false,
   };
 
   player.field.push(token);
@@ -463,6 +464,7 @@ function applyResurrect(
       isStealthed: false,
       isSilenced: false,
       statusEffects: [],
+      readiedThisTurn: false,
     };
 
     player.field.push(newFieldCard);
@@ -486,6 +488,28 @@ function applySilence(
     valueChanges[target.id] = {};
   });
   addEffectTriggerAction(state, sourceCardId, "silence", 1, valueChanges);
+}
+
+/**
+ * 再攻撃準備効果の処理
+ */
+function applyReady(
+  state: GameState,
+  targets: FieldCard[],
+  sourceCardId: string
+): void {
+  const valueChanges: Record<string, ValueChange> = {};
+  targets.forEach((target) => {
+    if (!target.readiedThisTurn) {
+      target.hasAttacked = false;
+      target.readiedThisTurn = true;
+      valueChanges[target.id] = {}; // Just log that the effect happened
+    }
+  });
+
+  if (Object.keys(valueChanges).length > 0) {
+    addEffectTriggerAction(state, sourceCardId, "ready", 1, valueChanges);
+  }
 }
 
 /**
@@ -924,6 +948,10 @@ export function executeCardEffect(
 
       case "destroy_all_creatures":
         applyDestroyAllCreatures(state, sourceCard.id);
+        break;
+
+      case "ready":
+        applyReady(state, targets, sourceCard.id);
         break;
 
       default:

@@ -433,13 +433,13 @@ export const berserkerCards: Card[] = [
     cost: 4,
     attack: 7,
     health: 2,
-    keywords: [],
+    keywords: ['trample'],
     effects: [
       {
         trigger: 'on_attack',
         target: 'self',
-        action: 'damage', // Placeholder for condition
-        value: 0,
+        action: 'ready',
+        value: 1,
         condition: { subject: 'playerLife', operator: 'lt', value: 'opponentLife' },
       },
     ],

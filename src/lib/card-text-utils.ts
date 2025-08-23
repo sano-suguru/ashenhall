@@ -71,6 +71,9 @@ export const getEffectText = (effect: Card['effects'][0], cardType: 'creature' |
     case 'hand_discard':
       effectDescription = `相手は手札からランダムに${effect.value}枚のカードを捨てる。`;
       break;
+    case 'ready':
+      effectDescription = `このクリーチャーはもう一度攻撃できる。`;
+      break;
     default:
         effectDescription = `[未定義アクション: ${effect.action}]`;
   }

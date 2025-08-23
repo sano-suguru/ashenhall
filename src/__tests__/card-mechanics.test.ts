@@ -31,8 +31,8 @@ describe('Card Mechanics Tests', () => {
     let gameState = createInitialGameState('lifesteal-test', [bloodCraver], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed');
     
     gameState.players[p1].life = 10;
-    gameState.players[p1].field.push({ ...bloodCraver, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
-    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
+    gameState.players[p1].field.push({ ...bloodCraver, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -46,8 +46,8 @@ describe('Card Mechanics Tests', () => {
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
     let gameState = createInitialGameState('poison-test', [venomtongue], [skeleton], 'inquisitor', 'necromancer', 'aggressive', 'aggressive', 'seed');
 
-    gameState.players[p1].field.push({ ...venomtongue, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
-    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
+    gameState.players[p1].field.push({ ...venomtongue, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -71,8 +71,8 @@ describe('Card Mechanics Tests', () => {
     let gameState = createInitialGameState('retaliate-test', [skeleton], [vindicator], 'necromancer', 'knight', 'aggressive', 'aggressive', 'seed');
 
     const initialHealth = 4;
-    gameState.players[p1].field.push({ ...skeleton, owner: p1, currentHealth: initialHealth, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
-    gameState.players[p2].field.push({ ...vindicator, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] });
+    gameState.players[p1].field.push({ ...skeleton, owner: p1, currentHealth: initialHealth, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...vindicator, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -110,7 +110,7 @@ describe('Card Mechanics Tests', () => {
     const lastStand = berserkerCards.find(c => c.id === 'ber_last_stand')!;
     const enemyCreature = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
 
-    baseState.players[p2].field = [{ ...enemyCreature, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }];
+    baseState.players[p2].field = [{ ...enemyCreature, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     
     let stateHighLife = JSON.parse(JSON.stringify(baseState));
     stateHighLife.players[p1].life = 10;
@@ -139,7 +139,7 @@ describe('Card Mechanics Tests', () => {
     const spell = mageCards.find(c => c.id === 'mag_torrent')!;
 
     let state = JSON.parse(JSON.stringify(baseState));
-    state.players[p1].field = [{ ...scholar, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }];
+    state.players[p1].field = [{ ...scholar, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.players[p1].hand = [spell];
     state.players[p1].energy = 3;
     state.phase = 'deploy';
@@ -157,8 +157,8 @@ describe('Card Mechanics Tests', () => {
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [
-      { ...banneret, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] },
-      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }
+      { ...banneret, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false },
+      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }
     ];
     state.phase = 'battle';
     state.currentPlayer = p1;
@@ -176,7 +176,7 @@ describe('Card Mechanics Tests', () => {
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [writ];
     state.players[p1].energy = 2;
-    state.players[p2].field = [{ ...zombie, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }];
+    state.players[p2].field = [{ ...zombie, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.phase = 'deploy';
     state.currentPlayer = p1;
 
@@ -200,10 +200,9 @@ describe('Card Mechanics Tests', () => {
   // === New Mechanics Tests for Expansion ===
 
   test('Rush keyword should allow attacking on the same turn', () => {
-    const rushCreature = { ...berserkerCards.find(c => c.id === 'ber_desperate_berserker')! as CreatureCard, keywords: ['rush'] };
+    const rushCreature = { ...necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard, keywords: ['rush'] };
     let state = JSON.parse(JSON.stringify(baseState));
-    state.players[p1].field = [{ ...rushCreature, owner: p1, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: state.turnNumber, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }];
-    state.players[p1].life = 5; // To meet desperate berserker's condition
+    state.players[p1].field = [{ ...rushCreature, owner: p1, currentHealth: rushCreature.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: state.turnNumber, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.players[p2].life = 10;
     state.phase = 'battle';
     state.currentPlayer = p1;
@@ -251,8 +250,8 @@ describe('Card Mechanics Tests', () => {
     state.players[p1].hand = [vowOfUnity];
     state.players[p1].energy = 3;
     state.players[p1].field = [
-      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] },
-      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }
+      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false },
+      { ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }
     ]; // 2 allies
     state.phase = 'deploy';
     state.currentPlayer = p1;
@@ -263,7 +262,7 @@ describe('Card Mechanics Tests', () => {
     expect(state.players[p1].field[0].attackModifier).toBe(1);
     expect(state.players[p1].field[0].healthModifier).toBe(1);
 
-    state.players[p1].field.push({ ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 2, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [] }); // 3 allies
+    state.players[p1].field.push({ ...squire, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 2, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }); // 3 allies
     state.players[p1].hand = [vowOfUnity];
     state.players[p1].energy = 3;
     state.phase = 'deploy';

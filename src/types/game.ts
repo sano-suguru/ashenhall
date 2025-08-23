@@ -46,7 +46,8 @@ export type Keyword =
   | 'retaliate' // 反撃: 攻撃された時に反撃ダメージ
   | 'echo' // 残響: 墓地のカード枚数を参照
   | 'formation' // 連携: 味方クリーチャーの数を参照
-  | 'rush'; // 速攻: 召喚ターンに攻撃可能
+  | 'rush' // 速攻: 召喚ターンに攻撃可能
+  | 'trample'; // 貫通: ブロッカーの体力を超えたダメージをプレイヤーに与える
 
 /** カード効果の発動タイミング */
 export type EffectTrigger =
@@ -86,7 +87,8 @@ export type EffectAction =
   | 'destroy_deck_top' // デッキトップ破壊
   | 'swap_attack_health' // 攻撃力と体力を入れ替え
   | 'hand_discard' // 手札破壊
-  | 'destroy_all_creatures'; // 全クリーチャー破壊
+  | 'destroy_all_creatures' // 全クリーチャー破壊
+  | 'ready'; // 再攻撃準備: 攻撃済み状態を解除する
 
 /** カード効果の条件 */
 export type ConditionSubject = 'graveyard' | 'allyCount' | 'playerLife' | 'opponentLife';
@@ -191,6 +193,8 @@ export interface FieldCard extends CreatureCard {
   isSilenced: boolean;
   /** 状態異常リスト */
   statusEffects: StatusEffect[];
+  /** このターンに再攻撃準備効果が発動したか */
+  readiedThisTurn: boolean;
 }
 
 // === ゲーム状態型定義 ===
@@ -461,6 +465,10 @@ export const GAME_CONSTANTS = {
   INITIAL_LIFE: 15,
   /** 初期手札数 */
   INITIAL_HAND_SIZE: 3,
+  /** 初期エネルギー */
+  INITIAL_ENERGY: 0,
+  /** 初期最大エネルギー */
+  INITIAL_MAX_ENERGY: 0,
   /** 手札上限 */
   HAND_LIMIT: 7,
   /** 場の上限 */
