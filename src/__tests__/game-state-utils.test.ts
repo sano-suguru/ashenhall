@@ -88,6 +88,42 @@ describe("formatActionAsText", () => {
     expect(result).toContain("《some_card》の効果");
     expect(result).not.toContain(":");
   });
+
+  it("should format card_attack on creature with before/after values", () => {
+    const action: GameAction = {
+      sequence: 5,
+      playerId: "player1",
+      type: "card_attack",
+      data: {
+        attackerCardId: "some_attacker",
+        targetId: "some_target",
+        damage: 3,
+        targetHealth: { before: 5, after: 2 },
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("《some_attacker》 → 《some_target》");
+    expect(result).toContain("(3ダメージ) 体力 5→2");
+  });
+
+  it("should format card_attack on player with before/after values", () => {
+    const action: GameAction = {
+      sequence: 6,
+      playerId: "player1",
+      type: "card_attack",
+      data: {
+        attackerCardId: "some_attacker",
+        targetId: "player2",
+        damage: 2,
+        targetPlayerLife: { before: 15, after: 13 },
+      },
+      timestamp: 0,
+    };
+    const result = formatActionAsText(action, mockGameState);
+    expect(result).toContain("《some_attacker》 → 相手");
+    expect(result).toContain("(2ダメージ) ライフ 15→13");
+  });
 });
 
 describe("findDecisiveAction", () => {

@@ -204,16 +204,25 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
       };
     }
     case "card_attack": {
-      const attackerName = getCardName(action.data.attackerCardId);
-      const isPlayerTarget = action.data.targetId === "player1" || action.data.targetId === "player2";
-      const targetName = isPlayerTarget ? "プレイヤー" : `《${getCardName(action.data.targetId)}》`;
+      const { data } = action;
+      const attackerName = getCardName(data.attackerCardId);
+      const isPlayerTarget = data.targetId === "player1" || data.targetId === "player2";
+      const targetName = isPlayerTarget ? getPlayerName(data.targetId as PlayerId) : `《${getCardName(data.targetId)}》`;
+      
+      let details = `(${data.damage}ダメージ)`;
+      if (data.targetHealth) {
+        details += ` 体力 ${data.targetHealth.before}→${data.targetHealth.after}`;
+      } else if (data.targetPlayerLife) {
+        details += ` ライフ ${data.targetPlayerLife.before}→${data.targetPlayerLife.after}`;
+      }
+
       return {
         type: 'card_attack',
         iconName: 'Swords',
         playerName,
         message: `《${attackerName}》 → ${targetName}`,
-        details: `(${action.data.damage}ダメージ)`,
-        cardIds: [action.data.attackerCardId, action.data.targetId],
+        details: details,
+        cardIds: [data.attackerCardId, data.targetId],
       };
     }
     case "creature_destroyed": {
