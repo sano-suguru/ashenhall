@@ -57,8 +57,14 @@ class SeededRandom {
   }
 }
 
+import {
+  addEffectTriggerAction as addEffectTriggerActionFromLogger,
+  addTriggerEventAction,
+  addCreatureDestroyedAction,
+} from "./action-logger";
+
 /**
- * 効果ログを追加
+ * 効果ログを追加（既存コードとの互換性を保つ）
  */
 function addEffectTriggerAction(
   state: GameState,
@@ -67,55 +73,12 @@ function addEffectTriggerAction(
   effectValue: number,
   targets: Record<string, ValueChange>
 ): void {
-  const action: GameAction = {
-    sequence: state.actionLog.length,
-    playerId: state.currentPlayer,
-    type: "effect_trigger",
-    data: {
-      sourceCardId,
-      effectType,
-      effectValue,
-      targets,
-    },
-    timestamp: Date.now(),
-  };
-  state.actionLog.push(action);
-}
-
-/**
- * トリガーイベントログを追加
- */
-function addTriggerEventAction(
-  state: GameState,
-  playerId: PlayerId,
-  data: TriggerEventActionData
-): void {
-  const action: GameAction = {
-    sequence: state.actionLog.length,
-    playerId,
-    type: "trigger_event",
-    data,
-    timestamp: Date.now(),
-  };
-  state.actionLog.push(action);
-}
-
-/**
- * 破壊ログを追加
- */
-function addCreatureDestroyedAction(
-  state: GameState,
-  playerId: PlayerId,
-  data: CreatureDestroyedActionData
-): void {
-  const action: GameAction = {
-    sequence: state.actionLog.length,
-    playerId,
-    type: "creature_destroyed",
-    data,
-    timestamp: Date.now(),
-  };
-  state.actionLog.push(action);
+  addEffectTriggerActionFromLogger(state, state.currentPlayer, {
+    sourceCardId,
+    effectType,
+    effectValue,
+    targets,
+  });
 }
 
 /**
