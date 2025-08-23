@@ -15,7 +15,7 @@ import {
 } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { GAME_CONSTANTS } from '@/types/game';
-import type { Card, Faction, TacticsType } from '@/types/game';
+import type { Card, Faction, TacticsType, GameState } from '@/types/game';
 
 describe('Ashenhall ゲームエンジン', () => {
   // テスト用の基本設定
@@ -1329,9 +1329,80 @@ describe('Card Keyword and Effect Tests', () => {
         expect(action1.data.cardId).toBe(action2.data.cardId);
         expect(action1.data.position).toBe(action2.data.position);
         expect(action1.playerId).toBe(action2.playerId);
-      });
     });
   });
+});
+
+describe('戦闘システム - 勝利判定後の処理', () => {
+  const testGameId = 'overkill-test';
+  const testSeed = 'overkill-test-seed';
+  const player1Faction: Faction = 'berserker';
+  const player2Faction: Faction = 'necromancer';
+  const player1Tactics: TacticsType = 'aggressive';
+  const player2Tactics: TacticsType = 'defensive';
+
+  const createTestDeck = (): Card[] => {
+    const deck: Card[] = [];
+    const availableCards = necromancerCards.slice(0, 4);
+    availableCards.forEach(card => {
+      for (let i = 0; i < 5; i++) {
+        deck.push({ ...card, id: `${card.id}_${i}` });
+      }
+    });
+    return deck;
+  };
+
+  test('ライフが0になった後、過剰な攻撃が行われず、ライフがマイナスにならない', () => {
+    const deck1 = createTestDeck();
+    const deck2 = createTestDeck();
+    const gameState: GameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed);
+
+    // Arrange: 状況設定
+    // player2のライフを3に設定
+    gameState.players.player2.life = 3;
+    // player2の場は空
+    gameState.players.player2.field = [];
+
+    // player1の場に攻撃力2のクリーチャーを3体配置
+    const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
+    if (!attackerCard || attackerCard.type !== 'creature') {
+      throw new Error('攻撃者カードが見つかりません');
+    }
+    for (let i = 0; i < 3; i++) {
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        id: `attacker_${i}`,
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
+        summonTurn: 0, position: i, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+      });
+    }
+
+    // player1のターン、戦闘フェーズに設定
+    gameState.currentPlayer = 'player1';
+    gameState.phase = 'battle';
+
+    // Act: 戦闘フェーズを実行
+    const finalGameState = processGameStep(gameState);
+
+    // Assert: 結果を検証
+    // 1. 最終的なライフが0であること
+    expect(finalGameState.players.player2.life).toBe(0);
+
+    // 2. 攻撃アクションが1回だけ行われていること
+    const attackActions = finalGameState.actionLog.filter(
+      action => action.type === 'card_attack' && action.data.targetId === 'player2'
+    );
+    expect(attackActions.length).toBe(1);
+
+    // 3. ログの詳細を検証
+    if (attackActions[0]?.type === 'card_attack') {
+      expect(attackActions[0].data.targetPlayerLife?.before).toBe(3);
+      expect(attackActions[0].data.targetPlayerLife?.after).toBe(0);
+    }
+  });
+});
 
   describe('戦闘システム - 直接攻撃バグ修正検証', () => {
     test('相手の場が空の時、プレイヤーに直接攻撃する', () => {

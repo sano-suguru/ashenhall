@@ -190,7 +190,7 @@ function handleCombatDamage(
     }
   } else if (targetPlayer) {
     const playerLifeBefore = opponent.life;
-    opponent.life -= damage;
+    opponent.life = Math.max(0, opponent.life - damage);
     const playerLifeAfter = opponent.life;
     addCardAttackAction(state, currentPlayerId, {
       attackerCardId: attacker.id,
@@ -291,6 +291,11 @@ export function processBattlePhase(state: GameState): void {
 
   // whileループで再攻撃可能なクリーチャーに対応
   while (true) {
+    // いずれかのプレイヤーのライフが0以下なら戦闘フェーズを終了
+    if (state.players.player1.life <= 0 || state.players.player2.life <= 0) {
+      break;
+    }
+
     const nextAttacker = currentPlayer.field.find(
       (card) =>
         ((!card.isSilenced && card.keywords.includes("rush")) ||
