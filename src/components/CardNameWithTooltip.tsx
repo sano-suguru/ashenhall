@@ -10,6 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
+import { getEffectText } from '@/lib/card-text-utils';
 import type { Card } from '@/types/game';
 import { 
   Skull, 
@@ -208,32 +209,7 @@ const Tooltip = ({ card, tooltipStyle }: { card: Card, tooltipStyle: React.CSSPr
             <div className="grid grid-cols-1 gap-1">
               {card.effects.map((effect, index) => (
                 <div key={index} className="bg-gray-800 bg-opacity-50 px-2 py-1 rounded text-xs">
-                  <span className="text-purple-300 font-semibold">
-                    {effect.trigger === 'on_play' && (card.type === 'creature' ? '召喚時' : '使用時')}
-                    {effect.trigger === 'on_death' && '死亡時'}
-                    {effect.trigger === 'turn_start' && 'ターン開始時'}
-                    {effect.trigger === 'turn_end' && 'ターン終了時'}
-                    {effect.trigger === 'passive' && '常時効果'}
-                    {effect.trigger === 'on_spell_play' && '呪文使用時'}
-                  </span>
-                  <span className="text-gray-200 ml-2">
-                    {effect.action === 'damage' && `${effect.value}ダメージを`}
-                    {effect.action === 'heal' && `${effect.value}回復を`}
-                    {effect.action === 'buff_attack' && `攻撃力+${effect.value}を`}
-                    {effect.action === 'buff_health' && `体力+${effect.value}を`}
-                    {effect.action === 'debuff_attack' && `攻撃力-${effect.value}を`}
-                    {effect.action === 'debuff_health' && `体力-${effect.value}を`}
-                    {effect.action === 'summon' && `トークン×${effect.value}を`}
-                    {effect.action === 'draw_card' && `カード×${effect.value}を`}
-                    {effect.action === 'resurrect' && `クリーチャー×${effect.value}を蘇生`}
-                    {effect.action === 'silence' && `クリーチャー×${effect.value}を沈黙`}
-                    {effect.target === 'self' && '自分に与える'}
-                    {effect.target === 'ally_all' && '味方全体に与える'}
-                    {effect.target === 'enemy_all' && '敵全体に与える'}
-                    {effect.target === 'ally_random' && '味方ランダム1体に与える'}
-                    {effect.target === 'enemy_random' && '敵ランダム1体に与える'}
-                    {effect.target === 'player' && 'プレイヤーに与える'}
-                  </span>
+                  {getEffectText(effect, card.type)}
                 </div>
               ))}
             </div>

@@ -60,7 +60,7 @@ export const getEffectText = (effect: Card['effects'][0], cardType: 'creature' |
       effectDescription = `${getTargetText(effect.target)}を沈黙させる。`;
       break;
     case 'stun':
-      effectDescription = `${getTargetText(effect.target)}を1ターンスタンさせる。`;
+      effectDescription = `${getTargetText(effect.target)}は、次のターン攻撃できない。`;
       break;
     case 'destroy_deck_top':
       effectDescription = `相手はデッキの上から${effect.value}枚のカードを墓地に置く。`;
