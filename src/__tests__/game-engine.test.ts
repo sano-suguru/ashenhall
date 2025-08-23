@@ -180,6 +180,10 @@ describe('Ashenhall ゲームエンジン', () => {
         testSeed
       );
 
+      // ライフを大きな値に設定して早期決着を防止
+      gameState.players.player1.life = 99;
+      gameState.players.player2.life = 99;
+
       // 16ターン (8ターンずつ) 進行させて、エネルギーが上限に達することを確認
       for (let i = 0; i < 16 * 5; i++) { // 5 phases per turn
         if (gameState.result) break;

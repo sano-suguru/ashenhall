@@ -130,7 +130,8 @@ describe('Card Mechanics Tests', () => {
     stateLowLife.currentPlayer = p1;
 
     stateLowLife = processGameStep(stateLowLife);
-    expect(stateLowLife.players[p2].field[0].currentHealth).toBe(0);
+    expect(stateLowLife.players[p2].field.length).toBe(0);
+    expect(stateLowLife.players[p2].graveyard.some((c: Card) => c.id === enemyCreature.id)).toBe(true);
   });
 
   test('魔力循環の学者 should gain attack when a spell is played', () => {

@@ -666,6 +666,7 @@ function processEndPhase(state: GameState): void {
     state.players[state.currentPlayer === "player1" ? "player2" : "player1"];
 
   [currentPlayer, opponent].forEach((player) => {
+    const poisonDeaths: FieldCard[] = [];
     player.field.forEach((card) => {
       // 状態異常処理
       card.statusEffects.forEach((effect) => {
@@ -683,6 +684,9 @@ function processEndPhase(state: GameState): void {
               },
             },
           });
+          if (card.currentHealth <= 0) {
+            poisonDeaths.push(card);
+          }
         }
         effect.duration -= 1;
       });
@@ -691,6 +695,11 @@ function processEndPhase(state: GameState): void {
       card.isStealthed = false;
       card.hasAttacked = false;
       card.statusEffects = card.statusEffects.filter((e) => e.duration > 0);
+    });
+
+    // 毒による死亡処理
+    poisonDeaths.forEach(deadCard => {
+      handleCreatureDeath(state, deadCard, 'effect', 'poison_effect');
     });
   });
 
