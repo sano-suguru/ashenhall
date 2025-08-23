@@ -19,6 +19,7 @@ import type {
   ValueChange,
   TriggerEventActionData,
   EffectTrigger,
+  CreatureDestroyedActionData,
 } from "@/types/game";
 
 /**
@@ -100,6 +101,65 @@ function addTriggerEventAction(
 }
 
 /**
+ * 破壊ログを追加
+ */
+function addCreatureDestroyedAction(
+  state: GameState,
+  playerId: PlayerId,
+  data: CreatureDestroyedActionData
+): void {
+  const action: GameAction = {
+    sequence: state.actionLog.length,
+    playerId,
+    type: "creature_destroyed",
+    data,
+    timestamp: Date.now(),
+  };
+  state.actionLog.push(action);
+}
+
+/**
+ * クリーチャー死亡処理を一元化
+ */
+export function handleCreatureDeath(
+  state: GameState,
+  deadCard: FieldCard,
+  source: 'combat' | 'effect',
+  sourceCardId: string
+): void {
+  const ownerId = deadCard.owner;
+  const player = state.players[ownerId];
+
+  // 既に場からいなくなっている場合は処理しない
+  const cardIndexOnField = player.field.findIndex(c => c.id === deadCard.id);
+  if (cardIndexOnField === -1) {
+    return;
+  }
+
+  // 破壊ログを記録
+  addCreatureDestroyedAction(state, ownerId, {
+    destroyedCardId: deadCard.id,
+    source,
+    sourceCardId,
+  });
+
+  // 死亡したカード自身の`on_death`効果を発動
+  processEffectTrigger(state, "on_death", deadCard, ownerId, deadCard);
+
+  // 場から取り除き、墓地へ送る
+  const [removedCard] = player.field.splice(cardIndexOnField, 1);
+  player.graveyard.push(removedCard);
+
+  // 他の味方の`on_ally_death`効果を発動
+  player.field.forEach((allyCard) => {
+    processEffectTrigger(state, "on_ally_death", allyCard, ownerId, removedCard);
+  });
+
+  // 場のカードの位置を再インデックス
+  player.field.forEach((c, i) => (c.position = i));
+}
+
+/**
  * 対象選択ロジック
  */
 function selectTargets(
@@ -175,6 +235,13 @@ function applyDamage(
   }
 
   addEffectTriggerAction(state, sourceCardId, "damage", damage, valueChanges);
+
+  // ダメージ適用後に死亡判定
+  targets.forEach((target) => {
+    if (target.currentHealth <= 0) {
+      handleCreatureDeath(state, target, 'effect', sourceCardId);
+    }
+  });
 }
 
 /**

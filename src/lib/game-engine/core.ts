@@ -34,6 +34,7 @@ import {
   processEffectTrigger,
   applyPassiveEffects,
   executeCardEffect,
+  handleCreatureDeath,
 } from "./card-effects";
 import { evaluateCardForPlay, chooseAttackTarget } from "./ai-tactics";
 import { SeededRandom } from "./seeded-random";
@@ -584,7 +585,9 @@ function processBattlePhase(state: GameState): void {
         targetHealth: { before: targetHealthBefore, after: targetHealthAfter },
       });
 
-      if (target.currentHealth > 0) {
+      if (target.currentHealth <= 0) {
+        handleCreatureDeath(state, target, 'combat', attacker.id);
+      } else {
         const totalTargetAttack =
           target.attack + target.attackModifier + target.passiveAttackModifier;
         const retaliateDamage =
@@ -631,6 +634,10 @@ function processBattlePhase(state: GameState): void {
               after: attackerHealthAfter,
             },
           });
+
+          if (attacker.currentHealth <= 0) {
+            handleCreatureDeath(state, attacker, 'combat', target.id);
+          }
         }
       }
     } else if (targetPlayer) {
@@ -645,39 +652,6 @@ function processBattlePhase(state: GameState): void {
       });
     }
     attacker.hasAttacked = true;
-  });
-
-  [currentPlayer, opponent].forEach((player) => {
-    const deadCardsInLoop = player.field.filter(
-      (card) => card.currentHealth <= 0
-    );
-    if (deadCardsInLoop.length > 0) {
-      deadCardsInLoop.forEach((deadCard) => {
-        addCreatureDestroyedAction(state, player.id, {
-          destroyedCardId: deadCard.id,
-          source: "combat",
-        });
-        processEffectTrigger(state, "on_death", deadCard, player.id, deadCard);
-        //味方死亡時トリガーを（死んだカード以外の）味方に発動
-        player.field.forEach((card) => {
-          if (card.id !== deadCard.id) {
-            processEffectTrigger(
-              state,
-              "on_ally_death",
-              card,
-              player.id,
-              deadCard
-            );
-          }
-        });
-      });
-
-      player.field = player.field.filter((card) => card.currentHealth > 0);
-      player.graveyard.push(...deadCardsInLoop);
-      player.field.forEach((card, index) => {
-        card.position = index;
-      });
-    }
   });
 
   advancePhase(state);
@@ -722,26 +696,6 @@ function processEndPhase(state: GameState): void {
 
   // ターン終了効果
   processEffectTrigger(state, "turn_end");
-
-  // 死亡処理
-  [currentPlayer, opponent].forEach((player) => {
-    const deadCards = player.field.filter((card) => card.currentHealth <= 0);
-    if (deadCards.length > 0) {
-      deadCards.forEach((deadCard) => {
-        addCreatureDestroyedAction(state, player.id, {
-          destroyedCardId: deadCard.id,
-          source: "effect",
-          sourceCardId: "poison_effect",
-        });
-        processEffectTrigger(state, "on_death", deadCard, player.id, undefined);
-      });
-      player.field = player.field.filter((card) => card.currentHealth > 0);
-      player.graveyard.push(...deadCards);
-      player.field.forEach((card, index) => {
-        card.position = index;
-      });
-    }
-  });
 
   advancePhase(state);
 }
