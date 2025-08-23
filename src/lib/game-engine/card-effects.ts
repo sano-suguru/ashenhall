@@ -22,41 +22,7 @@ import type {
   CreatureDestroyedActionData,
 } from "@/types/game";
 
-/**
- * 決定論的乱数生成器（ゲームエンジンコアと同じ実装）
- */
-class SeededRandom {
-  private seed: number;
-
-  constructor(seed: string) {
-    this.seed = this.hashCode(seed);
-  }
-
-  private hashCode(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  }
-
-  next(): number {
-    this.seed = (this.seed * 9301 + 49297) % 233280;
-    return this.seed / 233280;
-  }
-
-  nextInt(min: number, max: number): number {
-    return Math.floor(this.next() * (max - min)) + min;
-  }
-
-  choice<T>(array: T[]): T | undefined {
-    if (array.length === 0) return undefined;
-    return array[this.nextInt(0, array.length)];
-  }
-}
-
+import { SeededRandom } from "./seeded-random";
 import {
   addEffectTriggerAction as addEffectTriggerActionFromLogger,
   addTriggerEventAction,
