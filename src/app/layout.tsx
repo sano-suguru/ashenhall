@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = localFont({
   src: "../styles/fonts/Geist[wght].woff2",
@@ -31,6 +32,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Toaster 
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
         {children}
         <div id="modal-root"></div>
       </body>

@@ -8,18 +8,14 @@
  * - 統合デッキ共有機能（URL/コード/画像）
  */
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { CustomDeck, Faction, Card } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
 import { validateDeck } from '@/lib/deck-utils';
-import { encodeDeck } from '@/lib/deck-sharing';
 import { GAME_CONSTANTS } from '@/types/game';
 import CardComponent from './CardComponent';
-import Modal from './Modal';
-import DeckImageGenerator from './DeckImageGenerator';
-import { createRoot } from 'react-dom/client';
-import { Save, Trash2, AlertCircle, CheckCircle, Star, Share2, X, Copy, Link, Image as ImageIcon } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import ShareDeckModal from './ShareDeckModal';
+import { Save, Trash2, AlertCircle, CheckCircle, Star, Share2 } from 'lucide-react';
 
 interface DeckBuilderProps {
   deck: CustomDeck;
@@ -99,60 +95,6 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
   const handleShare = () => {
     setShowShareModal(true);
   };
-
-  const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      alert(`${type}をクリップボードにコピーしました。`);
-    }).catch(err => {
-      console.error(`Could not copy ${type}: `, err);
-    });
-  };
-
-  const handleCopyUrl = () => {
-    const deckCode = encodeDeck(currentDeck);
-    const url = `${window.location.origin}?deck=${deckCode}`;
-    copyToClipboard(url, 'URL');
-  };
-
-  const handleCopyCode = () => {
-    const deckCode = encodeDeck(currentDeck);
-    copyToClipboard(deckCode, 'デッキコード');
-  };
-
-  const handleDownloadImage = useCallback(async () => {
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    document.body.appendChild(tempContainer);
-
-    const root = createRoot(tempContainer);
-    
-    try {
-      await new Promise<void>((resolve) => {
-        root.render(
-          <DeckImageGenerator deck={currentDeck} />
-        );
-        // 少し待ってレンダリングを確実にする
-        setTimeout(resolve, 500);
-      });
-
-      const dataUrl = await toPng(tempContainer.firstChild as HTMLElement, {
-        cacheBust: true,
-        pixelRatio: 2,
-      });
-
-      const link = document.createElement('a');
-      link.download = `${currentDeck.name}.png`;
-      link.href = dataUrl;
-      link.click();
-
-    } catch (err) {
-      console.error('Image generation failed:', err);
-    } finally {
-      root.unmount();
-      document.body.removeChild(tempContainer);
-    }
-  }, [currentDeck]);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -249,17 +191,11 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
           </main>
         </div>
 
-        <Modal isOpen={showShareModal} onClose={() => setShowShareModal(false)}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">デッキを共有</h3>
-            <button onClick={() => setShowShareModal(false)}><X /></button>
-          </div>
-          <div className="space-y-4">
-            <button onClick={handleCopyUrl} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><Link /><span>URLをコピー</span></button>
-            <button onClick={handleCopyCode} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><Copy /><span>デッキコードをコピー</span></button>
-            <button onClick={handleDownloadImage} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><ImageIcon /><span>画像として保存</span></button>
-          </div>
-        </Modal>
+        <ShareDeckModal 
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          deck={currentDeck}
+        />
       </div>
     </div>
   );
