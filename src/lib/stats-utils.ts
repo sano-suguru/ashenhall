@@ -1,97 +1,141 @@
-/**
- * ローカル統計管理ユーティリティ
- * 
- * 設計方針:
- * - localStorageとのやり取りを抽象化
- * - 安全なデータの読み書き（エラーハンドリング）
- * - テスト可能な純粋な関数として実装
- */
+import type { GameState, GameAction, GameResult } from '@/types/game';
+import { GAME_CONSTANTS } from '@/types/game';
+import { getTurnNumberForAction } from './game-state-utils';
 
-import type { LocalStats, Faction, GameState, PlayerId } from '@/types/game';
-
-const STATS_STORAGE_KEY = 'ashenhall_local_stats';
-
-/**
- * 初期状態の統計データを生成
- */
-export function getInitialStats(): LocalStats {
-  return {
-    totalGames: 0,
-    totalWins: 0,
-    factionStats: {
-      necromancer: { games: 0, wins: 0 },
-      berserker: { games: 0, wins: 0 },
-      mage: { games: 0, wins: 0 },
-      knight: { games: 0, wins: 0 },
-      inquisitor: { games: 0, wins: 0 },
-    },
-    lastPlayed: new Date().toISOString(),
-  };
+// HP変化追跡機能
+export interface TurnSummary {
+  turnNumber: number;
+  player1Damage: number;
+  player2Damage: number;
+  significance: string | null;
+  player1LifeBefore: number;
+  player1LifeAfter: number;
+  player2LifeBefore: number;
+  player2LifeAfter: number;
 }
 
-/**
- * localStorageから統計データを読み込む
- */
-export function loadStats(): LocalStats {
-  try {
-    const storedStats = localStorage.getItem(STATS_STORAGE_KEY);
-    if (storedStats) {
-      // TODO: ここでデータ構造のバリデーションを追加するとより堅牢になる
-      return JSON.parse(storedStats) as LocalStats;
+// ターンごとのHP変化を計算
+export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
+  const summaries: TurnSummary[] = [];
+  let currentPlayer1Life = GAME_CONSTANTS.INITIAL_LIFE;
+  let currentPlayer2Life = GAME_CONSTANTS.INITIAL_LIFE;
+  
+  const turnGroups: Record<number, GameAction[]> = {};
+  gameState.actionLog.forEach(action => {
+    const turnNumber = getTurnNumberForAction(action, gameState);
+    if (!turnGroups[turnNumber]) turnGroups[turnNumber] = [];
+    turnGroups[turnNumber].push(action);
+  });
+
+  Object.entries(turnGroups)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .forEach(([turnNum, actions]) => {
+      const turnNumber = Number(turnNum);
+      const player1LifeBefore = currentPlayer1Life;
+      const player2LifeBefore = currentPlayer2Life;
+      let player1Damage = 0;
+      let player2Damage = 0;
+
+      actions.forEach(action => {
+        if (action.type === 'card_attack' && (action.data.targetId === 'player1' || action.data.targetId === 'player2')) {
+          if (action.playerId === 'player1') {
+            player2Damage += action.data.damage;
+          } else {
+            player1Damage += action.data.damage;
+          }
+        } else if (action.type === 'effect_trigger' && action.data.effectType === 'damage') {
+          Object.entries(action.data.targets).forEach(([targetId, valueChange]) => {
+            if (valueChange.life) {
+              const damage = Math.max(0, valueChange.life.before - valueChange.life.after);
+              if (targetId === 'player1') {
+                player1Damage += damage;
+              } else if (targetId === 'player2') {
+                player2Damage += damage;
+              }
+            }
+          });
+        }
+      });
+
+      currentPlayer1Life -= player1Damage;
+      currentPlayer2Life -= player2Damage;
+
+      const significance = determineTurnSignificance(
+        turnNumber, 
+        player1Damage, 
+        player2Damage, 
+        currentPlayer1Life, 
+        currentPlayer2Life, 
+        actions
+      );
+
+      if (player1Damage > 0 || player2Damage > 0 || significance) {
+        summaries.push({
+          turnNumber,
+          player1Damage,
+          player2Damage,
+          significance,
+          player1LifeBefore,
+          player1LifeAfter: currentPlayer1Life,
+          player2LifeBefore,
+          player2LifeAfter: currentPlayer2Life,
+        });
+      }
+    });
+
+  return summaries;
+}
+
+// ターンの重要性を判定
+function determineTurnSignificance(
+  turnNumber: number,
+  player1Damage: number,
+  player2Damage: number,
+  player1LifeAfter: number,
+  player2LifeAfter: number,
+  actions: GameAction[]
+): string | null {
+  if (player1Damage >= 5 || player2Damage >= 5) return '大ダメージターン';
+  if (player1Damage >= 3 || player2Damage >= 3) return '中ダメージターン';
+
+  const hasPlayerAttack = actions.some(action => 
+    action.type === 'card_attack' && (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+  );
+  
+  if (hasPlayerAttack && turnNumber <= 5) return '初回プレイヤー攻撃';
+  if (player1LifeAfter <= 5 || player2LifeAfter <= 5) return '危険ライフ';
+  if (turnNumber >= 8 && (player1Damage >= 2 || player2Damage >= 2)) return '攻勢転換点';
+
+  return null;
+}
+
+// 戦況の全体分析
+export function analyzeBattleTrend(summaries: TurnSummary[], gameResult: GameResult | undefined): {
+  phases: { name: string; description: string }[];
+  keyMoments: { turn: number; description: string }[];
+} {
+  const phases = [];
+  const keyMoments = [];
+  const maxTurn = summaries.length > 0 ? Math.max(...summaries.map(s => s.turnNumber)) : 0;
+  
+  if (maxTurn <= 6) {
+    phases.push({ name: '短期決戦', description: '序盤で決着' });
+  } else if (maxTurn <= 12) {
+    phases.push({ name: '標準戦', description: '序盤→中盤で決着' });
+  } else {
+    phases.push({ name: '長期戦', description: `序盤(1-5)→中盤(6-12)→終盤(13-${maxTurn})` });
+  }
+
+  summaries.forEach(summary => {
+    if (summary.significance) {
+      keyMoments.push({ turn: summary.turnNumber, description: summary.significance });
     }
-  } catch (error) {
-    console.error('Failed to load stats from localStorage:', error);
-    // エラーが発生した場合は初期データを返す
-  }
-  return getInitialStats();
-}
+  });
 
-/**
- * localStorageに統計データを保存する
- */
-export function saveStats(stats: LocalStats): void {
-  try {
-    const statsString = JSON.stringify(stats);
-    localStorage.setItem(STATS_STORAGE_KEY, statsString);
-  } catch (error) {
-    console.error('Failed to save stats to localStorage:', error);
-  }
-}
-
-/**
- * ゲーム結果を基に統計データを更新する
- * @param currentStats 更新前の統計データ
- * @param gameState 終了したゲームの状態
- * @returns 更新後の新しい統計データオブジェクト
- */
-export function updateStatsWithGameResult(
-  currentStats: LocalStats,
-  gameState: GameState
-): LocalStats {
-  if (!gameState.result) {
-    return currentStats;
+  if (gameResult && summaries.length > 0 && gameResult.reason === 'life_zero') {
+    const lastSummary = summaries[summaries.length - 1];
+    keyMoments.push({ turn: lastSummary.turnNumber, description: '最終決戦 → 勝負決定' });
   }
 
-  // ディープコピーして元のオブジェクトを変更しない
-  const newStats: LocalStats = JSON.parse(JSON.stringify(currentStats));
-
-  const playerFaction = gameState.players.player1.faction;
-  const winner = gameState.result.winner;
-
-  // 全体統計を更新
-  newStats.totalGames += 1;
-  if (winner === 'player1') {
-    newStats.totalWins += 1;
-  }
-
-  // 勢力別統計を更新
-  newStats.factionStats[playerFaction].games += 1;
-  if (winner === 'player1') {
-    newStats.factionStats[playerFaction].wins += 1;
-  }
-
-  // 最終プレイ日時を更新
-  newStats.lastPlayed = new Date().toISOString();
-
-  return newStats;
+  return { phases, keyMoments };
 }

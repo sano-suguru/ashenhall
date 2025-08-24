@@ -432,3 +432,37 @@ export function findDecisiveAction(gameState: GameState): GameAction | null {
   }
   return null;
 }
+
+// 最終状態サマリーの型定義
+interface FinalGameState {
+  player1: {
+    life: number;
+    fieldCards: number;
+    handCards: number;
+    deckCards: number;
+  };
+  player2: {
+    life: number;
+    fieldCards: number;
+    handCards: number;
+    deckCards: number;
+  };
+}
+
+// 最終状態を取得する関数
+export function getFinalGameState(gameState: GameState): FinalGameState {
+  return {
+    player1: {
+      life: gameState.players.player1.life,
+      fieldCards: gameState.players.player1.field.length,
+      handCards: gameState.players.player1.hand.length,
+      deckCards: gameState.players.player1.deck.length,
+    },
+    player2: {
+      life: gameState.players.player2.life,
+      fieldCards: gameState.players.player2.field.length,
+      handCards: gameState.players.player2.hand.length,
+      deckCards: gameState.players.player2.deck.length,
+    },
+  };
+}
