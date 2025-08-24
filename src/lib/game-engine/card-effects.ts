@@ -282,6 +282,103 @@ export function executeCardEffect(
   }
 }
 
+type TriggerHandler = (
+  state: GameState,
+  trigger: EffectTrigger,
+  sourceCard?: FieldCard | Card,
+  sourcePlayerId?: PlayerId,
+  triggeringCard?: FieldCard | Card
+) => void;
+
+const processCardsEffects = (
+  state: GameState,
+  cards: FieldCard[],
+  playerId: PlayerId,
+  trigger: EffectTrigger
+) => {
+  cards.forEach((card) => {
+    if (card.isSilenced) return;
+    const effectsToExecute = card.effects.filter(
+      (effect) =>
+        effect.trigger === trigger &&
+        checkEffectCondition(state, playerId, effect.condition)
+    );
+    effectsToExecute.forEach((effect) => {
+      executeCardEffect(state, effect, card, playerId);
+    });
+  });
+};
+
+function handleSingleCardTrigger(
+  state: GameState,
+  trigger: EffectTrigger,
+  sourceCard?: FieldCard | Card,
+  sourcePlayerId?: PlayerId,
+  triggeringCard?: FieldCard | Card
+): void {
+  if (!sourceCard || !sourcePlayerId) return;
+
+  const effectsToExecute = sourceCard.effects.filter(
+    (effect) =>
+      effect.trigger === trigger &&
+      checkEffectCondition(state, sourcePlayerId, effect.condition)
+  );
+
+  if (effectsToExecute.length > 0) {
+    addTriggerEventAction(state, sourcePlayerId, {
+      triggerType: trigger,
+      sourceCardId: triggeringCard?.id,
+      targetCardId: sourceCard.id,
+    });
+  }
+
+  effectsToExecute.forEach((effect) =>
+    executeCardEffect(state, effect, sourceCard, sourcePlayerId)
+  );
+}
+
+function handlePlayerScopedTrigger(
+  state: GameState,
+  trigger: EffectTrigger,
+  sourceCard?: FieldCard | Card,
+  sourcePlayerId?: PlayerId
+): void {
+  if (!sourcePlayerId) return;
+
+  if (trigger === "on_spell_play") {
+    const opponentId: PlayerId =
+      sourcePlayerId === "player1" ? "player2" : "player1";
+    state.players[sourcePlayerId].field.forEach((card) => {
+      if (card.id === "mag_chant_avatar" && !card.isSilenced) {
+        applyDamage(state, [], opponentId, 1, card.id);
+      }
+    });
+  }
+
+  processCardsEffects(
+    state,
+    state.players[sourcePlayerId].field,
+    sourcePlayerId,
+    trigger
+  );
+}
+
+function handleGlobalTrigger(
+  state: GameState,
+  trigger: EffectTrigger
+): void {
+  processCardsEffects(state, state.players.player1.field, "player1", trigger);
+  processCardsEffects(state, state.players.player2.field, "player2", trigger);
+}
+
+const triggerHandlers: Partial<Record<EffectTrigger, TriggerHandler>> = {
+  on_play: handleSingleCardTrigger,
+  on_death: handleSingleCardTrigger,
+  on_damage_taken: handleSingleCardTrigger,
+  on_spell_play: handlePlayerScopedTrigger,
+  on_ally_death: handlePlayerScopedTrigger,
+};
+
 /**
  * 指定タイミングでの効果発動処理
  */
@@ -290,73 +387,10 @@ export function processEffectTrigger(
   trigger: EffectTrigger,
   sourceCard?: FieldCard | Card,
   sourcePlayerId?: PlayerId,
-  // `on_damage_taken` のようなイベントで、トリガーのきっかけとなったカードを渡す
   triggeringCard?: FieldCard | Card
 ): void {
-  const processCardsEffects = (
-    cards: FieldCard[],
-    playerId: PlayerId,
-    triggerSourceCard?: FieldCard
-  ) => {
-    cards.forEach((card) => {
-      if (card.isSilenced) return;
-      const effectsToExecute = card.effects.filter(
-        (effect) =>
-          effect.trigger === trigger &&
-          checkEffectCondition(state, playerId, effect.condition)
-      );
-      effectsToExecute.forEach((effect) => {
-        executeCardEffect(state, effect, card, playerId);
-      });
-    });
-  };
-
-  if (
-    (trigger === "on_play" || trigger === "on_death") &&
-    sourceCard &&
-    sourcePlayerId
-  ) {
-    const effectsToExecute = sourceCard.effects.filter(
-      (effect) =>
-        effect.trigger === trigger &&
-        checkEffectCondition(state, sourcePlayerId, effect.condition)
-    );
-    // 効果が実際に存在する場合のみイベントログを記録
-    if (effectsToExecute.length > 0 && sourcePlayerId && sourceCard) {
-      addTriggerEventAction(state, sourcePlayerId, {
-        triggerType: trigger,
-        sourceCardId: triggeringCard?.id,
-        targetCardId: sourceCard.id,
-      });
-    }
-    effectsToExecute.forEach((effect) =>
-      executeCardEffect(state, effect, sourceCard, sourcePlayerId)
-    );
-  } else if (trigger === "on_spell_play" && sourcePlayerId) {
-    const opponentId: PlayerId =
-      sourcePlayerId === "player1" ? "player2" : "player1";
-    state.players[sourcePlayerId].field.forEach((card) => {
-      if (card.id === "mag_chant_avatar" && !card.isSilenced) {
-        applyDamage(state, [], opponentId, 1, card.id);
-      }
-    });
-    processCardsEffects(state.players[sourcePlayerId].field, sourcePlayerId);
-  } else if (trigger === "on_damage_taken" && sourceCard && sourcePlayerId) {
-    if ("currentHealth" in sourceCard) {
-      processCardsEffects(
-        [sourceCard as FieldCard],
-        sourcePlayerId,
-        sourceCard as FieldCard
-      );
-    }
-  } else if (trigger === "on_ally_death" && sourcePlayerId) {
-    // 味方死亡時は全味方クリーチャーの効果をチェック
-    processCardsEffects(state.players[sourcePlayerId].field, sourcePlayerId);
-  } else {
-    // turn_start, turn_end, on_ally_death etc.
-    processCardsEffects(state.players.player1.field, "player1");
-    processCardsEffects(state.players.player2.field, "player2");
-  }
+  const handler = triggerHandlers[trigger] || handleGlobalTrigger;
+  handler(state, trigger, sourceCard, sourcePlayerId, triggeringCard);
 }
 
 /**

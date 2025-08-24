@@ -27,8 +27,9 @@ describe('カード効果システム', () => {
   };
 
   // テスト用のフィールドカードを作成
-  const createTestFieldCard = (cardData: CreatureCard): FieldCard => ({
+  const createTestFieldCard = (cardData: CreatureCard, owner: 'player1' | 'player2' = 'player1'): FieldCard => ({
     ...cardData,
+    owner,
     currentHealth: cardData.health,
     attackModifier: 0,
     healthModifier: 0,
@@ -40,6 +41,7 @@ describe('カード効果システム', () => {
     isStealthed: false,
     isSilenced: false,
     statusEffects: [],
+    readiedThisTurn: false,
   });
 
   describe('基本的な効果処理', () => {
@@ -352,6 +354,80 @@ describe('カード効果システム', () => {
 
       // 敵カードにダメージが入っていることを確認
       expect(gameState.players.player2.field[0].currentHealth).toBe(1);
+    });
+
+    test('on_ally_death効果が味方死亡時に発動する', () => {
+      const gameState = createTestGameState();
+      
+      // on_ally_death効果を持つカード
+      const watcherCard = createTestFieldCard({
+        id: 'watcher_test',
+        name: 'ウォッチャー',
+        type: 'creature',
+        faction: 'necromancer',
+        cost: 3,
+        attack: 2,
+        health: 3,
+        keywords: [],
+        effects: [{
+          trigger: 'on_ally_death',
+          target: 'self',
+          action: 'buff_attack',
+          value: 1,
+        }],
+      });
+      gameState.players.player1.field.push(watcherCard);
+
+      // 死亡する味方カード
+      const dyingAlly = createTestFieldCard({
+        id: 'dying_ally',
+        name: '死に行く味方',
+        type: 'creature',
+        faction: 'necromancer',
+        cost: 1,
+        attack: 1,
+        health: 1,
+        keywords: [],
+        effects: [],
+      });
+
+      // on_ally_death効果発動
+      processEffectTrigger(gameState, 'on_ally_death', dyingAlly, 'player1');
+
+      // ウォッチャーの攻撃力が+1されていることを確認
+      expect(gameState.players.player1.field[0].attackModifier).toBe(1);
+    });
+
+    test('turn_start効果がターン開始時に発動する', () => {
+      const gameState = createTestGameState();
+      
+      // turn_start効果を持つカード
+      const turnStartCard = createTestFieldCard({
+        id: 'turn_start_test',
+        name: 'ターン開始時効果',
+        type: 'creature',
+        faction: 'mage',
+        cost: 4,
+        attack: 3,
+        health: 4,
+        keywords: [],
+        effects: [{
+          trigger: 'turn_start',
+          target: 'player',
+          action: 'heal',
+          value: 1,
+        }],
+      });
+      gameState.players.player1.field.push(turnStartCard);
+      gameState.players.player1.life = 10; // 初期ライフを減らしておく
+
+      // turn_start効果発動
+      processEffectTrigger(gameState, 'turn_start');
+
+      // プレイヤー1のライフが回復していることを確認
+      expect(gameState.players.player1.life).toBe(11);
+      // プレイヤー2には影響がないことを確認
+      expect(gameState.players.player2.life).toBe(15);
     });
   });
 
