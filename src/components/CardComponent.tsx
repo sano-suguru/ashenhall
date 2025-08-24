@@ -13,7 +13,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Card, FieldCard, Faction } from '@/types/game';
-import { getEffectText } from '@/lib/card-text-utils';
+import { getEffectText, KEYWORD_DEFINITIONS } from '@/lib/card-text-utils';
 import { 
   Skull, 
   Zap, 
@@ -36,6 +36,8 @@ import {
   Repeat, // for swap_attack_health
   FileX, // for hand_discard
   Flame, // for destroy_all_creatures
+  Star, // for keyword
+  RotateCw, // for ready
 } from 'lucide-react';
 
 interface CardComponentProps {
@@ -108,6 +110,7 @@ const EFFECT_ICONS = {
   swap_attack_health: Repeat,
   hand_discard: FileX,
   destroy_all_creatures: Flame,
+  ready: RotateCw,
 } as const;
 
 // サイズ設定
@@ -205,6 +208,22 @@ const Tooltip = ({ card, isFieldCard, fieldCard, tooltipStyle }: { card: Card, i
             )}
           </div>
         </div>
+        )}
+        {card.keywords.length > 0 && (
+          <div className="mb-2">
+            <div className="text-yellow-300 font-semibold mb-1 flex items-center text-xs">
+              <Star size={12} className="mr-1" />
+              能力
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {card.keywords.map((keyword) => (
+                <div key={keyword} className="bg-gray-800 bg-opacity-50 px-2 py-1 rounded text-xs">
+                  <span className="font-bold">{KEYWORD_DEFINITIONS[keyword]?.name || keyword}:</span>
+                  <span className="ml-1">{KEYWORD_DEFINITIONS[keyword]?.description || '効果の説明がありません'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         {card.effects.length > 0 && (
           <div className="mb-2">

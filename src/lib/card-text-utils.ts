@@ -72,11 +72,23 @@ export const getEffectText = (effect: Card['effects'][0], cardType: 'creature' |
       effectDescription = `相手は手札からランダムに${effect.value}枚のカードを捨てる。`;
       break;
     case 'ready':
-      effectDescription = `このクリーチャーはもう一度攻撃できる。`;
+      effectDescription = `このターン、もう一度だけ攻撃できる。`;
       break;
     default:
         effectDescription = `[未定義アクション: ${effect.action}]`;
   }
 
   return `${triggerText}: ${effectDescription}`;
+};
+
+export const KEYWORD_DEFINITIONS: Record<string, { name: string; description: string }> = {
+  guard: { name: '守護', description: 'このクリーチャーがいる限り、他の味方は攻撃されない' },
+  lifesteal: { name: '生命奪取', description: '与えたダメージ分プレイヤーを回復' },
+  stealth: { name: '潜伏', description: '1ターンの間、対象にならない' },
+  poison: { name: '毒', description: 'ダメージを与えた敵に継続ダメージを与える' },
+  retaliate: { name: '反撃', description: '攻撃された時に半分のダメージで反撃する' },
+  echo: { name: '残響', description: 'あなたの墓地にあるカード枚数を参照する' },
+  formation: { name: '連携', description: 'あなたの場にいる味方クリーチャーの数を参照する' },
+  rush: { name: '速攻', description: '召喚されたターンに攻撃できる' },
+  trample: { name: '貫通', description: 'ブロックしたクリーチャーの体力を超えたダメージを敵プレイヤーに与える' },
 };

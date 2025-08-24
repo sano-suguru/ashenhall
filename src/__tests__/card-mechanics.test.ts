@@ -293,4 +293,31 @@ describe('Card Mechanics Tests', () => {
     expect(token?.health).toBe(5);
     expect(state.players[p1].graveyard.length).toBe(0);
   });
+
+  test('Health debuff should destroy a creature if its health drops to 0 or below', () => {
+    const purifier = inquisitorCards.find(c => c.id === 'inq_purifier')!;
+    const bloodWarrior = berserkerCards.find(c => c.id === 'ber_berserker')! as CreatureCard;
+    const bomber = berserkerCards.find(c => c.id === 'ber_bomber')! as CreatureCard;
+
+    let state = JSON.parse(JSON.stringify(baseState));
+    state.players[p1].hand = [purifier];
+    state.players[p1].energy = 2;
+    state.players[p2].field = [
+      { ...bloodWarrior, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false },
+      { ...bomber, owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }
+    ];
+    state.phase = 'deploy';
+    state.currentPlayer = p1;
+
+    state = processGameStep(state);
+
+    const opponentField = state.players[p2].field;
+    const opponentGraveyard = state.players[p2].graveyard;
+
+    expect(opponentField.length).toBe(1);
+    expect(opponentField[0].id).toBe('ber_bomber');
+    expect(opponentField[0].currentHealth).toBe(1);
+    expect(opponentGraveyard.length).toBe(1);
+    expect(opponentGraveyard[0].id).toBe('ber_berserker');
+  });
 });

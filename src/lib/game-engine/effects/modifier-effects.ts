@@ -15,6 +15,7 @@ import type {
   ValueChange,
   CardEffect,
 } from "@/types/game";
+import { handleCreatureDeath } from "../card-effects";
 import {
   addEffectTriggerAction,
   createValueChange,
@@ -159,4 +160,13 @@ function applyDebuff(
   const effectType =
     debuffType === "attack" ? "debuff_attack" : "debuff_health";
   addEffectTriggerAction(state, sourceCardId, effectType, value, valueChanges);
+
+  // 体力デバフ適用後に死亡判定を行う
+  if (debuffType === "health") {
+    targets.forEach((target) => {
+      if (target.currentHealth <= 0) {
+        handleCreatureDeath(state, target, "effect", sourceCardId);
+      }
+    });
+  }
 }

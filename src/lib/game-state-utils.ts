@@ -38,6 +38,7 @@ const EFFECT_NAMES: Record<EffectAction, string> = {
   swap_attack_health: "攻/体入替",
   hand_discard: "手札破壊",
   destroy_all_creatures: "全体破壊",
+  ready: "再攻撃可能",
 };
 
 const PHASE_NAMES: Record<string, string> = {
@@ -75,6 +76,7 @@ const KEYWORD_NAMES: Record<Keyword, string> = {
   echo: "残響",
   formation: "連携",
   rush: "速攻",
+  trample: "貫通",
 };
 
 // UIコンポーネントから移植
@@ -270,6 +272,10 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
         
         if (changes.length === 0) {
           const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
+          // readyアクションの場合は特別なテキストを生成
+          if (data.effectType === 'ready') {
+            return `${targetName}が${effectName}になった`;
+          }
           return `${targetName}に${effectName}(${data.effectValue})`;
         }
         return `${targetName} ${changes.join(', ')}`;

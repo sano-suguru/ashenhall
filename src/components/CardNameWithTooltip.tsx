@@ -10,7 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
-import { getEffectText } from '@/lib/card-text-utils';
+import { getEffectText, KEYWORD_DEFINITIONS } from '@/lib/card-text-utils';
 import type { Card } from '@/types/game';
 import { 
   Skull, 
@@ -19,7 +19,8 @@ import {
   Shield, 
   Eye,
   Heart,
-  Sword
+  Sword,
+  Star
 } from 'lucide-react';
 
 interface CardNameWithTooltipProps {
@@ -199,6 +200,22 @@ const Tooltip = ({ card, tooltipStyle }: { card: Card, tooltipStyle: React.CSSPr
             </div>
           </div>
         </div>
+        )}
+        {card.keywords.length > 0 && (
+          <div className="mb-2">
+            <div className="text-yellow-300 font-semibold mb-1 flex items-center text-xs">
+              <Star size={12} className="mr-1" />
+              能力
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {card.keywords.map((keyword) => (
+                <div key={keyword} className="bg-gray-800 bg-opacity-50 px-2 py-1 rounded text-xs">
+                  <span className="font-bold">{KEYWORD_DEFINITIONS[keyword]?.name || keyword}:</span>
+                  <span className="ml-1">{KEYWORD_DEFINITIONS[keyword]?.description || '効果の説明がありません'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         {card.effects.length > 0 && (
           <div className="mb-2">
