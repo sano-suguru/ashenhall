@@ -54,6 +54,9 @@ importers:
       eslint-config-next:
         specifier: 15.4.6
         version: 15.4.6(eslint@9.33.0(jiti@2.5.1))(typescript@5.9.2)
+      eslint-plugin-complexity:
+        specifier: ^1.0.2
+        version: 1.0.2(eslint@9.33.0(jiti@2.5.1))
       jest:
         specifier: ^30.0.5
         version: 30.0.5(@types/node@20.19.11)
@@ -1489,6 +1492,9 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
 
+  eslint-plugin-complexity@1.0.2:
+    resolution: {integrity: sha512-6SwGZ2Kz3pNBfKDpT38bh6XTsrPCkPVgYYsXhtWVa88IrlQ8HnHbvfKqjL826jYEU0AQiiljNRJ5BQNJe45qNw==}
+
   eslint-plugin-import@2.32.0:
     resolution: {integrity: sha512-whOE1HFo/qJDyX4SnXzP4N6zOWn79WhnCUY/iDR0mPfQZO8wcYE4JClzI2oZrhBnnMUCBCHZhO6VQyoBU95mZA==}
     engines: {node: '>=4'}
@@ -1520,6 +1526,16 @@ packages:
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  eslint-utils@3.0.0:
+    resolution: {integrity: sha512-uuQC43IGctw68pJA1RgbQS8/NP7rch6Cwd4j3ZBtgo4/8Flj4eGE7ZYSZRN3iq5pVUv6GPdW5Z1RFleo84uLDA==}
+    engines: {node: ^10.0.0 || ^12.0.0 || >= 14.0.0}
+    peerDependencies:
+      eslint: '>=5'
+
+  eslint-visitor-keys@2.1.0:
+    resolution: {integrity: sha512-0rSmRBzXgDzIsD6mGdJgevzgezI534Cer5L/vyMX0kHzT/jiB43jRhd9YUlMGYLQy2zprNmoT8qasCGtY+QaKw==}
+    engines: {node: '>=10'}
 
   eslint-visitor-keys@3.4.3:
     resolution: {integrity: sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==}
@@ -4660,6 +4676,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  eslint-plugin-complexity@1.0.2(eslint@9.33.0(jiti@2.5.1)):
+    dependencies:
+      eslint-utils: 3.0.0(eslint@9.33.0(jiti@2.5.1))
+    transitivePeerDependencies:
+      - eslint
+
   eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.39.1(eslint@9.33.0(jiti@2.5.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.33.0(jiti@2.5.1)):
     dependencies:
       '@rtsao/scc': 1.1.0
@@ -4738,6 +4760,13 @@ snapshots:
     dependencies:
       esrecurse: 4.3.0
       estraverse: 5.3.0
+
+  eslint-utils@3.0.0(eslint@9.33.0(jiti@2.5.1)):
+    dependencies:
+      eslint: 9.33.0(jiti@2.5.1)
+      eslint-visitor-keys: 2.1.0
+
+  eslint-visitor-keys@2.1.0: {}
 
   eslint-visitor-keys@3.4.3: {}
 
