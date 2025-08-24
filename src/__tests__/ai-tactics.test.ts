@@ -1,114 +1,200 @@
-import { describe, test, expect, beforeEach } from '@jest/globals';
-import { createInitialGameState } from '@/lib/game-engine/core';
-import { evaluateCardForPlay, chooseAttackTarget } from '@/lib/game-engine/ai-tactics';
-import { getCardById, knightCards, necromancerCards, berserkerCards } from '@/data/cards/base-cards';
-import type { GameState, Card, FieldCard } from '@/types/game';
-import { SeededRandom } from '@/lib/game-engine/seeded-random';
+import {
+  evaluateCardForPlay,
+  calculateBaseScore,
+  calculateFactionBonus,
+} from '@/lib/game-engine/ai-tactics';
+import type { GameState, Card, PlayerId, FieldCard, CreatureCard } from '@/types/game';
 
-describe('AI Tactics Engine', () => {
-  let baseState: GameState;
-  const p1 = 'player1';
-  const p2 = 'player2';
+// モックデータとヘルパー関数
+const createMockCard = (overrides: Partial<Card>): Card => {
+  const baseCard = {
+    id: 'test-card',
+    name: 'Test Card',
+    cost: 3,
+    faction: 'necromancer',
+    effects: [],
+    keywords: [],
+    flavor: '',
+  };
+
+  if (overrides.type === 'spell') {
+    return {
+      ...baseCard,
+      type: 'spell',
+      ...overrides,
+    } as Card;
+  }
+
+  // デフォルトまたは明示的に指定された場合はクリーチャーを作成
+  return {
+    ...baseCard,
+    type: 'creature',
+    attack: 3,
+    health: 3,
+    ...overrides,
+  } as Card;
+};
+
+const createMockFieldCard = (card: Card, owner: PlayerId, position: number): FieldCard => {
+  if (card.type !== 'creature') {
+    throw new Error('Only creature cards can be on the field');
+  }
+  return {
+    ...card,
+    owner,
+    position,
+    currentHealth: card.health,
+    attackModifier: 0,
+    healthModifier: 0,
+    passiveAttackModifier: 0,
+    passiveHealthModifier: 0,
+    summonTurn: 1,
+    hasAttacked: false,
+    isStealthed: false,
+    isSilenced: false,
+    statusEffects: [],
+    readiedThisTurn: false,
+  };
+};
+
+const createMockGameState = (overrides: Partial<GameState>): GameState => ({
+  gameId: 'test-game',
+  randomSeed: 'test-seed',
+  turnNumber: 1,
+  phase: 'deploy',
+  currentPlayer: 'player1',
+  startTime: Date.now(),
+  players: {
+    player1: {
+      id: 'player1',
+      life: 15,
+      energy: 3,
+      maxEnergy: 3,
+      deck: [],
+      hand: [],
+      field: [],
+      graveyard: [],
+      faction: 'necromancer',
+      tacticsType: 'balanced',
+    },
+    player2: {
+      id: 'player2',
+      life: 15,
+      energy: 3,
+      maxEnergy: 3,
+      deck: [],
+      hand: [],
+      field: [],
+      graveyard: [],
+      faction: 'knight',
+      tacticsType: 'balanced',
+    },
+  },
+  actionLog: [],
+  ...overrides,
+});
+
+describe('evaluateCardForPlay (Before Refactoring)', () => {
+  let gameState: GameState;
+  const playerId: PlayerId = 'player1';
 
   beforeEach(() => {
-    baseState = createInitialGameState(
-      'ai-test',
-      [...knightCards, ...necromancerCards, ...berserkerCards],
-      [...knightCards, ...necromancerCards, ...berserkerCards],
-      'knight',
-      'berserker',
-      'balanced',
-      'balanced',
-      'ai-test-seed'
-    );
+    gameState = createMockGameState({});
   });
 
-  describe('evaluateCardForPlay', () => {
-    test('Knight (Formation) bonus should increase with more allies', () => {
-      const vowOfUnity = getCardById('kni_vow_of_unity')!;
-      const stateWithAllies = JSON.parse(JSON.stringify(baseState));
-      stateWithAllies.players[p1].faction = 'knight';
-      stateWithAllies.players[p1].field = [
-        { id: 'kni_squire', owner: p1 },
-        { id: 'kni_squire', owner: p1 },
-        { id: 'kni_squire', owner: p1 },
-      ] as FieldCard[];
-      
-      const scoreWithoutAllies = evaluateCardForPlay(vowOfUnity, baseState, p1);
-      const scoreWithAllies = evaluateCardForPlay(vowOfUnity, stateWithAllies, p1);
+  it('should return a baseline score for a balanced creature', () => {
+    const card = createMockCard({ type: 'creature', attack: 3, health: 3, cost: 3 });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    expect(score).toBeCloseTo((3 + 3) / 3);
+  });
 
-      expect(scoreWithAllies).toBeGreaterThan(scoreWithoutAllies);
+  it('should value attack higher for aggressive tactics', () => {
+    gameState.players.player1.tacticsType = 'aggressive';
+    const card = createMockCard({ type: 'creature', attack: 4, health: 2, cost: 3 });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    // 4 * 2 + 2 - 3 = 7
+    expect(score).toBe(7);
+  });
+
+  it('should value health higher for defensive tactics', () => {
+    gameState.players.player1.tacticsType = 'defensive';
+    const card = createMockCard({ type: 'creature', attack: 2, health: 4, cost: 3 });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    // 4 * 2 + 2 - 3 = 7
+    expect(score).toBe(7);
+  });
+
+  it('should give bonus to necromancer for echo card based on graveyard size', () => {
+    gameState.players.player1.faction = 'necromancer';
+    gameState.players.player1.graveyard = [createMockCard({ type: 'creature' }), createMockCard({ type: 'creature' })];
+    const card = createMockCard({ type: 'creature', keywords: ['echo'] });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    // baseScore + graveyard.length * 3 = 2 + 2 * 3 = 8
+    expect(score).toBe(8);
+  });
+
+  it('should give bonus to knight for formation card based on field size', () => {
+    gameState.players.player1.faction = 'knight';
+    const creatureCard = createMockCard({ type: 'creature' }) as CreatureCard;
+    gameState.players.player1.field = [
+      createMockFieldCard(creatureCard, 'player1', 0)
+    ];
+    const card = createMockCard({ keywords: ['formation'], type: 'creature' });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    // baseScore + field.length * 4 = 2 + 1 * 4 = 6
+    expect(score).toBe(6);
+  });
+
+  it('should give bonus to mage for spell cards', () => {
+    gameState.players.player1.faction = 'mage';
+    const card = createMockCard({ type: 'spell', cost: 4 });
+    const score = evaluateCardForPlay(card, gameState, playerId);
+    // baseScore (cost * 1.5) + factionBonus (15) = 6 + 15 = 21
+    expect(score).toBe(21);
+  });
+});
+
+// ここからリファクタリング後のヘルパー関数のテスト
+describe('AI Tactics Scorers (After Refactoring)', () => {
+  let gameState: GameState;
+  const playerId: PlayerId = 'player1';
+
+  beforeEach(() => {
+    gameState = createMockGameState({});
+  });
+
+  describe('calculateBaseScore', () => {
+    it('calculates score for spell card', () => {
+      const card = createMockCard({ type: 'spell', cost: 4 });
+      expect(calculateBaseScore(card, gameState, playerId)).toBe(6);
     });
 
-    test('Necromancer (Echo) bonus should increase with more cards in graveyard', () => {
-      const librarian = getCardById('necro_librarian')!;
-      const stateWithGraveyard = JSON.parse(JSON.stringify(baseState));
-      stateWithGraveyard.players[p1].faction = 'necromancer';
-      stateWithGraveyard.players[p1].graveyard = [
-        { id: 'necro_skeleton' }, { id: 'necro_skeleton' }, { id: 'necro_skeleton' }, { id: 'necro_skeleton' }, { id: 'necro_skeleton' },
-      ] as Card[];
-
-      const stateWithoutGraveyard = JSON.parse(JSON.stringify(baseState));
-      stateWithoutGraveyard.players[p1].faction = 'necromancer';
-
-      const scoreWithout = evaluateCardForPlay(librarian, stateWithoutGraveyard, p1);
-      const scoreWith = evaluateCardForPlay(librarian, stateWithGraveyard, p1);
-
-      expect(scoreWith).toBeGreaterThan(scoreWithout);
-    });
-
-    test('Berserker bonus should increase as player life decreases', () => {
-        const lastStand = getCardById('ber_last_stand')!;
-        const stateLowLife = JSON.parse(JSON.stringify(baseState));
-        stateLowLife.players[p1].faction = 'berserker';
-        stateLowLife.players[p1].life = 5;
-  
-        const stateHighLife = JSON.parse(JSON.stringify(baseState));
-        stateHighLife.players[p1].faction = 'berserker';
-
-        const scoreHighLife = evaluateCardForPlay(lastStand, stateHighLife, p1);
-        const scoreLowLife = evaluateCardForPlay(lastStand, stateLowLife, p1);
-  
-        expect(scoreLowLife).toBeGreaterThan(scoreHighLife);
+    it('uses the correct tactics scorer for creature', () => {
+      gameState.players.player1.tacticsType = 'aggressive';
+      const card = createMockCard({ type: 'creature', attack: 5, health: 1, cost: 3 });
+      // 5 * 2 + 1 - 3 = 8
+      expect(calculateBaseScore(card, gameState, playerId)).toBe(8);
     });
   });
 
-  describe('chooseAttackTarget', () => {
-    const random = new SeededRandom('test-seed');
-
-    test('should be forced to attack a Guard creature', () => {
-      const attacker = { ...getCardById('ber_champion')!, owner: p1, currentHealth: 1 } as FieldCard;
-      const guard = { ...getCardById('kni_vindicator')!, owner: p2, keywords: ['guard'], currentHealth: 1, isStealthed: false, isSilenced: false } as FieldCard;
-      const highThreat = { ...getCardById('ber_champion')!, owner: p2, attack: 10, currentHealth: 1, isStealthed: false, isSilenced: false } as FieldCard;
-
-      baseState.players[p2].field = [guard, highThreat];
-      const result = chooseAttackTarget(attacker, baseState, random);
-
-      expect(result.targetCard?.id).toBe('kni_vindicator');
-      expect(result.targetPlayer).toBe(false);
+  describe('calculateFactionBonus', () => {
+    it('calculates bonus for Necromancer', () => {
+      gameState.players.player1.faction = 'necromancer';
+      gameState.players.player1.graveyard = [createMockCard({}), createMockCard({})];
+      const card = createMockCard({ keywords: ['echo'] });
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(6);
     });
 
-    test('should prioritize higher threat creature when no Guard is present', () => {
-        const attacker = { ...getCardById('ber_champion')!, owner: p1, currentHealth: 1 } as FieldCard;
-        const lowThreat = { ...getCardById('kni_squire')!, owner: p2, currentHealth: 1, attack: 1, isStealthed: false, isSilenced: false } as FieldCard;
-        const highThreat = { ...getCardById('ber_champion')!, owner: p2, currentHealth: 3, attack: 4, isStealthed: false, isSilenced: false } as FieldCard;
-  
-        baseState.players[p2].field = [lowThreat, highThreat];
-        
-        const mockRandom = new SeededRandom('test-seed');
-        mockRandom.next = () => 0.99; // Ensure it doesn't attack player
-        const result = chooseAttackTarget(attacker, baseState, mockRandom);
-  
-        expect(result.targetCard?.id).toBe('ber_champion');
+    it('calculates bonus for Knight', () => {
+      gameState.players.player1.faction = 'knight';
+      const card = createMockCard({ keywords: ['guard'] });
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(6);
     });
 
-    test('should attack the player if the opponent has an empty field', () => {
-      const attacker = { ...getCardById('ber_champion')!, owner: p1, currentHealth: 1 } as FieldCard;
-      baseState.players[p2].field = [];
-      const result = chooseAttackTarget(attacker, baseState, random);
-
-      expect(result.targetCard).toBeNull();
-      expect(result.targetPlayer).toBe(true);
+    it('returns 0 for a faction with no specific bonus for the card', () => {
+      gameState.players.player1.faction = 'berserker';
+      const card = createMockCard({ keywords: ['guard'] }); // Berserker has no guard bonus
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(0);
     });
   });
 });

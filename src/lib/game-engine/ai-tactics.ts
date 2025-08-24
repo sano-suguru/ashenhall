@@ -11,69 +11,102 @@ import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from 
 import { GAME_CONSTANTS } from '@/types/game';
 import { SeededRandom } from './seeded-random';
 
+// --- 戦術別スコア計算 ---
+const getAggressiveScore = (card: Card) => (card.type === 'creature' ? card.attack * 2 + card.health - card.cost : 0);
+const getDefensiveScore = (card: Card) => (card.type === 'creature' ? card.health * 2 + card.attack - card.cost : 0);
+const getTempoScore = (card: Card) => {
+  if (card.type !== 'creature') return 0;
+  const costEfficiency = (card.attack + card.health) / Math.max(card.cost, 1);
+  return costEfficiency * 3 - card.cost * 2;
+};
+const getBalancedScore = (card: Card) => {
+  if (card.type !== 'creature') return 0;
+  return (card.attack + card.health) / Math.max(card.cost, 1);
+};
+
+const tacticsScorers: Record<TacticsType, (card: Card) => number> = {
+  aggressive: getAggressiveScore,
+  defensive: getDefensiveScore,
+  tempo: getTempoScore,
+  balanced: getBalancedScore,
+};
+
+// NOTE:以降の関数はテストのためにエクスポートされています
+export const calculateBaseScore = (card: Card, gameState: GameState, playerId: PlayerId): number => {
+  if (card.type === 'spell') {
+    return card.cost * 1.5;
+  }
+  const tactics = gameState.players[playerId].tacticsType;
+  const scorer = tacticsScorers[tactics] || getBalancedScore;
+  return scorer(card);
+};
+
+// --- 勢力別ボーナス計算 ---
+const getNecromancerBonus = (card: Card, player: GameState['players'][PlayerId]) => {
+  let bonus = 0;
+  if (card.keywords.includes('echo')) bonus += player.graveyard.length * 3;
+  if (card.effects.some(e => e.trigger === 'on_death')) bonus += 5;
+  return bonus;
+};
+
+const getKnightBonus = (card: Card, player: GameState['players'][PlayerId]) => {
+  let bonus = 0;
+  if (card.keywords.includes('formation')) bonus += player.field.length * 4;
+  if (card.keywords.includes('guard')) bonus += 6;
+  return bonus;
+};
+
+const getBerserkerBonus = (card: Card, player: GameState['players'][PlayerId]) => {
+  let bonus = 0;
+  const lifeDeficit = GAME_CONSTANTS.INITIAL_LIFE - player.life;
+  if (lifeDeficit > 0) bonus += lifeDeficit * 1.5;
+  if (card.type === 'creature' && card.attack > card.health) bonus += card.attack * 2;
+  return bonus;
+};
+
+const getMageBonus = (card: Card, _player: GameState['players'][PlayerId], _opponent: GameState['players'][PlayerId]) => {
+  let bonus = 0;
+  if (card.type === 'spell') bonus += 15;
+  if (card.effects.some(e => e.trigger === 'on_spell_play')) bonus += 10;
+  return bonus;
+};
+
+const getInquisitorBonus = (card: Card, _player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => {
+  let bonus = 0;
+  if (card.effects.some(e => e.action.includes('debuff') || e.action.includes('destroy'))) {
+    bonus += opponent.field.length * 3;
+  }
+  if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) bonus += 8;
+  return bonus;
+};
+
+type FactionScorer = (card: Card, player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => number;
+
+const factionScorers: Record<Faction, FactionScorer> = {
+  necromancer: getNecromancerBonus,
+  knight: getKnightBonus,
+  berserker: getBerserkerBonus,
+  mage: getMageBonus,
+  inquisitor: getInquisitorBonus,
+};
+
+export const calculateFactionBonus = (card: Card, gameState: GameState, playerId: PlayerId): number => {
+  const player = gameState.players[playerId];
+  const opponent = gameState.players[playerId === 'player1' ? 'player2' : 'player1'];
+  const scorer = factionScorers[player.faction];
+  return scorer ? scorer(card, player, opponent) : 0;
+};
+
 /**
- * カード配置の評価（高度化版）
+ * カード配置の評価（リファクタリング版）
  * @param card 評価対象のカード
  * @param gameState 現在のゲーム状態
  * @param playerId AIプレイヤーのID
  * @returns カードの評価スコア
  */
 export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: PlayerId): number {
-  const player = gameState.players[playerId];
-  const opponent = gameState.players[playerId === 'player1' ? 'player2' : 'player1'];
-  const tactics = player.tacticsType;
-
-  let baseScore = 0;
-  if (card.type === 'spell') {
-    baseScore = card.cost * 1.5; // 基本スコア
-  } else if (card.type === 'creature') {
-    const baseValue = card.attack + card.health;
-    const costEfficiency = baseValue / Math.max(card.cost, 1);
-    switch (tactics) {
-      case 'aggressive':
-        baseScore = card.attack * 2 + card.health - card.cost;
-        break;
-      case 'defensive':
-        baseScore = card.health * 2 + card.attack - card.cost;
-        break;
-      case 'tempo':
-        baseScore = costEfficiency * 3 - card.cost * 2;
-        break;
-      case 'balanced':
-      default:
-        baseScore = costEfficiency;
-        break;
-    }
-  }
-
-  // 勢力ボーナス（より盤面を考慮するように拡張）
-  let factionBonus = 0;
-  switch (player.faction) {
-    case 'necromancer':
-      if (card.keywords.includes('echo')) factionBonus += player.graveyard.length * 3;
-      if (card.effects.some(e => e.trigger === 'on_death')) factionBonus += 5;
-      break;
-    case 'knight':
-      if (card.keywords.includes('formation')) factionBonus += player.field.length * 4;
-      if (card.keywords.includes('guard')) factionBonus += 6;
-      break;
-    case 'berserker':
-      const lifeDeficit = GAME_CONSTANTS.INITIAL_LIFE - player.life;
-      if (lifeDeficit > 0) factionBonus += lifeDeficit * 1.5;
-      if (card.type === 'creature' && card.attack > card.health) factionBonus += card.attack * 2;
-      break;
-    case 'mage':
-      if (card.type === 'spell') factionBonus += 15;
-      if (card.effects.some(e => e.trigger === 'on_spell_play')) factionBonus += 10;
-      break;
-    case 'inquisitor':
-      if (card.effects.some(e => e.action.includes('debuff') || e.action.includes('destroy'))) {
-        factionBonus += opponent.field.length * 3;
-      }
-      if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) factionBonus += 8;
-      break;
-  }
-
+  const baseScore = calculateBaseScore(card, gameState, playerId);
+  const factionBonus = calculateFactionBonus(card, gameState, playerId);
   return baseScore + factionBonus;
 }
 
