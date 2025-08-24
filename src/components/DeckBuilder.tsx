@@ -5,15 +5,21 @@
  * - ドラッグ＆ドロップ非対応のシンプルなUIでMVPを迅速に実装
  * - カード一覧とデッキ内容を明確に分離して表示
  * - デッキの妥当性（枚数、同名カード制限）をリアルタイムでフィードバック
+ * - 統合デッキ共有機能（URL/コード/画像）
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { CustomDeck, Faction, Card } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
 import { validateDeck } from '@/lib/deck-utils';
+import { encodeDeck } from '@/lib/deck-sharing';
 import { GAME_CONSTANTS } from '@/types/game';
 import CardComponent from './CardComponent';
-import { Save, Trash2, AlertCircle, CheckCircle, Star } from 'lucide-react';
+import Modal from './Modal';
+import DeckImageGenerator from './DeckImageGenerator';
+import { createRoot } from 'react-dom/client';
+import { Save, Trash2, AlertCircle, CheckCircle, Star, Share2, X, Copy, Link, Image as ImageIcon } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 interface DeckBuilderProps {
   deck: CustomDeck;
@@ -27,6 +33,9 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
     ...deck,
     coreCardIds: deck.coreCardIds || [],
   });
+  const [showShareModal, setShowShareModal] = useState(false);
+  const deckContentRef = useRef<HTMLDivElement>(null);
+
   const availableCards = useMemo(() => getCardsByFaction(deck.faction), [deck.faction]);
 
   const deckValidation = useMemo(() => validateDeck(currentDeck), [currentDeck]);
@@ -87,6 +96,64 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
     return currentDeck.cards.filter(id => id === cardId).length;
   };
 
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`${type}をクリップボードにコピーしました。`);
+    }).catch(err => {
+      console.error(`Could not copy ${type}: `, err);
+    });
+  };
+
+  const handleCopyUrl = () => {
+    const deckCode = encodeDeck(currentDeck);
+    const url = `${window.location.origin}?deck=${deckCode}`;
+    copyToClipboard(url, 'URL');
+  };
+
+  const handleCopyCode = () => {
+    const deckCode = encodeDeck(currentDeck);
+    copyToClipboard(deckCode, 'デッキコード');
+  };
+
+  const handleDownloadImage = useCallback(async () => {
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
+
+    const root = createRoot(tempContainer);
+    
+    try {
+      await new Promise<void>((resolve) => {
+        root.render(
+          <DeckImageGenerator deck={currentDeck} />
+        );
+        // 少し待ってレンダリングを確実にする
+        setTimeout(resolve, 500);
+      });
+
+      const dataUrl = await toPng(tempContainer.firstChild as HTMLElement, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
+
+      const link = document.createElement('a');
+      link.download = `${currentDeck.name}.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch (err) {
+      console.error('Image generation failed:', err);
+    } finally {
+      root.unmount();
+      document.body.removeChild(tempContainer);
+    }
+  }, [currentDeck]);
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-6xl h-[90vh] flex flex-col">
@@ -99,6 +166,7 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
             className="bg-transparent text-2xl font-bold text-white border-b-2 border-gray-600 focus:border-amber-400 outline-none"
           />
           <div className="flex items-center space-x-4">
+            <button onClick={handleShare} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"><Share2 /><span>共有</span></button>
             <button onClick={handleDelete} className="text-red-500 hover:text-red-400 transition-colors"><Trash2 /></button>
             <button onClick={handleSave} disabled={!deckValidation.isValid} className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"><Save /><span>保存</span></button>
             <button onClick={onClose} className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">閉じる</button>
@@ -134,7 +202,7 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
           </aside>
 
           {/* Deck Content */}
-          <main className="w-2/3 p-4 flex flex-col">
+          <main className="w-2/3 p-4 flex flex-col" ref={deckContentRef}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-amber-300">デッキ内容 ({currentDeck.cards.length}/{GAME_CONSTANTS.DECK_SIZE})</h3>
               <div className="text-sm text-gray-400">
@@ -180,6 +248,18 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
             </footer>
           </main>
         </div>
+
+        <Modal isOpen={showShareModal} onClose={() => setShowShareModal(false)}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">デッキを共有</h3>
+            <button onClick={() => setShowShareModal(false)}><X /></button>
+          </div>
+          <div className="space-y-4">
+            <button onClick={handleCopyUrl} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><Link /><span>URLをコピー</span></button>
+            <button onClick={handleCopyCode} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><Copy /><span>デッキコードをコピー</span></button>
+            <button onClick={handleDownloadImage} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"><ImageIcon /><span>画像として保存</span></button>
+          </div>
+        </Modal>
       </div>
     </div>
   );

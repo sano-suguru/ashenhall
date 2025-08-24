@@ -25,6 +25,7 @@ import {
   setActiveDeckForFaction,
   validateDeck
 } from '@/lib/deck-utils';
+import { decodeDeck } from '@/lib/deck-sharing';
 import { getCardById } from '@/data/cards/base-cards';
 import { sampleDecks } from '@/data/decks/sample-decks';
 import { 
@@ -111,6 +112,25 @@ export default function GameSetup({ onGameStart, stats }: GameSetupProps) {
   const [editingDeck, setEditingDeck] = useState<CustomDeck | null>(null);
 
   useEffect(() => {
+    // URLからデッキコードを読み込む
+    const urlParams = new URLSearchParams(window.location.search);
+    const deckCode = urlParams.get('deck');
+    if (deckCode) {
+      const decodedData = decodeDeck(deckCode);
+      if (decodedData) {
+        const newDeck = createNewDeck(
+          loadDeckCollection(), // 一時的なコレクション
+          `インポートされたデッキ`,
+          decodedData.faction
+        );
+        newDeck.cards = decodedData.cards;
+        newDeck.coreCardIds = decodedData.coreCardIds;
+        setEditingDeck(newDeck);
+        // URLからクエリパラメータを削除してリロードを防ぐ
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     let collection = loadDeckCollection();
     // If there are no decks at all, populate with sample decks.
     if (collection.decks.length === 0) {

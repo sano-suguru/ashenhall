@@ -14,6 +14,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
     "react": "19.1.0",
