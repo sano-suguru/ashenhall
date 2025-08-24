@@ -84,6 +84,7 @@ const EFFECT_ICONS: Record<EffectAction, React.ComponentType<{ size?: number; cl
   swap_attack_health: Repeat,
   hand_discard: Trash2,
   destroy_all_creatures: Skull,
+  ready: Repeat,
 };
 
 // 効果名マッピング
@@ -104,6 +105,7 @@ const EFFECT_NAMES: Record<EffectAction, string> = {
   swap_attack_health: '攻守交換',
   hand_discard: '手札破壊',
   destroy_all_creatures: '全体除去',
+  ready: '再攻撃準備',
 };
 
 const ICONS = {
@@ -401,6 +403,125 @@ function getFinalGameState(gameState: GameState): FinalGameState {
   };
 }
 
+// --- Battle Log Text Formatting Helpers ---
+
+const formatLogHeader = (gameState: GameState): string => {
+  const startTime = new Date(gameState.startTime).toLocaleString('ja-JP');
+  const duration = Math.floor((Date.now() - gameState.startTime) / 1000);
+  
+  let text = `=== Ashenhall 戦闘ログ ===\n`;
+  text += `ゲームID: ${gameState.gameId}\n`;
+  text += `開始時刻: ${startTime}\n`;
+  text += `現在ターン: ${gameState.turnNumber}\n`;
+  text += `経過時間: ${duration}秒\n`;
+  
+  if (gameState.result) {
+    const winner = gameState.result.winner 
+      ? (gameState.result.winner === 'player1' ? 'あなた' : '相手')
+      : '引き分け';
+    const reason = gameState.result.reason === 'life_zero' ? 'ライフ0' : 
+                 gameState.result.reason === 'deck_empty' ? 'デッキ切れ' : 
+                 gameState.result.reason === 'timeout' ? '時間切れ' : 
+                 gameState.result.reason;
+    text += `勝者: ${winner} (${reason}による勝利)\n`;
+    text += `総ターン: ${gameState.result.totalTurns}\n`;
+  }
+  return text;
+};
+
+const formatTurnSummariesSection = (gameState: GameState): string => {
+  const turnSummaries = calculateTurnSummaries(gameState);
+  if (turnSummaries.length === 0) return '';
+
+  let text = `\n=== 戦況サマリー ===\n`;
+  turnSummaries.forEach(summary => {
+    text += `【ターン${summary.turnNumber}】`;
+    if (summary.player1Damage > 0) {
+      text += ` あなた ${summary.player1LifeBefore}→${summary.player1LifeAfter}HP (-${summary.player1Damage})`;
+    }
+    if (summary.player2Damage > 0) {
+      text += ` 相手 ${summary.player2LifeBefore}→${summary.player2LifeAfter}HP (-${summary.player2Damage})`;
+    }
+    if (summary.significance) {
+      text += ` | ${summary.significance}`;
+    }
+    text += `\n`;
+  });
+  return text;
+};
+
+const formatBattleAnalysisSection = (gameState: GameState): string => {
+  const turnSummaries = calculateTurnSummaries(gameState);
+  const battleAnalysis = analyzeBattleTrend(turnSummaries, gameState.result);
+  let text = '';
+
+  if (battleAnalysis.phases.length > 0) {
+    text += `\n=== 戦況分析 ===\n`;
+    battleAnalysis.phases.forEach(phase => {
+      text += `${phase.name}: ${phase.description}\n`;
+    });
+  }
+  if (battleAnalysis.keyMoments.length > 0) {
+    text += `\n=== 重要な変化 ===\n`;
+    battleAnalysis.keyMoments.forEach(moment => {
+      text += `ターン${moment.turn}: ${moment.description}\n`;
+    });
+  }
+  return text;
+};
+
+const formatActionLogSection = (actions: GameAction[], totalActionCount: number, gameState: GameState): string => {
+  let text = `\n=== アクション詳細 ===\n`;
+  if (actions.length < totalActionCount) {
+    text += `※ フィルター適用済み (${actions.length}/${totalActionCount}件表示)\n`;
+  }
+  text += `\n`;
+
+  const groups: Record<number, GameAction[]> = {};
+  actions.forEach(action => {
+    const turnNumber = getTurnNumberForAction(action, gameState);
+    if (!groups[turnNumber]) groups[turnNumber] = [];
+    groups[turnNumber].push(action);
+  });
+
+  Object.entries(groups)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .forEach(([turnNumber, turnActions]) => {
+      text += `【ターン${turnNumber}】\n`;
+      turnActions.forEach(action => {
+        text += `  ${formatActionAsText(action, gameState)}\n`;
+      });
+      text += `\n`;
+    });
+  return text;
+};
+
+const formatGameEndSection = (gameState: GameState): string => {
+  if (!gameState.result) return '';
+
+  let text = `\n=== ゲーム終了 ===\n`;
+  const winner = gameState.result.winner 
+    ? (gameState.result.winner === 'player1' ? 'あなた' : '相手')
+    : '引き分け';
+  const reason = gameState.result.reason === 'life_zero' ? 'ライフ0による勝利' : 
+               gameState.result.reason === 'deck_empty' ? 'デッキ切れによる勝利' :
+               gameState.result.reason === 'timeout' ? '時間切れによる勝利' : '勝利';
+  text += `勝者: ${winner}\n`;
+  text += `終了理由: ${reason}\n`;
+
+  const decisiveAction = findDecisiveAction(gameState);
+  if (decisiveAction) {
+    text += `決定打: ${formatActionAsText(decisiveAction, gameState)}\n`;
+  }
+
+  text += `\n=== 最終状態 ===\n`;
+  const finalState = getFinalGameState(gameState);
+  text += `あなた  - ライフ: ${finalState.player1.life}  場: ${finalState.player1.fieldCards}体  手札: ${finalState.player1.handCards}枚  デッキ: ${finalState.player1.deckCards}枚\n`;
+  text += `相手    - ライフ: ${finalState.player2.life}  場: ${finalState.player2.fieldCards}体  手札: ${finalState.player2.handCards}枚  デッキ: ${finalState.player2.deckCards}枚\n`;
+  
+  return text;
+};
+
 export default function BattleLogModal({ 
   gameState, 
   isOpen, 
@@ -412,124 +533,15 @@ export default function BattleLogModal({
   const [filterPlayer, setFilterPlayer] = useState<string>('all');
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // 戦闘ログをテキスト形式に変換
+  // 戦闘ログをテキスト形式に変換 (リファクタリング後)
   const formatBattleLogAsText = (useFiltered: boolean = false): string => {
     const actionsToFormat = useFiltered ? filteredActions : gameState.actionLog;
-    const startTime = new Date(gameState.startTime).toLocaleString('ja-JP');
-    const duration = Math.floor((Date.now() - gameState.startTime) / 1000);
     
-    let text = `=== Ashenhall 戦闘ログ ===\n`;
-    text += `ゲームID: ${gameState.gameId}\n`;
-    text += `開始時刻: ${startTime}\n`;
-    text += `現在ターン: ${gameState.turnNumber}\n`;
-    text += `経過時間: ${duration}秒\n`;
-    
-    if (gameState.result) {
-      const winner = gameState.result.winner 
-        ? (gameState.result.winner === 'player1' ? 'あなた' : '相手')
-        : '引き分け';
-      const reason = gameState.result.reason === 'life_zero' ? 'ライフ0' : 
-                   gameState.result.reason === 'deck_empty' ? 'デッキ切れ' : 
-                   gameState.result.reason === 'timeout' ? '時間切れ' : 
-                   gameState.result.reason;
-      text += `勝者: ${winner} (${reason}による勝利)\n`;
-      text += `総ターン: ${gameState.result.totalTurns}\n`;
-    }
-    
-    // 戦況サマリーを追加
-    const turnSummaries = calculateTurnSummaries(gameState);
-    const battleAnalysis = analyzeBattleTrend(turnSummaries, gameState.result);
-    
-    if (turnSummaries.length > 0) {
-      text += `\n=== 戦況サマリー ===\n`;
-      
-      // HP変化のあったターンを表示
-      turnSummaries.forEach(summary => {
-        text += `【ターン${summary.turnNumber}】`;
-        
-        if (summary.player1Damage > 0) {
-          text += ` あなた ${summary.player1LifeBefore}→${summary.player1LifeAfter}HP (-${summary.player1Damage})`;
-        }
-        
-        if (summary.player2Damage > 0) {
-          text += ` 相手 ${summary.player2LifeBefore}→${summary.player2LifeAfter}HP (-${summary.player2Damage})`;
-        }
-        
-        if (summary.significance) {
-          text += ` | ${summary.significance}`;
-        }
-        
-        text += `\n`;
-      });
-      
-      // 戦況フェーズ分析
-      if (battleAnalysis.phases.length > 0) {
-        text += `\n=== 戦況分析 ===\n`;
-        battleAnalysis.phases.forEach(phase => {
-          text += `${phase.name}: ${phase.description}\n`;
-        });
-      }
-      
-      // 重要な転換点
-      if (battleAnalysis.keyMoments.length > 0) {
-        text += `\n=== 重要な変化 ===\n`;
-        battleAnalysis.keyMoments.forEach(moment => {
-          text += `ターン${moment.turn}: ${moment.description}\n`;
-        });
-      }
-    }
-    
-    text += `\n=== アクション詳細 ===\n`;
-    
-    if (useFiltered && actionsToFormat.length < gameState.actionLog.length) {
-      text += `※ フィルター適用済み (${actionsToFormat.length}/${gameState.actionLog.length}件表示)\n`;
-    }
-    text += `\n`;
-
-    // ターン別にグループ化（正確なターン番号計算を使用）
-    const groups: Record<number, GameAction[]> = {};
-    actionsToFormat.forEach(action => {
-      const turnNumber = getTurnNumberForAction(action, gameState);
-      
-      if (!groups[turnNumber]) groups[turnNumber] = [];
-      groups[turnNumber].push(action);
-    });
-
-    // テキスト出力
-    Object.entries(groups)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([turnNumber, actions]) => {
-        text += `【ターン${turnNumber}】\n`;
-        actions.forEach(action => {
-          text += `  ${formatActionAsText(action, gameState)}\n`;
-        });
-        text += `\n`;
-      });
-
-    // ゲーム終了情報を追加
-    if (gameState.result) {
-      text += `\n=== ゲーム終了 ===\n`;
-      const winner = gameState.result.winner 
-        ? (gameState.result.winner === 'player1' ? 'あなた' : '相手')
-        : '引き分け';
-      const reason = gameState.result.reason === 'life_zero' ? 'ライフ0による勝利' : 
-                   gameState.result.reason === 'deck_empty' ? 'デッキ切れによる勝利' :
-                   gameState.result.reason === 'timeout' ? '時間切れによる勝利' : '勝利';
-      text += `勝者: ${winner}\n`;
-      text += `終了理由: ${reason}\n`;
-
-      // 決定打の情報を追加
-      const decisiveAction = findDecisiveAction(gameState);
-      if (decisiveAction) {
-        text += `決定打: ${formatActionAsText(decisiveAction, gameState)}\n`;
-      }
-
-      // 最終状態を追加
-      text += `\n=== 最終状態 ===\n`;
-      const finalState = getFinalGameState(gameState);
-      text += `あなた  - ライフ: ${finalState.player1.life}  場: ${finalState.player1.fieldCards}体  手札: ${finalState.player1.handCards}枚  デッキ: ${finalState.player1.deckCards}枚\n`;
-      text += `相手    - ライフ: ${finalState.player2.life}  場: ${finalState.player2.fieldCards}体  手札: ${finalState.player2.handCards}枚  デッキ: ${finalState.player2.deckCards}枚\n`;
-    }
+    let text = formatLogHeader(gameState);
+    text += formatTurnSummariesSection(gameState);
+    text += formatBattleAnalysisSection(gameState);
+    text += formatActionLogSection(actionsToFormat, gameState.actionLog.length, gameState);
+    text += formatGameEndSection(gameState);
     
     return text;
   };
