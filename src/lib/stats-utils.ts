@@ -2,7 +2,7 @@ import type { GameState, GameAction, GameResult, LocalStats, Faction } from '@/t
 import { GAME_CONSTANTS } from '@/types/game';
 import { getTurnNumberForAction } from './game-state-utils';
 
-const STATS_STORAGE_KEY = 'ashenhall_stats';
+const STATS_STORAGE_KEY = 'ashenhall_local_stats';
 
 // --- Local Stats Management ---
 
