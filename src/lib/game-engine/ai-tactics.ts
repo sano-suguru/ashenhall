@@ -8,16 +8,18 @@
  */
 
 import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from '@/types/game';
-import { GAME_CONSTANTS } from '@/types/game';
+import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS } from '@/types/game';
 import { SeededRandom } from './seeded-random';
 
+const { BASE_SCORE, TACTICS_MODIFIERS, FACTION_BONUSES } = AI_EVALUATION_WEIGHTS;
+
 // --- 戦術別スコア計算 ---
-const getAggressiveScore = (card: Card) => (card.type === 'creature' ? card.attack * 2 + card.health - card.cost : 0);
-const getDefensiveScore = (card: Card) => (card.type === 'creature' ? card.health * 2 + card.attack - card.cost : 0);
+const getAggressiveScore = (card: Card) => (card.type === 'creature' ? card.attack * TACTICS_MODIFIERS.AGGRESSIVE.ATTACK + card.health * TACTICS_MODIFIERS.AGGRESSIVE.HEALTH - card.cost : 0);
+const getDefensiveScore = (card: Card) => (card.type === 'creature' ? card.health * TACTICS_MODIFIERS.DEFENSIVE.HEALTH + card.attack * TACTICS_MODIFIERS.DEFENSIVE.ATTACK - card.cost : 0);
 const getTempoScore = (card: Card) => {
   if (card.type !== 'creature') return 0;
   const costEfficiency = (card.attack + card.health) / Math.max(card.cost, 1);
-  return costEfficiency * 3 - card.cost * 2;
+  return costEfficiency * TACTICS_MODIFIERS.TEMPO.EFFICIENCY - card.cost * TACTICS_MODIFIERS.TEMPO.COST_PENALTY;
 };
 const getBalancedScore = (card: Card) => {
   if (card.type !== 'creature') return 0;
@@ -34,7 +36,7 @@ const tacticsScorers: Record<TacticsType, (card: Card) => number> = {
 // NOTE:以降の関数はテストのためにエクスポートされています
 export const calculateBaseScore = (card: Card, gameState: GameState, playerId: PlayerId): number => {
   if (card.type === 'spell') {
-    return card.cost * 1.5;
+    return card.cost * BASE_SCORE.SPELL_COST_MULTIPLIER;
   }
   const tactics = gameState.players[playerId].tacticsType;
   const scorer = tacticsScorers[tactics] || getBalancedScore;
@@ -44,39 +46,39 @@ export const calculateBaseScore = (card: Card, gameState: GameState, playerId: P
 // --- 勢力別ボーナス計算 ---
 const getNecromancerBonus = (card: Card, player: GameState['players'][PlayerId]) => {
   let bonus = 0;
-  if (card.keywords.includes('echo')) bonus += player.graveyard.length * 3;
-  if (card.effects.some(e => e.trigger === 'on_death')) bonus += 5;
+  if (card.keywords.includes('echo')) bonus += player.graveyard.length * FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD;
+  if (card.effects.some(e => e.trigger === 'on_death')) bonus += FACTION_BONUSES.NECROMANCER.ON_DEATH;
   return bonus;
 };
 
 const getKnightBonus = (card: Card, player: GameState['players'][PlayerId]) => {
   let bonus = 0;
-  if (card.keywords.includes('formation')) bonus += player.field.length * 4;
-  if (card.keywords.includes('guard')) bonus += 6;
+  if (card.keywords.includes('formation')) bonus += player.field.length * FACTION_BONUSES.KNIGHT.FORMATION_PER_ALLY;
+  if (card.keywords.includes('guard')) bonus += FACTION_BONUSES.KNIGHT.GUARD;
   return bonus;
 };
 
 const getBerserkerBonus = (card: Card, player: GameState['players'][PlayerId]) => {
   let bonus = 0;
   const lifeDeficit = GAME_CONSTANTS.INITIAL_LIFE - player.life;
-  if (lifeDeficit > 0) bonus += lifeDeficit * 1.5;
-  if (card.type === 'creature' && card.attack > card.health) bonus += card.attack * 2;
+  if (lifeDeficit > 0) bonus += lifeDeficit * FACTION_BONUSES.BERSERKER.PER_LIFE_DEFICIT;
+  if (card.type === 'creature' && card.attack > card.health) bonus += card.attack * FACTION_BONUSES.BERSERKER.HIGH_ATTACK;
   return bonus;
 };
 
 const getMageBonus = (card: Card, _player: GameState['players'][PlayerId], _opponent: GameState['players'][PlayerId]) => {
   let bonus = 0;
-  if (card.type === 'spell') bonus += 15;
-  if (card.effects.some(e => e.trigger === 'on_spell_play')) bonus += 10;
+  if (card.type === 'spell') bonus += FACTION_BONUSES.MAGE.SPELL_PLAY;
+  if (card.effects.some(e => e.trigger === 'on_spell_play')) bonus += FACTION_BONUSES.MAGE.ON_SPELL_PLAY_TRIGGER;
   return bonus;
 };
 
 const getInquisitorBonus = (card: Card, _player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => {
   let bonus = 0;
   if (card.effects.some(e => e.action.includes('debuff') || e.action.includes('destroy'))) {
-    bonus += opponent.field.length * 3;
+    bonus += opponent.field.length * FACTION_BONUSES.INQUISITOR.DEBUFF_PER_ENEMY;
   }
-  if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) bonus += 8;
+  if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) bonus += FACTION_BONUSES.INQUISITOR.SILENCE_STUN;
   return bonus;
 };
 

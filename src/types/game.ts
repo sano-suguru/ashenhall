@@ -583,6 +583,28 @@ export const FACTION_DESCRIPTIONS: Record<Faction, string> = {
   inquisitor: '秩序なき世に裁きを。敵の力を削ぎ、完膚なきまでに制圧する鉄の規律',
 } as const;
 
+/** AIのカード評価係数 */
+export const AI_EVALUATION_WEIGHTS = {
+  // 基本スコア計算用
+  BASE_SCORE: {
+    SPELL_COST_MULTIPLIER: 1.5,
+  },
+  // 戦術別モディファイア
+  TACTICS_MODIFIERS: {
+    AGGRESSIVE: { ATTACK: 2, HEALTH: 1 },
+    DEFENSIVE: { ATTACK: 1, HEALTH: 2 },
+    TEMPO: { EFFICIENCY: 3, COST_PENALTY: 2 },
+  },
+  // 勢力別ボーナス
+  FACTION_BONUSES: {
+    NECROMANCER: { ECHO_PER_GRAVEYARD: 3, ON_DEATH: 5 },
+    KNIGHT: { FORMATION_PER_ALLY: 4, GUARD: 6 },
+    BERSERKER: { PER_LIFE_DEFICIT: 1.5, HIGH_ATTACK: 2 },
+    MAGE: { SPELL_PLAY: 15, ON_SPELL_PLAY_TRIGGER: 10 },
+    INQUISITOR: { DEBUFF_PER_ENEMY: 3, SILENCE_STUN: 8 },
+  },
+} as const;
+
 // === ローカル統計機能用型定義 ===
 
 /** 勢力ごとの戦績 */

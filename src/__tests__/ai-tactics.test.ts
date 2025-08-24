@@ -4,6 +4,7 @@ import {
   calculateFactionBonus,
 } from '@/lib/game-engine/ai-tactics';
 import type { GameState, Card, PlayerId, FieldCard, CreatureCard } from '@/types/game';
+import { AI_EVALUATION_WEIGHTS } from '@/types/game';
 
 // モックデータとヘルパー関数
 const createMockCard = (overrides: Partial<Card>): Card => {
@@ -112,16 +113,16 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
     gameState.players.player1.tacticsType = 'aggressive';
     const card = createMockCard({ type: 'creature', attack: 4, health: 2, cost: 3 });
     const score = evaluateCardForPlay(card, gameState, playerId);
-    // 4 * 2 + 2 - 3 = 7
-    expect(score).toBe(7);
+    const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.AGGRESSIVE;
+    expect(score).toBe(4 * ATTACK + 2 * HEALTH - 3);
   });
 
   it('should value health higher for defensive tactics', () => {
     gameState.players.player1.tacticsType = 'defensive';
     const card = createMockCard({ type: 'creature', attack: 2, health: 4, cost: 3 });
     const score = evaluateCardForPlay(card, gameState, playerId);
-    // 4 * 2 + 2 - 3 = 7
-    expect(score).toBe(7);
+    const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.DEFENSIVE;
+    expect(score).toBe(4 * HEALTH + 2 * ATTACK - 3);
   });
 
   it('should give bonus to necromancer for echo card based on graveyard size', () => {
@@ -129,8 +130,9 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
     gameState.players.player1.graveyard = [createMockCard({ type: 'creature' }), createMockCard({ type: 'creature' })];
     const card = createMockCard({ type: 'creature', keywords: ['echo'] });
     const score = evaluateCardForPlay(card, gameState, playerId);
-    // baseScore + graveyard.length * 3 = 2 + 2 * 3 = 8
-    expect(score).toBe(8);
+    const baseScore = (3 + 3) / 3;
+    const bonus = 2 * AI_EVALUATION_WEIGHTS.FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD;
+    expect(score).toBe(baseScore + bonus);
   });
 
   it('should give bonus to knight for formation card based on field size', () => {
@@ -141,16 +143,18 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
     ];
     const card = createMockCard({ keywords: ['formation'], type: 'creature' });
     const score = evaluateCardForPlay(card, gameState, playerId);
-    // baseScore + field.length * 4 = 2 + 1 * 4 = 6
-    expect(score).toBe(6);
+    const baseScore = (3 + 3) / 3;
+    const bonus = 1 * AI_EVALUATION_WEIGHTS.FACTION_BONUSES.KNIGHT.FORMATION_PER_ALLY;
+    expect(score).toBe(baseScore + bonus);
   });
 
   it('should give bonus to mage for spell cards', () => {
     gameState.players.player1.faction = 'mage';
     const card = createMockCard({ type: 'spell', cost: 4 });
     const score = evaluateCardForPlay(card, gameState, playerId);
-    // baseScore (cost * 1.5) + factionBonus (15) = 6 + 15 = 21
-    expect(score).toBe(21);
+    const baseScore = 4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER;
+    const bonus = AI_EVALUATION_WEIGHTS.FACTION_BONUSES.MAGE.SPELL_PLAY;
+    expect(score).toBe(baseScore + bonus);
   });
 });
 
@@ -166,14 +170,14 @@ describe('AI Tactics Scorers (After Refactoring)', () => {
   describe('calculateBaseScore', () => {
     it('calculates score for spell card', () => {
       const card = createMockCard({ type: 'spell', cost: 4 });
-      expect(calculateBaseScore(card, gameState, playerId)).toBe(6);
+      expect(calculateBaseScore(card, gameState, playerId)).toBe(4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER);
     });
 
     it('uses the correct tactics scorer for creature', () => {
       gameState.players.player1.tacticsType = 'aggressive';
       const card = createMockCard({ type: 'creature', attack: 5, health: 1, cost: 3 });
-      // 5 * 2 + 1 - 3 = 8
-      expect(calculateBaseScore(card, gameState, playerId)).toBe(8);
+      const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.AGGRESSIVE;
+      expect(calculateBaseScore(card, gameState, playerId)).toBe(5 * ATTACK + 1 * HEALTH - 3);
     });
   });
 
@@ -182,13 +186,13 @@ describe('AI Tactics Scorers (After Refactoring)', () => {
       gameState.players.player1.faction = 'necromancer';
       gameState.players.player1.graveyard = [createMockCard({}), createMockCard({})];
       const card = createMockCard({ keywords: ['echo'] });
-      expect(calculateFactionBonus(card, gameState, playerId)).toBe(6);
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(2 * AI_EVALUATION_WEIGHTS.FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD);
     });
 
     it('calculates bonus for Knight', () => {
       gameState.players.player1.faction = 'knight';
       const card = createMockCard({ keywords: ['guard'] });
-      expect(calculateFactionBonus(card, gameState, playerId)).toBe(6);
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(AI_EVALUATION_WEIGHTS.FACTION_BONUSES.KNIGHT.GUARD);
     });
 
     it('returns 0 for a faction with no specific bonus for the card', () => {
