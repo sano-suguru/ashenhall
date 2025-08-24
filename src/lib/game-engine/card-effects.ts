@@ -29,31 +29,9 @@ import {
   addCreatureDestroyedAction,
 } from "./action-logger";
 import {
-  executeDamageEffect,
-  executeHealEffect,
-} from "./effects/base-effects";
-import {
-  executeBuffAttackEffect,
-  executeBuffHealthEffect,
-  executeDebuffAttackEffect,
-  executeDebuffHealthEffect,
-} from "./effects/modifier-effects";
-import {
-  executeSummonEffect,
-  executeResurrectEffect,
-} from "./effects/summon-effects";
-import {
-  executeSilenceEffect,
-  executeReadyEffect,
-  executeStunEffect,
-  executeDrawCardEffect,
-} from "./effects/status-effects";
-import {
-  executeDestroyDeckTopEffect,
-  executeSwapAttackHealthEffect,
-  executeHandDiscardEffect,
-  executeDestroyAllCreaturesEffect,
-} from "./effects/special-effects";
+  effectHandlers,
+  resolveDynamicEffectParameters,
+} from "./effect-registry";
 
 /**
  * 効果ログを追加（既存コードとの互換性を保つ）
@@ -268,122 +246,36 @@ export function executeCardEffect(
     const random = new SeededRandom(
       state.randomSeed + state.turnNumber + sourceCard.id
     );
-    let targets = selectTargets(state, sourcePlayerId, effect.target, random);
-    let value = effect.value;
-    const sourcePlayer = state.players[sourcePlayerId];
-    const opponentId: PlayerId =
-      sourcePlayerId === "player1" ? "player2" : "player1";
 
-    // --- 動的な効果値や対象を解決（既存ID分岐を維持）---
-    if (
-      sourceCard.id === "necro_grave_giant" &&
-      effect.action === "buff_attack"
-    ) {
-      value = sourcePlayer.graveyard.filter(
-        (c) => c.type === "creature"
-      ).length;
-    }
-    if (sourceCard.id === "kni_sanctuary_prayer" && effect.action === "heal") {
-      value = sourcePlayer.field.filter((c) => c.currentHealth > 0).length;
-    }
-    if (
-      sourceCard.id === "kni_white_wing_marshal" &&
-      effect.target === "ally_all"
-    ) {
-      targets = targets.filter((t) => t.id !== sourceCard.id); // 自分自身を除く
-    }
-
+    // 1. 初期対象を選択
+    let initialTargets = selectTargets(
+      state,
+      sourcePlayerId,
+      effect.target,
+      random
+    );
     if (effect.target === "self" && sourceCard.type === "creature") {
       const fieldCard = state.players[sourcePlayerId].field.find(
         (c) => c.id === sourceCard.id
       );
       if (fieldCard) {
-        targets = [fieldCard];
+        initialTargets = [fieldCard];
       }
     }
 
-    switch (effect.action) {
-      case "damage":
-        if (effect.target === "player") {
-          executeDamageEffect(state, [], opponentId, value, sourceCard.id, sourceCard, random);
-        } else {
-          executeDamageEffect(state, targets, null, value, sourceCard.id, sourceCard, random);
-        }
-        break;
+    // 2. 動的パラメータを解決
+    const { value, targets } = resolveDynamicEffectParameters(
+      state,
+      effect,
+      sourceCard,
+      sourcePlayerId,
+      initialTargets
+    );
 
-      case "heal":
-        if (effect.target === "player") {
-          executeHealEffect(state, [], sourcePlayerId, value, sourceCard.id);
-        } else {
-          executeHealEffect(state, targets, null, value, sourceCard.id);
-        }
-        break;
-
-      case "buff_attack":
-        executeBuffAttackEffect(state, targets, value, sourceCard.id, effect);
-        break;
-
-      case "buff_health":
-        executeBuffHealthEffect(state, targets, value, sourceCard.id, effect);
-        break;
-
-      case "debuff_attack":
-        executeDebuffAttackEffect(state, targets, value, sourceCard.id);
-        break;
-
-      case "debuff_health":
-        executeDebuffHealthEffect(state, targets, value, sourceCard.id);
-        break;
-
-      case "summon":
-        executeSummonEffect(state, sourcePlayerId, sourceCard, random, value);
-        break;
-
-      case "draw_card":
-        executeDrawCardEffect(state, sourcePlayerId, value, sourceCard.id);
-        break;
-
-      case "silence":
-        executeSilenceEffect(state, targets, sourceCard.id);
-        break;
-
-      case "resurrect":
-        executeResurrectEffect(state, sourcePlayerId, sourceCard, random, value);
-        break;
-
-      case "stun":
-        executeStunEffect(state, targets, value, sourceCard.id);
-        break;
-
-      case "ready":
-        executeReadyEffect(state, targets, sourceCard.id);
-        break;
-
-      case "destroy_deck_top":
-        executeDestroyDeckTopEffect(state, sourcePlayerId, value, sourceCard.id);
-        break;
-
-      case "swap_attack_health":
-        executeSwapAttackHealthEffect(state, targets, sourceCard.id);
-        break;
-
-      case "hand_discard":
-        executeHandDiscardEffect(
-          state,
-          opponentId,
-          value,
-          sourceCard.id,
-          random,
-          effect.targetFilter
-        );
-        break;
-
-      case "destroy_all_creatures":
-        executeDestroyAllCreaturesEffect(state, sourceCard.id);
-        break;
-
-      default:
-        break;
+    // 3. 効果ハンドラを取得して実行
+    const handler = effectHandlers[effect.action];
+    if (handler) {
+      handler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
     }
   } catch (error) {
     console.error(`Error executing card effect:`, error);
