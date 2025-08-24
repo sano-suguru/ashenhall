@@ -1,6 +1,6 @@
-import type { Card } from '@/types/game';
+import type { Card, CardEffect, EffectAction } from '@/types/game';
 
-const getTargetText = (target: Card['effects'][0]['target']): string => {
+const getTargetText = (target: CardEffect['target']): string => {
   const targetMap: { [key: string]: string } = {
     self: '自身',
     ally_all: '味方全体',
@@ -12,7 +12,27 @@ const getTargetText = (target: Card['effects'][0]['target']): string => {
   return targetMap[target] || '';
 };
 
-export const getEffectText = (effect: Card['effects'][0], cardType: 'creature' | 'spell'): string => {
+const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> = {
+  damage: (e) => `${getTargetText(e.target)}に${e.value}ダメージを与える。`,
+  heal: (e) => `${getTargetText(e.target)}を${e.value}回復する。`,
+  buff_attack: (e) => `${getTargetText(e.target)}の攻撃力を+${e.value}する。`,
+  buff_health: (e) => `${getTargetText(e.target)}の体力を+${e.value}する。`,
+  debuff_attack: (e) => `${getTargetText(e.target)}の攻撃力を-${e.value}する。`,
+  debuff_health: (e) => `${getTargetText(e.target)}の体力を-${e.value}する。`,
+  summon: (e) => `1/1の骸骨トークンを${e.value}体召喚する。`,
+  draw_card: (e) => `カードを${e.value}枚引く。`,
+  resurrect: (e) => `あなたの墓地からコスト${e.value}以下のクリーチャーを1体戦場に戻す。`,
+  silence: (e) => `${getTargetText(e.target)}を沈黙させる。`,
+  stun: (e) => `${getTargetText(e.target)}は、次のターン攻撃できない。`,
+  destroy_deck_top: (e) => `相手はデッキの上から${e.value}枚のカードを墓地に置く。`,
+  swap_attack_health: (e) => `${getTargetText(e.target)}の攻撃力と体力を入れ替える。`,
+  hand_discard: (e) => `相手は手札からランダムに${e.value}枚のカードを捨てる。`,
+  ready: () => `このターン、もう一度だけ攻撃できる。`,
+  guard: (e) => `${getTargetText(e.target)}に守護を付与する。`,
+  destroy_all_creatures: () => '全てのクリーチャーを破壊する。',
+};
+
+export const getEffectText = (effect: CardEffect, cardType: 'creature' | 'spell'): string => {
   const triggerMap: { [key: string]: string } = {
     on_play: cardType === 'creature' ? '召喚時' : '使用時',
     on_death: '死亡時',
@@ -27,56 +47,10 @@ export const getEffectText = (effect: Card['effects'][0], cardType: 'creature' |
 
   const triggerText = triggerMap[effect.trigger] || `[未定義トリガー: ${effect.trigger}]`;
 
-  let effectDescription = '';
-  switch (effect.action) {
-    case 'damage':
-      effectDescription = `${getTargetText(effect.target)}に${effect.value}ダメージを与える。`;
-      break;
-    case 'heal':
-      effectDescription = `${getTargetText(effect.target)}を${effect.value}回復する。`;
-      break;
-    case 'buff_attack':
-      effectDescription = `${getTargetText(effect.target)}の攻撃力を+${effect.value}する。`;
-      break;
-    case 'buff_health':
-      effectDescription = `${getTargetText(effect.target)}の体力を+${effect.value}する。`;
-      break;
-    case 'debuff_attack':
-      effectDescription = `${getTargetText(effect.target)}の攻撃力を-${effect.value}する。`;
-      break;
-    case 'debuff_health':
-      effectDescription = `${getTargetText(effect.target)}の体力を-${effect.value}する。`;
-      break;
-    case 'summon':
-      effectDescription = `1/1の骸骨トークンを${effect.value}体召喚する。`;
-      break;
-    case 'draw_card':
-      effectDescription = `カードを${effect.value}枚引く。`;
-      break;
-    case 'resurrect':
-      effectDescription = `あなたの墓地からコスト${effect.value}以下のクリーチャーを1体戦場に戻す。`;
-      break;
-    case 'silence':
-      effectDescription = `${getTargetText(effect.target)}を沈黙させる。`;
-      break;
-    case 'stun':
-      effectDescription = `${getTargetText(effect.target)}は、次のターン攻撃できない。`;
-      break;
-    case 'destroy_deck_top':
-      effectDescription = `相手はデッキの上から${effect.value}枚のカードを墓地に置く。`;
-      break;
-    case 'swap_attack_health':
-      effectDescription = `${getTargetText(effect.target)}の攻撃力と体力を入れ替える。`;
-      break;
-    case 'hand_discard':
-      effectDescription = `相手は手札からランダムに${effect.value}枚のカードを捨てる。`;
-      break;
-    case 'ready':
-      effectDescription = `このターン、もう一度だけ攻撃できる。`;
-      break;
-    default:
-        effectDescription = `[未定義アクション: ${effect.action}]`;
-  }
+  const generator = actionTextGenerator[effect.action];
+  const effectDescription = generator
+    ? generator(effect)
+    : `[未定義アクション: ${effect.action}]`;
 
   return `${triggerText}: ${effectDescription}`;
 };
