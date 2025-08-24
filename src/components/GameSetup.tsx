@@ -117,6 +117,7 @@ export default function GameSetup({ onGameStart, stats }: GameSetupProps) {
       sampleDecks.forEach(sampleDeck => {
         const newDeck = createNewDeck(collection, sampleDeck.name, sampleDeck.faction);
         newDeck.cards = [...sampleDeck.cardIds];
+        newDeck.coreCardIds = sampleDeck.coreCardIds ? [...sampleDeck.coreCardIds] : [];
         collection = addDeckToCollection(collection, newDeck);
         collection = setActiveDeckForFaction(collection, sampleDeck.faction, newDeck.id);
       });
