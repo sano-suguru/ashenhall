@@ -19,37 +19,10 @@ import type {
 import { createInitialGameState, processGameStep } from "./game-engine/core";
 import { getCardById } from "@/data/cards/base-cards";
 import { GAME_CONSTANTS } from "@/types/game";
+import { logFormatters } from "./log-formatters";
 
 // UIコンポーネントから移植された定数とヘルパー関数
-const EFFECT_NAMES: Record<EffectAction, string> = {
-  damage: "ダメージ",
-  heal: "回復",
-  buff_attack: "攻撃力強化",
-  buff_health: "体力強化",
-  debuff_attack: "攻撃力低下",
-  debuff_health: "体力低下",
-  summon: "召喚",
-  draw_card: "ドロー",
-  resurrect: "蘇生",
-  silence: "沈黙",
-  guard: "守護",
-  stun: "スタン",
-  destroy_deck_top: "デッキ破壊",
-  swap_attack_health: "攻/体入替",
-  hand_discard: "手札破壊",
-  destroy_all_creatures: "全体破壊",
-  ready: "再攻撃可能",
-};
-
-const PHASE_NAMES: Record<string, string> = {
-  draw: "ドロー",
-  energy: "エネルギー",
-  deploy: "配置",
-  battle: "戦闘",
-  end: "終了",
-};
-
-function getCardName(cardId: string): string {
+export function getCardName(cardId: string): string {
   const card = getCardById(cardId);
   return card?.name || cardId;
 }
@@ -59,40 +32,15 @@ const SPECIAL_SOURCE_NAMES: Record<string, string> = {
   deck_empty: "デッキ切れ",
 };
 
-function getSourceDisplayName(sourceId: string): string {
+export function getSourceDisplayName(sourceId: string): string {
   return SPECIAL_SOURCE_NAMES[sourceId] || `《${getCardName(sourceId)}》`;
 }
 
-function getPlayerName(playerId: PlayerId): string {
+export function getPlayerName(playerId: PlayerId): string {
   return playerId === "player1" ? "あなた" : "相手";
 }
 
-const KEYWORD_NAMES: Record<Keyword, string> = {
-  guard: "守護",
-  lifesteal: "生命奪取",
-  stealth: "潜伏",
-  poison: "毒",
-  retaliate: "報復",
-  echo: "残響",
-  formation: "連携",
-  rush: "速攻",
-  trample: "貫通",
-};
-
-// UIコンポーネントから移植
-const TRIGGER_TYPE_NAMES: Record<EffectTrigger, string> = {
-  on_play: 'プレイされた時',
-  on_death: '死亡した時',
-  turn_start: 'ターン開始時',
-  turn_end: 'ターン終了時',
-  passive: '常時効果',
-  on_ally_death: '味方が死亡した時',
-  on_damage_taken: 'ダメージを受けた時',
-  on_attack: '攻撃した時',
-  on_spell_play: '呪文をプレイした時',
-};
-
-function getTurnNumberForAction(
+export function getTurnNumberForAction(
   action: GameAction,
   gameState: GameState
 ): number {
@@ -190,169 +138,8 @@ function reconstructInitialState(originalState: GameState): GameState {
  */
 export function getLogDisplayParts(action: GameAction, gameState: GameState): LogDisplayParts {
   const playerName = getPlayerName(action.playerId);
-
-  switch (action.type) {
-    case "energy_update": {
-      const { maxEnergyBefore, maxEnergyAfter } = action.data;
-      return {
-        type: 'energy_update',
-        iconName: 'Zap',
-        playerName,
-        message: `最大エネルギー +1`,
-        details: `(${maxEnergyBefore} → ${maxEnergyAfter})、全回復`,
-        cardIds: [],
-      };
-    }
-    case "card_play": {
-      const card = getCardById(action.data.cardId);
-      return {
-        type: 'card_play',
-        iconName: 'CreditCard',
-        playerName,
-        message: `《${card?.name || action.data.cardId}》を配置`,
-        details: `(コスト${card?.cost || "?"})`,
-        cardIds: [action.data.cardId],
-      };
-    }
-    case "card_attack": {
-      const { data } = action;
-      const attackerName = getCardName(data.attackerCardId);
-      const isPlayerTarget = data.targetId === "player1" || data.targetId === "player2";
-      const targetName = isPlayerTarget ? getPlayerName(data.targetId as PlayerId) : `《${getCardName(data.targetId)}》`;
-      
-      let details = `(${data.damage}ダメージ)`;
-      if (data.targetHealth) {
-        details += ` 体力 ${data.targetHealth.before}→${data.targetHealth.after}`;
-      } else if (data.targetPlayerLife) {
-        details += ` ライフ ${data.targetPlayerLife.before}→${data.targetPlayerLife.after}`;
-      }
-
-      return {
-        type: 'card_attack',
-        iconName: 'Swords',
-        playerName,
-        message: `《${attackerName}》 → ${targetName}`,
-        details: details,
-        cardIds: [data.attackerCardId, data.targetId],
-      };
-    }
-    case "creature_destroyed": {
-      const { destroyedCardId, source, sourceCardId } = action.data;
-      let sourceText = "";
-      if (source === 'combat') sourceText = "戦闘";
-      else if (source === 'effect' && sourceCardId) sourceText = `${getSourceDisplayName(sourceCardId)}の効果`;
-      return {
-        type: 'creature_destroyed',
-        iconName: 'ShieldOff',
-        playerName,
-        message: `《${getCardName(destroyedCardId)}》破壊`,
-        details: `(${sourceText}により)`,
-        cardIds: [destroyedCardId],
-      };
-    }
-    case "effect_trigger": {
-      const { data } = action;
-      const sourceCardName = getSourceDisplayName(data.sourceCardId);
-
-      const detailsParts = Object.entries(data.targets).map(([targetId, valueChange]) => {
-        const targetName = (targetId === 'player1' || targetId === 'player2') ? getPlayerName(targetId as PlayerId) : `《${getCardName(targetId)}》`;
-        const changes = [];
-        if (valueChange.attack) {
-          const diff = valueChange.attack.after - valueChange.attack.before;
-          changes.push(`攻撃力 ${valueChange.attack.before}→${valueChange.attack.after} (${diff >= 0 ? '+' : ''}${diff})`);
-        }
-        if (valueChange.health) {
-          const diff = valueChange.health.after - valueChange.health.before;
-          changes.push(`体力 ${valueChange.health.before}→${valueChange.health.after} (${diff >= 0 ? '+' : ''}${diff})`);
-        }
-        if (valueChange.life) {
-          const diff = valueChange.life.after - valueChange.life.before;
-          changes.push(`ライフ ${valueChange.life.before}→${valueChange.life.after} (${diff >= 0 ? '+' : ''}${diff})`);
-        }
-        
-        if (changes.length === 0) {
-          const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
-          // readyアクションの場合は特別なテキストを生成
-          if (data.effectType === 'ready') {
-            return `${targetName}が${effectName}になった`;
-          }
-          return `${targetName}に${effectName}(${data.effectValue})`;
-        }
-        return `${targetName} ${changes.join(', ')}`;
-      });
-
-      return {
-        type: 'effect_trigger',
-        iconName: 'Sparkles',
-        playerName,
-        message: `${sourceCardName}の効果`,
-        details: detailsParts.join('; '),
-        cardIds: [data.sourceCardId, ...Object.keys(data.targets)],
-      };
-    }
-    case "phase_change": {
-      if (action.data.toPhase === "draw") {
-        const turnNumber = getTurnNumberForAction(action, gameState);
-        return {
-          type: 'phase_change',
-          iconName: 'RotateCcw',
-          playerName,
-          message: `ターン${turnNumber}開始 - ${playerName}のターン`,
-          cardIds: [],
-        };
-      }
-      const phaseName = PHASE_NAMES[action.data.toPhase] || action.data.toPhase;
-      return {
-        type: 'phase_change',
-        iconName: 'Flag',
-        playerName,
-        message: `${phaseName}フェーズ`,
-        cardIds: [],
-      };
-    }
-    case "trigger_event": {
-      const { triggerType, sourceCardId, targetCardId } = action.data;
-      const triggerName = TRIGGER_TYPE_NAMES[triggerType] || '不明なトリガー';
-      const message = targetCardId
-        ? `《${getCardName(targetCardId)}》の効果が発動`
-        : `効果が発動`;
-      
-      return {
-        type: 'trigger_event',
-        iconName: 'Zap',
-        playerName,
-        message,
-        triggerText: triggerName,
-        cardIds: [sourceCardId, targetCardId].filter((id): id is string => !!id),
-      };
-    }
-    case "keyword_trigger": {
-      const { keyword, sourceCardId, targetId, value } = action.data;
-      const sourceName = getCardName(sourceCardId);
-      const isPlayerTarget = targetId === "player1" || targetId === "player2";
-      const targetName = isPlayerTarget ? getPlayerName(targetId as PlayerId) : `《${getCardName(targetId)}》`;
-      const keywordName = KEYWORD_NAMES[keyword] || keyword;
-
-      return {
-        type: 'keyword_trigger',
-        iconName: 'Star',
-        playerName,
-        message: `《${sourceName}》の${keywordName}効果 → ${targetName}`,
-        details: `(${value}追加ダメージ)`,
-        cardIds: [sourceCardId, targetId],
-      };
-    }
-    default: {
-      const exhaustiveCheck: never = action;
-      return {
-        type: 'card_play', // fallback
-        iconName: 'AlertTriangle',
-        playerName: 'システム',
-        message: '不明なアクション',
-        cardIds: [],
-      };
-    }
-  }
+  const formatter = logFormatters[action.type];
+  return formatter(action, playerName, gameState);
 }
 
 /**
