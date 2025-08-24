@@ -231,9 +231,6 @@ export default function GameSetup({ onGameStart, stats }: GameSetupProps) {
             
             {/* ゲーム説明 */}
             <div className="mb-6">
-              <p className="text-2xl text-amber-200 font-bold mb-2 tracking-wide">
-                非同期自動対戦カードゲーム
-              </p>
               <p className="text-lg text-gray-300">
                 時間を選ばない戦略体験 - いつでも対戦申請、結果は後で確認
               </p>
