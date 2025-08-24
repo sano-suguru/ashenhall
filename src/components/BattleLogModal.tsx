@@ -15,7 +15,7 @@ import type { GameState, GameAction, PlayerId, EffectAction, GameResult, EffectT
 import { GAME_CONSTANTS } from '@/types/game';
 import { getCardById } from '@/data/cards/base-cards';
 import CardNameWithTooltip from './CardNameWithTooltip';
-import { formatActionAsText, findDecisiveAction, getLogDisplayParts } from '@/lib/game-state-utils';
+import { formatActionAsText, findDecisiveAction, getLogDisplayParts, getTurnNumberForAction } from '@/lib/game-state-utils';
 import { 
   X, 
   Search,
@@ -353,22 +353,6 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
   );
 }
 
-// ターン番号を正確に計算するヘルパー関数
-function getTurnNumberForAction(action: GameAction, gameState: GameState): number {
-  // そのアクション時点でのターン番号を逆算
-  let turnNumber = 1;
-  for (let i = 0; i <= action.sequence; i++) {
-    const currentAction = gameState.actionLog[i];
-    if (currentAction && currentAction.type === 'phase_change' && currentAction.data.toPhase === 'draw') {
-      // sequence 0 の初期アクション以外はターン番号を増加
-      if (i > 0) {
-        turnNumber++;
-      }
-    }
-  }
-  return turnNumber;
-}
-
 // 最終状態サマリーの型定義
 interface FinalGameState {
   player1: {
@@ -608,19 +592,7 @@ export default function BattleLogModal({
     const groups: Record<number, GameAction[]> = {};
     
     filteredActions.forEach(action => {
-      let turnNumber = 1;
-      if (action.type === 'phase_change' && action.data.toPhase === 'draw') {
-        turnNumber = Math.floor((action.sequence + 1) / 5) + 1;
-      } else {
-        // 前のターン開始アクションを探す
-        for (let i = action.sequence - 1; i >= 0; i--) {
-          const prevAction = gameState.actionLog[i];
-          if (prevAction && prevAction.type === 'phase_change' && prevAction.data.toPhase === 'draw') {
-            turnNumber = Math.floor((prevAction.sequence + 1) / 5) + 1;
-            break;
-          }
-        }
-      }
+      const turnNumber = getTurnNumberForAction(action, gameState);
       
       if (!groups[turnNumber]) {
         groups[turnNumber] = [];

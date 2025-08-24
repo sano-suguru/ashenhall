@@ -1,6 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import type { GameState, GameAction } from "@/types/game";
-import { formatActionAsText, findDecisiveAction } from "@/lib/game-state-utils";
+import { formatActionAsText, findDecisiveAction, getTurnNumberForAction } from "@/lib/game-state-utils";
 import { getCardById } from "@/data/cards/base-cards";
 
 // Mock getCardById to avoid dependency on actual card data
@@ -307,5 +307,53 @@ describe("findDecisiveAction", () => {
       ],
     } as unknown as GameState;
     expect(findDecisiveAction(gameState)).toBeNull();
+  });
+});
+
+describe("getTurnNumberForAction", () => {
+  // ターン毎のアクション数が不規則な模擬ログデータ
+  const mockActions: GameAction[] = [
+    // Turn 1 (3 actions)
+    { sequence: 0, type: "phase_change", data: { toPhase: "draw" } } as GameAction,
+    { sequence: 1, type: "card_play", data: {} } as GameAction,
+    { sequence: 2, type: "card_attack", data: {} } as GameAction,
+    // Turn 2 (7 actions)
+    { sequence: 3, type: "phase_change", data: { toPhase: "draw" } } as GameAction,
+    { sequence: 4, type: "card_play", data: {} } as GameAction,
+    { sequence: 5, type: "effect_trigger", data: {} } as GameAction,
+    { sequence: 6, type: "effect_trigger", data: {} } as GameAction,
+    { sequence: 7, type: "card_attack", data: {} } as GameAction,
+    { sequence: 8, type: "creature_destroyed", data: {} } as GameAction,
+    { sequence: 9, type: "phase_change", data: { toPhase: "end" } } as GameAction,
+    // Turn 3 (5 actions)
+    { sequence: 10, type: "phase_change", data: { toPhase: "draw" } } as GameAction,
+    { sequence: 11, type: "card_play", data: {} } as GameAction,
+    { sequence: 12, type: "card_attack", data: {} } as GameAction,
+    { sequence: 13, type: "card_attack", data: {} } as GameAction,
+    { sequence: 14, type: "phase_change", data: { toPhase: "end" } } as GameAction,
+  ];
+
+  const mockGameState = {
+    actionLog: mockActions,
+  } as unknown as GameState;
+
+  it("should return turn 1 for actions in the first turn", () => {
+    expect(getTurnNumberForAction(mockActions[0], mockGameState)).toBe(1);
+    expect(getTurnNumberForAction(mockActions[2], mockGameState)).toBe(1);
+  });
+
+  it("should return turn 2 for actions in the second turn", () => {
+    expect(getTurnNumberForAction(mockActions[3], mockGameState)).toBe(2); // Turn start
+    expect(getTurnNumberForAction(mockActions[6], mockGameState)).toBe(2); // Middle of turn
+    expect(getTurnNumberForAction(mockActions[9], mockGameState)).toBe(2); // End of turn
+  });
+
+  it("should return turn 3 for actions in the third turn", () => {
+    expect(getTurnNumberForAction(mockActions[10], mockGameState)).toBe(3);
+    expect(getTurnNumberForAction(mockActions[14], mockGameState)).toBe(3);
+  });
+
+  it("should handle the very first action (sequence 0) correctly", () => {
+    expect(getTurnNumberForAction(mockActions[0], mockGameState)).toBe(1);
   });
 });
