@@ -1,7 +1,7 @@
 {
   "name": "ashenhall",
   "version": "0.1.0",
-  "description": "時間を選ばない戦略カードゲーム。五つの勢力から選んで非同期対戦、結果は後で確認",
+  "description": "時間を選ばない戦略カードゲーム。いつでも対戦申請、あとは待つだけ。",
   "private": true,
   "packageManager": "pnpm@10.15.0",
   "scripts": {
