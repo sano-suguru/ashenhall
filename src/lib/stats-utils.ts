@@ -1,6 +1,64 @@
-import type { GameState, GameAction, GameResult } from '@/types/game';
+import type { GameState, GameAction, GameResult, LocalStats, Faction } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getTurnNumberForAction } from './game-state-utils';
+
+const STATS_STORAGE_KEY = 'ashenhall_stats';
+
+// --- Local Stats Management ---
+
+const initialStats: LocalStats = {
+  totalGames: 0,
+  totalWins: 0,
+  factionStats: {
+    necromancer: { games: 0, wins: 0 },
+    berserker: { games: 0, wins: 0 },
+    mage: { games: 0, wins: 0 },
+    knight: { games: 0, wins: 0 },
+    inquisitor: { games: 0, wins: 0 },
+  },
+  lastPlayed: new Date().toISOString(),
+};
+
+export function loadStats(): LocalStats {
+  try {
+    const statsJson = localStorage.getItem(STATS_STORAGE_KEY);
+    return statsJson ? JSON.parse(statsJson) : initialStats;
+  } catch (error) {
+    console.error("Failed to load stats:", error);
+    return initialStats;
+  }
+}
+
+export function saveStats(stats: LocalStats) {
+  try {
+    const statsJson = JSON.stringify(stats);
+    localStorage.setItem(STATS_STORAGE_KEY, statsJson);
+  } catch (error) {
+    console.error("Failed to save stats:", error);
+  }
+}
+
+export function updateStatsWithGameResult(stats: LocalStats, gameState: GameState): LocalStats {
+  if (!gameState.result) return stats;
+
+  const newStats = JSON.parse(JSON.stringify(stats)) as LocalStats;
+  const playerFaction = gameState.players.player1.faction;
+
+  newStats.totalGames += 1;
+  newStats.factionStats[playerFaction].games += 1;
+
+  if (gameState.result.winner === 'player1') {
+    newStats.totalWins += 1;
+    newStats.factionStats[playerFaction].wins += 1;
+  }
+  
+  newStats.lastPlayed = new Date().toISOString();
+
+  return newStats;
+}
+
+
+// --- Battle Log Analysis ---
 
 // HP変化追跡機能
 export interface TurnSummary {
