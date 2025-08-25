@@ -5,59 +5,114 @@
  * AI同士の対戦を大量に実行し、統計データを収集する。
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect, afterAll } from '@jest/globals';
 import { executeFullGame } from '@/lib/game-engine/core';
-import { necromancerCards, knightCards } from '@/data/cards/base-cards';
-import type { GameState, PlayerId } from '@/types/game';
+import { FACTION_CARDS } from '@/data/cards/base-cards';
+import type { Faction } from '@/types/game';
+import fs from 'fs';
+import path from 'path';
 
 // シミュレーション設定
-const SIMULATION_COUNT = 100; // 実行する対戦回数
+const SIMULATION_COUNT = 10; // バランス調整中は回数を減らして高速化
+const ALL_FACTIONS: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
+
+interface SimulationResult {
+  faction1: Faction;
+  faction2: Faction;
+  wins1: number;
+  wins2: number;
+  draws: number;
+  averageTurns: number;
+}
+
+const allResults: SimulationResult[] = [];
+
+/**
+ * 2勢力間の対戦シミュレーションを実行するヘルパー関数
+ */
+const runSimulation = (faction1: Faction, faction2: Faction): SimulationResult => {
+  const results = {
+    wins1: 0,
+    wins2: 0,
+    draws: 0,
+    totalTurns: 0,
+  };
+
+  for (let i = 0; i < SIMULATION_COUNT; i++) {
+    const finalState = executeFullGame(
+      `sim-${faction1}-vs-${faction2}-${i}`,
+      FACTION_CARDS[faction1],
+      FACTION_CARDS[faction2],
+      faction1,
+      faction2,
+      'balanced',
+      'balanced',
+      `test-seed-sim-${faction1}-${faction2}-${i}`
+    );
+
+    if (finalState.result?.winner === 'player1') {
+      results.wins1++;
+    } else if (finalState.result?.winner === 'player2') {
+      results.wins2++;
+    } else {
+      results.draws++;
+    }
+    results.totalTurns += finalState.turnNumber;
+  }
+  
+  return {
+    faction1,
+    faction2,
+    ...results,
+    averageTurns: results.totalTurns / SIMULATION_COUNT,
+  };
+};
 
 describe('AI自動対戦シミュレーター', () => {
-  test(`死霊術師 vs 騎士のデッキで${SIMULATION_COUNT}回対戦し、統計を出力する`, () => {
-    const results = {
-      player1Wins: 0,
-      player2Wins: 0,
-      draws: 0,
-      totalTurns: 0,
-    };
+  // 全勢力の総当たり戦を実行
+  for (let i = 0; i < ALL_FACTIONS.length; i++) {
+    for (let j = i + 1; j < ALL_FACTIONS.length; j++) {
+      const faction1 = ALL_FACTIONS[i];
+      const faction2 = ALL_FACTIONS[j];
 
-    console.log(`\n=== AI Battle Simulation Start: Necromancer vs Knight (${SIMULATION_COUNT} games) ===`);
+      test(`${faction1} vs ${faction2} のシミュレーション`, () => {
+        console.log(`\n=== Running simulation: ${faction1} vs ${faction2} (${SIMULATION_COUNT} games) ===`);
+        const result = runSimulation(faction1, faction2);
+        
+        const winRate1 = (result.wins1 / SIMULATION_COUNT) * 100;
+        const winRate2 = (result.wins2 / SIMULATION_COUNT) * 100;
 
-    for (let i = 0; i < SIMULATION_COUNT; i++) {
-      const finalState = executeFullGame(
-        `sim-${i}`,
-        necromancerCards,
-        knightCards,
-        'necromancer',
-        'knight',
-        'balanced',
-        'balanced',
-        `test-seed-sim-${i}`
-      );
+        console.log(`  ${result.faction1} Wins: ${result.wins1} (${winRate1.toFixed(2)}%)`);
+        console.log(`  ${result.faction2} Wins: ${result.wins2} (${winRate2.toFixed(2)}%)`);
+        console.log(`  Average Turns: ${result.averageTurns.toFixed(2)}`);
 
-      if (finalState.result?.winner === 'player1') {
-        results.player1Wins++;
-      } else if (finalState.result?.winner === 'player2') {
-        results.player2Wins++;
-      } else {
-        results.draws++;
-      }
-      results.totalTurns += finalState.turnNumber;
+        allResults.push(result);
+        expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
+      });
     }
+  }
+});
 
-    const player1WinRate = (results.player1Wins / SIMULATION_COUNT) * 100;
-    const player2WinRate = (results.player2Wins / SIMULATION_COUNT) * 100;
-    const averageTurns = results.totalTurns / SIMULATION_COUNT;
+afterAll(() => {
+  console.log('\n\n--- All Simulations Complete ---');
+  
+  const reportDir = path.resolve(__dirname, '../../simulation_reports');
+  if (!fs.existsSync(reportDir)) {
+    fs.mkdirSync(reportDir);
+  }
 
-    console.log('--- Simulation Results ---');
-    console.log(`Necromancer (Player 1) Wins: ${results.player1Wins} (${player1WinRate.toFixed(2)}%)`);
-    console.log(`Knight (Player 2) Wins: ${results.player2Wins} (${player2WinRate.toFixed(2)}%)`);
-    console.log(`Draws: ${results.draws}`);
-    console.log(`Average Turns: ${averageTurns.toFixed(2)}`);
-    console.log('==========================');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `simulation-results-${timestamp}.json`;
+  
+  const report = {
+    simulationDate: new Date().toISOString(),
+    simulationCountPerMatchup: SIMULATION_COUNT,
+    results: allResults,
+  };
 
-    // テストとしては、シミュレーションが正常に完了したことを確認
-    expect(results.player1Wins + results.player2Wins + results.draws).toBe(SIMULATION_COUNT);
-  });
+  const reportPath = path.resolve(reportDir, filename);
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+
+  console.log(`Simulation report saved to: ${reportPath}`);
+  console.log('================================');
 });
