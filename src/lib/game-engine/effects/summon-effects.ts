@@ -30,25 +30,19 @@ export function executeSummonEffect(
   value: number
 ): void {
   if (sourceCard.id === "necro_soul_vortex") {
-    // 特殊効果: 魂の渦
+    // 特殊効果: 魂の渦 - valueはeffect-registryで計算された墓地の枚数
     const sourcePlayer = state.players[sourcePlayerId];
-    // 効果解決前に、自身を墓地から一時的に除外してカウントする
-    const spellCardIndex = sourcePlayer.graveyard.findIndex(
-      (c) => c.id === sourceCard.id
-    );
-    if (spellCardIndex > -1) {
-      sourcePlayer.graveyard.splice(spellCardIndex, 1);
-    }
-    const graveyardSize = sourcePlayer.graveyard.length;
-    sourcePlayer.graveyard = []; // 残りの墓地をゲームから除外
+    sourcePlayer.graveyard = []; // 墓地を空にする
     applySummon(state, sourcePlayerId, sourceCard.id, random, {
       name: "魂の集合体",
-      attack: graveyardSize,
-      health: graveyardSize,
+      attack: value,
+      health: value,
     });
   } else {
-    // 通常の召喚
-    applySummon(state, sourcePlayerId, sourceCard.id, random);
+    // 通常の召喚 (necro_necromancerなど、valueは召喚回数)
+    for (let i = 0; i < value; i++) {
+      applySummon(state, sourcePlayerId, sourceCard.id, random);
+    }
   }
 }
 

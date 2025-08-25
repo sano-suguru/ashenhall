@@ -141,5 +141,22 @@ export function resolveDynamicEffectParameters(
     targets = targets.filter((t) => t.id !== sourceCard.id); // 自分自身を除く
   }
 
+  // --- 動的効果値の解決 ---
+  if (
+    sourceCard.id === "necro_soul_vortex" &&
+    effect.action === "summon"
+  ) {
+    // 魂の渦: 墓地の枚数を効果値とする（自身は除く）
+    value = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
+  }
+  if (
+    sourceCard.id === "kni_galleon" &&
+    effect.action === "buff_attack" &&
+    effect.trigger === "passive"
+  ) {
+    // 不動の聖壁、ガレオン: 他の味方の数を効果値とする
+    value = sourcePlayer.field.filter((c) => c.id !== sourceCard.id).length;
+  }
+
   return { value, targets };
 }

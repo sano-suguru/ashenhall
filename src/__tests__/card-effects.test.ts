@@ -656,6 +656,48 @@ describe('カード効果システム', () => {
       expect(marshalOnField.passiveAttackModifier).toBe(0); // 自分は影響を受けない
       expect(allyOnField.passiveAttackModifier).toBe(1);
     });
+
+    test('《魂の渦》が墓地の枚数に応じたステータスのトークンを召喚し、墓地を空にする', () => {
+      const gameState = createTestGameState();
+      const soulVortex = necromancerCards.find(c => c.id === 'necro_soul_vortex')!;
+      
+      // 墓地にカードを5枚置く
+      for (let i = 0; i < 5; i++) {
+        gameState.players.player1.graveyard.push(necromancerCards[i]);
+      }
+      
+      executeCardEffect(gameState, soulVortex.effects[0], soulVortex, 'player1');
+
+      // 場のトークンを確認
+      expect(gameState.players.player1.field.length).toBe(1);
+      const token = gameState.players.player1.field[0];
+      expect(token.name).toBe('魂の集合体');
+      expect(token.attack).toBe(5);
+      expect(token.health).toBe(5);
+
+      // 墓地が空になっていることを確認
+      expect(gameState.players.player1.graveyard.length).toBe(0);
+    });
+
+    test('《不動の聖壁、ガレオン》が他の味方の数だけ攻撃力を得る', () => {
+      const gameState = createTestGameState();
+      const galleon = knightCards.find(c => c.id === 'kni_galleon')! as CreatureCard;
+      const sourceCard = createTestFieldCard(galleon);
+      const ally1 = createTestFieldCard(knightCards[0] as CreatureCard);
+      const ally2 = createTestFieldCard(knightCards[1] as CreatureCard);
+      gameState.players.player1.field.push(sourceCard, ally1, ally2);
+
+      applyPassiveEffects(gameState);
+
+      const galleonOnField = gameState.players.player1.field.find(c => c.id === galleon.id)!;
+      expect(galleonOnField.passiveAttackModifier).toBe(2);
+
+      // 味方が1体減る
+      gameState.players.player1.field.pop();
+      applyPassiveEffects(gameState);
+      
+      expect(galleonOnField.passiveAttackModifier).toBe(1);
+    });
   });
 
   describe('パッシブ効果の重複適用バグ再現テスト', () => {
