@@ -375,6 +375,7 @@ const triggerHandlers: Partial<Record<EffectTrigger, TriggerHandler>> = {
   on_play: handleSingleCardTrigger,
   on_death: handleSingleCardTrigger,
   on_damage_taken: handleSingleCardTrigger,
+  on_attack: handleSingleCardTrigger,
   on_spell_play: handlePlayerScopedTrigger,
   on_ally_death: handlePlayerScopedTrigger,
 };

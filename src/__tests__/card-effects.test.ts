@@ -728,4 +728,30 @@ describe('カード効果システム', () => {
       expect(healthAfterSecondApply).toBe(otherCard.health + 1);
     });
   });
+
+  describe('不具合修正テスト', () => {
+    test('相手ターン中に自軍のon_attack効果が発動しない', () => {
+      const gameState = createTestGameState();
+      gameState.currentPlayer = 'player2'; // 相手のターンに設定
+
+      // 自軍（player1）の場に背水の狂戦士を配置
+      const berserker = berserkerCards.find(c => c.id === 'ber_desperate_berserker')! as CreatureCard;
+      const berserkerFieldCard = createTestFieldCard(berserker, 'player1');
+      berserkerFieldCard.hasAttacked = true; // 攻撃済み状態にしておく
+      gameState.players.player1.field.push(berserkerFieldCard);
+
+      // 発動条件を満たすようにライフを調整 (player1 < player2)
+      gameState.players.player1.life = 10;
+      gameState.players.player2.life = 15;
+
+      // 相手（player2）のクリーチャーが攻撃する
+      const attacker = createTestFieldCard(berserkerCards[0] as CreatureCard, 'player2');
+      
+      // on_attackトリガーを発動
+      processEffectTrigger(gameState, 'on_attack', attacker, 'player2');
+
+      // 自軍の背水の狂戦士のhasAttackedフラグがfalseになっていない（効果が発動していない）ことを確認
+      expect(gameState.players.player1.field[0].hasAttacked).toBe(true);
+    });
+  });
 });
