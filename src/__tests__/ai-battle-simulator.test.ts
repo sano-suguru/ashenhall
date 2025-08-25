@@ -7,18 +7,26 @@
 
 import { describe, test, expect, afterAll } from '@jest/globals';
 import { executeFullGame } from '@/lib/game-engine/core';
-import { FACTION_CARDS } from '@/data/cards/base-cards';
-import type { Faction } from '@/types/game';
+import { FACTION_CARDS, getCardById } from '@/data/cards/base-cards';
+import { sampleDecks } from '@/data/decks/sample-decks';
+import type { Faction, TacticsType, Card } from '@/types/game';
 import fs from 'fs';
 import path from 'path';
 
-// シミュレーション設定
-const SIMULATION_COUNT = 10; // バランス調整中は回数を減らして高速化
+// --- シミュレーション設定 ---
+const SIMULATION_COUNT = 30;
 const ALL_FACTIONS: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
+const ALL_TACTICS: TacticsType[] = ['aggressive', 'defensive', 'tempo', 'balanced'];
 
+// --- 型定義 ---
 interface SimulationResult {
+  scenario: string;
   faction1: Faction;
   faction2: Faction;
+  deck1Name: string;
+  deck2Name: string;
+  tactics1: TacticsType;
+  tactics2: TacticsType;
   wins1: number;
   wins2: number;
   draws: number;
@@ -27,72 +35,112 @@ interface SimulationResult {
 
 const allResults: SimulationResult[] = [];
 
-/**
- * 2勢力間の対戦シミュレーションを実行するヘルパー関数
- */
-const runSimulation = (faction1: Faction, faction2: Faction): SimulationResult => {
-  const results = {
-    wins1: 0,
-    wins2: 0,
-    draws: 0,
-    totalTurns: 0,
-  };
+// --- ヘルパー関数 ---
+const runSimulation = (
+  scenario: string,
+  faction1: Faction, deck1: Card[], tactics1: TacticsType,
+  faction2: Faction, deck2: Card[], tactics2: TacticsType,
+  count: number
+): SimulationResult => {
+  const results = { wins1: 0, wins2: 0, draws: 0, totalTurns: 0 };
 
-  for (let i = 0; i < SIMULATION_COUNT; i++) {
+  for (let i = 0; i < count; i++) {
     const finalState = executeFullGame(
-      `sim-${faction1}-vs-${faction2}-${i}`,
-      FACTION_CARDS[faction1],
-      FACTION_CARDS[faction2],
-      faction1,
-      faction2,
-      'balanced',
-      'balanced',
-      `test-seed-sim-${faction1}-${faction2}-${i}`
+      `sim-${scenario}-${i}`,
+      deck1, deck2,
+      faction1, faction2,
+      tactics1, tactics2,
+      `seed-${scenario}-${i}`
     );
-
-    if (finalState.result?.winner === 'player1') {
-      results.wins1++;
-    } else if (finalState.result?.winner === 'player2') {
-      results.wins2++;
-    } else {
-      results.draws++;
-    }
+    if (finalState.result?.winner === 'player1') results.wins1++;
+    else if (finalState.result?.winner === 'player2') results.wins2++;
+    else results.draws++;
     results.totalTurns += finalState.turnNumber;
   }
   
   return {
-    faction1,
-    faction2,
+    scenario, faction1, faction2,
+    deck1Name: deck1.length === FACTION_CARDS[faction1].length ? 'スターター' : 'サンプル',
+    deck2Name: deck2.length === FACTION_CARDS[faction2].length ? 'スターター' : 'サンプル',
+    tactics1, tactics2,
     ...results,
-    averageTurns: results.totalTurns / SIMULATION_COUNT,
+    averageTurns: results.totalTurns / count,
   };
 };
 
+// --- テストスイート ---
 describe('AI自動対戦シミュレーター', () => {
-  // 全勢力の総当たり戦を実行
-  for (let i = 0; i < ALL_FACTIONS.length; i++) {
-    for (let j = i + 1; j < ALL_FACTIONS.length; j++) {
-      const faction1 = ALL_FACTIONS[i];
-      const faction2 = ALL_FACTIONS[j];
+  
+  describe('スイートA: スターターデッキ総当たり戦', () => {
+    for (let i = 0; i < ALL_FACTIONS.length; i++) {
+      for (let j = i + 1; j < ALL_FACTIONS.length; j++) {
+        const faction1 = ALL_FACTIONS[i];
+        const faction2 = ALL_FACTIONS[j];
 
-      test(`${faction1} vs ${faction2} のシミュレーション`, () => {
-        console.log(`\n=== Running simulation: ${faction1} vs ${faction2} (${SIMULATION_COUNT} games) ===`);
-        const result = runSimulation(faction1, faction2);
-        
-        const winRate1 = (result.wins1 / SIMULATION_COUNT) * 100;
-        const winRate2 = (result.wins2 / SIMULATION_COUNT) * 100;
-
-        console.log(`  ${result.faction1} Wins: ${result.wins1} (${winRate1.toFixed(2)}%)`);
-        console.log(`  ${result.faction2} Wins: ${result.wins2} (${winRate2.toFixed(2)}%)`);
-        console.log(`  Average Turns: ${result.averageTurns.toFixed(2)}`);
-
-        allResults.push(result);
-        expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
-      });
+        test(`${faction1} vs ${faction2}`, () => {
+          const result = runSimulation(
+            'starter-matchup',
+            faction1, FACTION_CARDS[faction1], 'balanced',
+            faction2, FACTION_CARDS[faction2], 'balanced',
+            SIMULATION_COUNT
+          );
+          allResults.push(result);
+          expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
+        });
+      }
     }
-  }
+  });
+
+  describe('スイートB: サンプルデッキ総当たり戦', () => {
+    const decks = sampleDecks.map(d => ({
+      ...d,
+      cards: d.cardIds.map(id => getCardById(id)).filter((c): c is Card => !!c)
+    }));
+
+    for (let i = 0; i < decks.length; i++) {
+      for (let j = i + 1; j < decks.length; j++) {
+        const deck1 = decks[i];
+        const deck2 = decks[j];
+
+        test(`${deck1.name} vs ${deck2.name}`, () => {
+          const result = runSimulation(
+            'sample-deck-matchup',
+            deck1.faction, deck1.cards, 'balanced',
+            deck2.faction, deck2.cards, 'balanced',
+            SIMULATION_COUNT
+          );
+          allResults.push(result);
+          expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
+        });
+      }
+    }
+  });
+
+  describe('スイートC: 戦術相性テスト (死霊術師ミラー)', () => {
+    const faction = 'necromancer';
+    const deck = FACTION_CARDS[faction];
+
+    for (let i = 0; i < ALL_TACTICS.length; i++) {
+      for (let j = i + 1; j < ALL_TACTICS.length; j++) {
+        const tactics1 = ALL_TACTICS[i];
+        const tactics2 = ALL_TACTICS[j];
+
+        test(`${tactics1} vs ${tactics2}`, () => {
+          const result = runSimulation(
+            'tactics-matchup',
+            faction, deck, tactics1,
+            faction, deck, tactics2,
+            SIMULATION_COUNT
+          );
+          allResults.push(result);
+          expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
+        });
+      }
+    }
+  });
 });
 
+// --- レポート生成 ---
 afterAll(() => {
   console.log('\n\n--- All Simulations Complete ---');
   
@@ -106,7 +154,6 @@ afterAll(() => {
   
   const report = {
     simulationDate: new Date().toISOString(),
-    simulationCountPerMatchup: SIMULATION_COUNT,
     results: allResults,
   };
 

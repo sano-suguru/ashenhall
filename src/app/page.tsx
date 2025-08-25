@@ -10,6 +10,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { Faction, TacticsType, GameState, LocalStats, Card } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
@@ -151,7 +152,16 @@ export default function Home() {
   // ゲーム状態に応じて表示を切り替え
   switch (appState) {
     case 'setup':
-      return <GameSetup onGameStart={handleGameStart} stats={localStats} />;
+      return (
+        <div className="relative min-h-screen">
+          <GameSetup onGameStart={handleGameStart} stats={localStats} />
+          <div className="absolute top-4 right-4">
+            <Link href="/stats" className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+              戦績を見る
+            </Link>
+          </div>
+        </div>
+      );
     
     case 'playing':
     case 'finished':

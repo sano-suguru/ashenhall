@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { GameState } from '@/types/game';
+import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
 import { GAME_CONSTANTS } from '@/types/game';
 import BattleLogModal from './BattleLogModal';
 import { reconstructStateAtSequence } from '@/lib/game-state-utils';
@@ -81,6 +82,14 @@ export default function GameBoard({
     setIsPlaying(false);
     setShowDetailedLog(false);
   };
+
+  useEffect(() => {
+    if (gameState.result) {
+      const currentStats = loadStats();
+      const updatedStats = updateStatsWithGameResult(currentStats, gameState);
+      saveStats(updatedStats);
+    }
+  }, [gameState]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
