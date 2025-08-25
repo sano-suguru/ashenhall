@@ -378,35 +378,6 @@ export const berserkerCards: Card[] = [
     flavor: '追い詰められた獣こそ、最も牙を剥く。',
   },
   {
-    id: 'ber_blood_awakening',
-    name: '血の覚醒',
-    type: 'spell',
-    faction: 'berserker',
-    cost: 2,
-    keywords: [],
-    effects: [
-      {
-        trigger: 'on_play',
-        target: 'player',
-        action: 'damage',
-        value: 3,
-      },
-      {
-        trigger: 'on_play',
-        target: 'ally_random',
-        action: 'buff_attack',
-        value: 3,
-      },
-      {
-        trigger: 'on_play',
-        target: 'ally_random',
-        action: 'buff_health',
-        value: 3,
-      },
-    ],
-    flavor: '痛みこそが我らを研ぎ澄ます。傷なき戦士に栄光はない。',
-  },
-  {
     id: 'ber_thorn_orc',
     name: '棘の鎧のオーク',
     type: 'creature',
@@ -446,7 +417,7 @@ export const berserkerCards: Card[] = [
     flavor: '死の淵こそ我が故郷。貴様も故郷に還りたくなったか？',
   },
   {
-    id: 'ber_blood_awakening_spell',
+    id: 'ber_blood_awakening',
     name: '血の覚醒',
     type: 'spell',
     faction: 'berserker',
@@ -1126,12 +1097,12 @@ export const inquisitorCards: Card[] = [
   },
   {
     id: 'inq_truth_extractor',
-    name: '真実を暴く者',
+    name: '思考検閲官',
     type: 'creature',
     faction: 'inquisitor',
     cost: 3,
     attack: 2,
-    health: 3,
+    health: 2,
     keywords: [],
     effects: [
       {

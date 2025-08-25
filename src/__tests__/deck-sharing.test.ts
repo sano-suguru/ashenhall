@@ -2,6 +2,16 @@ import { encodeDeck, decodeDeck } from '@/lib/deck-sharing';
 import type { CustomDeck } from '@/types/game';
 
 describe('Deck Sharing Utilities (v2)', () => {
+  let errorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    errorSpy.mockRestore();
+  });
+
   const sampleDeck: Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'> = {
     faction: 'necromancer',
     coreCardIds: ['necro_lich'],
