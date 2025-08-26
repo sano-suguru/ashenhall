@@ -15,7 +15,7 @@ describe('card-text-utils', () => {
     it.each(allEffects)(
       'カード「$card.name」の効果 ($effect.trigger, $effect.action) がエラーなくテキストに変換されること',
       ({ card, effect }) => {
-        const text = getEffectText(effect, card.type);
+        const text = getEffectText(effect, card.type, card.id);
         
         // 未定義の文字列が含まれていないことを確認
         expect(text).not.toContain('[未定義トリガー');
@@ -96,7 +96,7 @@ describe('card-text-utils', () => {
         const resurrectEffect = card!.effects.find(e => e.action === 'resurrect');
         expect(resurrectEffect).toBeDefined();
         const text = getEffectText(resurrectEffect!, card!.type);
-        expect(text).toBe('墓地のカード数が5以上の場合、召喚時: あなたの墓地からコスト2以下のクリーチャーを1体戦場に戻す。');
+        expect(text).toBe('墓地のカード数が4以上の場合、召喚時: あなたの墓地からコスト1以下のクリーチャーを1体戦場に戻す。');
       });
 
       it('《団結の誓い》の味方数条件が正しく表示されること', () => {

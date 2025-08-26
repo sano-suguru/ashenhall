@@ -79,16 +79,30 @@ export function executeResurrectEffect(
       );
     }
   } else {
-    // 通常の蘇生
+    // 通常の蘇生 - valueの数だけ蘇生処理
     const resurrectTargets = sourcePlayer.graveyard.filter(
       (c) => c.type === "creature"
     );
-    const chosen = random.choice(resurrectTargets);
-    if (chosen) {
+    
+    const chosenIds: string[] = [];
+    for (let i = 0; i < value && i < resurrectTargets.length; i++) {
+      // 既に選択済みのカードを除外してランダム選択
+      const availableTargets = resurrectTargets.filter(
+        target => !chosenIds.includes(target.id)
+      );
+      if (availableTargets.length === 0) break;
+      
+      const chosen = random.choice(availableTargets);
+      if (chosen) {
+        chosenIds.push(chosen.id);
+      }
+    }
+    
+    if (chosenIds.length > 0) {
       applyResurrect(
         state,
         sourcePlayerId,
-        [chosen.id],
+        chosenIds,
         sourceCard.id,
         random
       );

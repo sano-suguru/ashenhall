@@ -246,7 +246,7 @@ function checkEffectCondition(
 }
 
 /**
- * カードの全効果を実行（条件判定を事前に行う）
+ * カードの全効果を実行
  */
 export function executeAllCardEffects(
   state: GameState,
@@ -259,13 +259,8 @@ export function executeAllCardEffects(
       (effect) => effect.trigger === trigger
     );
 
-    // すべての効果の条件を事前にチェック
-    const validEffects = effectsToExecute.filter((effect) =>
-      checkEffectCondition(state, sourcePlayerId, effect.condition)
-    );
-
-    // 有効な効果を順番に実行
-    validEffects.forEach((effect) => {
+    // 効果を順番に実行（条件判定は各効果で行う）
+    effectsToExecute.forEach((effect) => {
       executeCardEffect(state, effect, sourceCard, sourcePlayerId);
     });
   } catch (error) {
@@ -283,6 +278,11 @@ export function executeCardEffect(
   sourcePlayerId: PlayerId
 ): void {
   try {
+    // 0. 条件判定を最初に実行
+    if (!checkEffectCondition(state, sourcePlayerId, effect.condition)) {
+      return; // 条件を満たさない場合は効果を実行しない
+    }
+
     const random = new SeededRandom(
       state.randomSeed + state.turnNumber + sourceCard.id
     );
@@ -346,9 +346,7 @@ const processCardsEffects = (
   cards.forEach((card) => {
     if (card.isSilenced) return;
     const effectsToExecute = card.effects.filter(
-      (effect) =>
-        effect.trigger === trigger &&
-        checkEffectCondition(state, playerId, effect.condition)
+      (effect) => effect.trigger === trigger
     );
     effectsToExecute.forEach((effect) => {
       executeCardEffect(state, effect, card, playerId);

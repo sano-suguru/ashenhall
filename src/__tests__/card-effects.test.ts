@@ -2087,5 +2087,62 @@ describe('Judgment Angel System', () => {
       // 自軍の背水の狂戦士のhasAttackedフラグがfalseになっていない（効果が発動していない）ことを確認
       expect(gameState.players.player1.field[0].hasAttacked).toBe(true);
     });
+
+    test('《囁きの書庫番》墓地条件テスト', () => {
+      const gameState = createTestGameState();
+      const librarian = necromancerCards.find(c => c.id === 'necro_librarian')!;
+      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+      
+      // 墓地に10枚配置
+      for (let i = 0; i < 10; i++) {
+        gameState.players.player1.graveyard.push(skeleton);
+      }
+      
+      const initialHandSize = gameState.players.player1.hand.length;
+      const initialGraveyardSize = gameState.players.player1.graveyard.length;
+      
+      // 蘇生効果テスト（墓地4枚以上で1体蘇生）
+      const resurrectEffect = librarian.effects.find(e => e.action === 'resurrect')!;
+      executeCardEffect(gameState, resurrectEffect, librarian, 'player1');
+      
+      // フィールドに1体蘇生されたことを確認
+      expect(gameState.players.player1.field.length).toBe(1);
+      expect(gameState.players.player1.graveyard.length).toBe(initialGraveyardSize - 1);
+      
+      // ドロー効果テスト（墓地8枚以上で1枚ドロー）
+      const drawEffect = librarian.effects.find(e => e.action === 'draw_card')!;
+      executeCardEffect(gameState, drawEffect, librarian, 'player1');
+      
+      // 手札に1枚ドローされたことを確認
+      expect(gameState.players.player1.hand.length).toBe(initialHandSize + 1);
+    });
+
+    test('《囁きの書庫番》墓地条件不足テスト', () => {
+      const gameState = createTestGameState();
+      const librarian = necromancerCards.find(c => c.id === 'necro_librarian')!;
+      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+      
+      // 墓地に3枚のみ配置（条件不足）
+      for (let i = 0; i < 3; i++) {
+        gameState.players.player1.graveyard.push(skeleton);
+      }
+      
+      const initialHandSize = gameState.players.player1.hand.length;
+      const initialFieldSize = gameState.players.player1.field.length;
+      
+      // 蘇生効果テスト（墓地5枚未満なので発動しない）
+      const resurrectEffect = librarian.effects.find(e => e.action === 'resurrect')!;
+      executeCardEffect(gameState, resurrectEffect, librarian, 'player1');
+      
+      // フィールドに変化がないことを確認
+      expect(gameState.players.player1.field.length).toBe(initialFieldSize);
+      
+      // ドロー効果テスト（墓地10枚未満なので発動しない）
+      const drawEffect = librarian.effects.find(e => e.action === 'draw_card')!;
+      executeCardEffect(gameState, drawEffect, librarian, 'player1');
+      
+      // 手札に変化がないことを確認
+      expect(gameState.players.player1.hand.length).toBe(initialHandSize);
+    });
   });
 });

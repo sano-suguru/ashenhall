@@ -225,11 +225,11 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
     
-    // Should resurrect one creature
-    expect(state.players[p1].field.length).toBe(2); 
+    // Should resurrect one creature (墓地4枚以上で1体蘇生)
+    expect(state.players[p1].field.length).toBe(2); // librarian + resurrected
     expect(state.players[p1].hand.length).toBe(0);
 
-    state.players[p1].graveyard = [skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton]; // 10 cards
+    state.players[p1].graveyard = [skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton, skeleton]; // 9 cards 
     state.players[p1].hand = [librarian];
     state.players[p1].energy = 3;
     state.players[p1].field = [];
@@ -237,9 +237,9 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
     
-    // Should resurrect and draw 2 cards
-    expect(state.players[p1].field.length).toBe(2);
-    expect(state.players[p1].hand.length).toBe(2);
+    // Should resurrect 1 creature and draw 1 card (墓地8枚以上で追加ドロー)
+    expect(state.players[p1].field.length).toBe(2); // librarian + resurrected
+    expect(state.players[p1].hand.length).toBe(1); // drew 1 card
   });
 
   test('Formation mechanic should trigger effects based on ally count', () => {

@@ -47,7 +47,7 @@ describe('CardComponent', () => {
     }
 
     // モック関数がカードの効果オブジェクトと共に呼び出されたか検証
-    expect(mockedGetEffectText).toHaveBeenCalledWith(testCard.effects[0], testCard.type);
+    expect(mockedGetEffectText).toHaveBeenCalledWith(testCard.effects[0], testCard.type, testCard.id);
     
     // モックの返り値が画面に表示されているか検証
     const effectText = await screen.findByText('モックされた効果テキスト');

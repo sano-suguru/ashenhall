@@ -1,5 +1,49 @@
 import type { Card, CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
 
+/**
+ * specialHandlerを持つカードの専用テキスト定義
+ */
+const SPECIAL_HANDLER_TEXTS: Record<string, string> = {
+  'judgment_angel_execution': '召喚時: 烙印を持つ敵をすべて破壊し、烙印を持たない敵からランダムに1体を破壊する。',
+  'pyre_conditional_destroy': 'ランダムな敵1体に3ダメージを与える。対象が烙印を持つ場合、代わりに破壊する。',
+};
+
+/**
+ * 動的効果値を持つカードの専用テキスト定義
+ * カードIDをキーとして、そのカードの正しい効果テキストを定義
+ */
+const DYNAMIC_EFFECT_TEXTS: Record<string, string> = {
+  // 味方クリーチャー数依存
+  'kni_sanctuary_prayer': '使用時: 味方全体を味方クリーチャー数分回復する。',
+  
+  // 墓地枚数依存
+  'necro_soul_vortex': '使用時: 墓地の枚数分だけ1/1の骸骨トークンを召喚する。',
+  'necro_grave_giant': '召喚時: 墓地のクリーチャー数分、自身の攻撃力を+Xする。',
+  
+  // 烙印持ち敵数依存
+  'inq_collective_confession': '使用時: 相手プレイヤーを2+烙印を持つ敵の数分回復する。',
+  
+  // 他の味方数依存（パッシブ効果）
+  'kni_galleon': '常時: 他の味方クリーチャー数分、自身の攻撃力を+Xする。',
+};
+
+/**
+ * 特別な効果テキストを取得
+ */
+function getSpecialEffectText(cardId: string, specialHandler?: string): string | null {
+  // specialHandlerがある場合は最優先
+  if (specialHandler && SPECIAL_HANDLER_TEXTS[specialHandler]) {
+    return SPECIAL_HANDLER_TEXTS[specialHandler];
+  }
+  
+  // 動的効果値テキストをチェック
+  if (DYNAMIC_EFFECT_TEXTS[cardId]) {
+    return DYNAMIC_EFFECT_TEXTS[cardId];
+  }
+  
+  return null;
+}
+
 const getTargetText = (target: CardEffect['target']): string => {
   const targetMap: { [key: string]: string } = {
     self: '自身',
@@ -86,7 +130,17 @@ const getConditionText = (condition: EffectCondition): string => {
   return `${subjectText}が${valueText}${operatorText}の場合、`;
 };
 
-export const getEffectText = (effect: CardEffect, cardType: 'creature' | 'spell'): string => {
+export const getEffectText = (
+  effect: CardEffect, 
+  cardType: 'creature' | 'spell',
+  cardId?: string
+): string => {
+  // 特別な効果テキストがある場合はそれを優先
+  const specialText = getSpecialEffectText(cardId || '', effect.specialHandler);
+  if (specialText) {
+    return specialText;
+  }
+
   const triggerMap: { [key: string]: string } = {
     on_play: cardType === 'creature' ? '召喚時' : '使用時',
     on_death: '死亡時',
