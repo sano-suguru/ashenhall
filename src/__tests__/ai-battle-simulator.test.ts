@@ -142,8 +142,6 @@ describe('AI自動対戦シミュレーター', () => {
 
 // --- レポート生成 ---
 afterAll(() => {
-  console.log('\n\n--- All Simulations Complete ---');
-  
   const reportDir = path.resolve(__dirname, '../../simulation_reports');
   if (!fs.existsSync(reportDir)) {
     fs.mkdirSync(reportDir);
@@ -159,7 +157,4 @@ afterAll(() => {
 
   const reportPath = path.resolve(reportDir, filename);
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-
-  console.log(`Simulation report saved to: ${reportPath}`);
-  console.log('================================');
 });
