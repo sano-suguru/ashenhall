@@ -1,4 +1,4 @@
-import type { Card, CardEffect, EffectAction } from '@/types/game';
+import type { Card, CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
 
 const getTargetText = (target: CardEffect['target']): string => {
   const targetMap: { [key: string]: string } = {
@@ -35,6 +35,57 @@ const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> 
   deck_search: (e) => `デッキから条件に合うカードを1枚手札に加える。`,
 };
 
+/**
+ * 効果の発動条件をテキストに変換
+ */
+const getConditionText = (condition: EffectCondition): string => {
+  const subjectMap: Record<ConditionSubject, string> = {
+    graveyard: '墓地のカード数',
+    allyCount: '味方クリーチャー数',
+    playerLife: 'あなたのライフ',
+    opponentLife: '相手のライフ',
+    brandedEnemyCount: '烙印を刻まれた敵の数',
+    hasBrandedEnemy: '烙印を刻まれた敵',
+  };
+
+  const operatorMap: Record<ConditionOperator, string> = {
+    gte: '以上',
+    lte: '以下',
+    lt: '未満',
+    gt: 'より多い',
+    eq: 'である',
+  };
+
+  const subjectText = subjectMap[condition.subject] || condition.subject;
+  const operatorText = operatorMap[condition.operator] || condition.operator;
+
+  // 特殊ケースの処理
+  if (condition.subject === 'hasBrandedEnemy') {
+    if (condition.operator === 'eq' && condition.value === 1) {
+      return '烙印を刻まれた敵がいる場合、';
+    } else if (condition.operator === 'eq' && condition.value === 0) {
+      return '烙印を刻まれた敵がいない場合、';
+    }
+  }
+
+  if (condition.subject === 'playerLife' && condition.value === 'opponentLife') {
+    if (condition.operator === 'lt') {
+      return '相手よりライフが少ない場合、';
+    } else if (condition.operator === 'gt') {
+      return '相手よりライフが多い場合、';
+    } else if (condition.operator === 'eq') {
+      return '相手とライフが同じ場合、';
+    }
+  }
+
+  // 通常の数値比較
+  const valueText = typeof condition.value === 'number' 
+    ? condition.value.toString()
+    : '相手のライフ';
+
+  return `${subjectText}が${valueText}${operatorText}の場合、`;
+};
+
 export const getEffectText = (effect: CardEffect, cardType: 'creature' | 'spell'): string => {
   const triggerMap: { [key: string]: string } = {
     on_play: cardType === 'creature' ? '召喚時' : '使用時',
@@ -54,6 +105,12 @@ export const getEffectText = (effect: CardEffect, cardType: 'creature' | 'spell'
   const effectDescription = generator
     ? generator(effect)
     : `[未定義アクション: ${effect.action}]`;
+
+  // 条件がある場合は条件テキストを追加
+  if (effect.condition) {
+    const conditionText = getConditionText(effect.condition);
+    return `${conditionText}${triggerText}: ${effectDescription}`;
+  }
 
   return `${triggerText}: ${effectDescription}`;
 };
