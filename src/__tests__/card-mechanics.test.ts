@@ -294,14 +294,14 @@ describe('Card Mechanics Tests', () => {
     expect(state.players[p1].graveyard.length).toBe(0);
   });
 
-  test('Health debuff should destroy a creature if its health drops to 0 or below', () => {
-    const purifier = inquisitorCards.find(c => c.id === 'inq_purifier')!;
+  test('Attack debuff should reduce creature attack power', () => {
+    const sinBurden = inquisitorCards.find(c => c.id === 'inq_sin_burden')!;
     const bloodWarrior = berserkerCards.find(c => c.id === 'ber_berserker')! as CreatureCard;
     const bomber = berserkerCards.find(c => c.id === 'ber_bomber')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
-    state.players[p1].hand = [purifier];
-    state.players[p1].energy = 2;
+    state.players[p1].hand = [sinBurden];
+    state.players[p1].energy = 1;
     state.players[p2].field = [
       { ...bloodWarrior, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false },
       { ...bomber, owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 1, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }
@@ -312,12 +312,10 @@ describe('Card Mechanics Tests', () => {
     state = processGameStep(state);
 
     const opponentField = state.players[p2].field;
-    const opponentGraveyard = state.players[p2].graveyard;
 
-    expect(opponentField.length).toBe(1);
-    expect(opponentField[0].id).toBe('ber_bomber');
-    expect(opponentField[0].currentHealth).toBe(1);
-    expect(opponentGraveyard.length).toBe(1);
-    expect(opponentGraveyard[0].id).toBe('ber_berserker');
+    expect(opponentField.length).toBe(2);
+    // One creature should have attack debuff applied
+    const debuffedCreatures = opponentField.filter((c: FieldCard) => c.attackModifier === -1);
+    expect(debuffedCreatures.length).toBe(1);
   });
 });

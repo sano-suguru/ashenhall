@@ -168,3 +168,40 @@ export function executeDestroyAllCreaturesEffect(
     valueChanges
   );
 }
+
+/**
+ * 消滅効果の処理（墓地を経由しない除去）
+ */
+export function executeBanishEffect(
+  state: GameState,
+  targets: FieldCard[],
+  sourceCardId: string
+): void {
+  const valueChanges: Record<string, ValueChange> = {};
+  
+  targets.forEach((target) => {
+    const ownerId = target.owner;
+    const player = state.players[ownerId];
+    
+    // 場から除去（handleCreatureDeathは使わない - 死亡時効果を発動させない）
+    const cardIndex = player.field.findIndex(c => c.id === target.id);
+    if (cardIndex !== -1) {
+      const [removedCard] = player.field.splice(cardIndex, 1);
+      // 墓地でなく消滅領域へ送る
+      player.banishedCards.push(removedCard);
+      valueChanges[target.id] = { health: createValueChange(target.currentHealth, 0) };
+    }
+  });
+
+  // 場の位置を再インデックス
+  state.players.player1.field.forEach((c, i) => (c.position = i));
+  state.players.player2.field.forEach((c, i) => (c.position = i));
+
+  addEffectTriggerAction(
+    state,
+    sourceCardId,
+    "banish",
+    1,
+    valueChanges
+  );
+}

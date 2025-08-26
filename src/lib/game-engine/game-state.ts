@@ -57,6 +57,7 @@ export function createInitialGameState(
       hand: initialHand,
       field: [],
       graveyard: [],
+      banishedCards: [],
     };
   };
 

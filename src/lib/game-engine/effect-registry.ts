@@ -37,13 +37,21 @@ import {
   executeReadyEffect,
   executeStunEffect,
   executeDrawCardEffect,
+  executeApplyBrandEffect,
+  executeDeckSearchEffect,
 } from "./effects/status-effects";
 import {
   executeDestroyDeckTopEffect,
   executeSwapAttackHealthEffect,
   executeHandDiscardEffect,
   executeDestroyAllCreaturesEffect,
+  executeBanishEffect,
 } from "./effects/special-effects";
+import {
+  getBrandedCreatureCount,
+  getBrandedEnemies,
+  selectRandomBrandedEnemy,
+} from "./brand-utils";
 
 /**
  * 全ての効果ハンドラが従うべき関数シグネチャ
@@ -105,6 +113,65 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
   },
   'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => 
     executeDestroyAllCreaturesEffect(state, sourceCard.id),
+  'apply_brand': (state, _e, sourceCard, _sp, _r, targets, _v) => 
+    executeApplyBrandEffect(state, targets, sourceCard.id),
+  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => {
+    if (sourceCard.id === "inq_divine_punisher") {
+      // 《神罰の執行者》の特殊ロジック: 烙印を持つ敵のみ対象
+      const brandedTarget = selectRandomBrandedEnemy(state, sourcePlayerId, random);
+      if (brandedTarget) {
+        executeBanishEffect(state, [brandedTarget], sourceCard.id);
+      }
+    } else {
+      executeBanishEffect(state, targets, sourceCard.id);
+    }
+  },
+  'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => 
+    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.targetFilter, random),
+};
+
+/**
+ * 特殊効果ハンドラー - カード固有の複雑なロジック
+ */
+export const specialEffectHandlers: Record<string, EffectHandler> = {
+  'pyre_conditional_destroy': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
+    // 《火刑》の特殊ロジック: 烙印持ちなら破壊、そうでなければ3ダメージ
+    if (targets.length === 0) return;
+    
+    const target = targets[0];
+    const hasBrand = target.statusEffects.some(se => se.type === 'branded');
+    
+    if (hasBrand) {
+      // 烙印を持つ場合は確実に破壊
+      executeDamageEffect(state, [target], null, 99, sourceCard.id, sourceCard, random);
+    } else {
+      // 烙印を持たない場合は通常の3ダメージ
+      executeDamageEffect(state, [target], null, 3, sourceCard.id, sourceCard, random);
+    }
+  },
+  'judgment_angel_execution': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
+    // 《審判の天使》の特殊ロジック
+    const opponentId = getOpponentId(sourcePlayerId);
+    const opponent = state.players[opponentId];
+    
+    // 1. 烙印持ちの敵をすべて破壊
+    const brandedEnemies = getBrandedEnemies(state, sourcePlayerId);
+    if (brandedEnemies.length > 0) {
+      executeDamageEffect(state, brandedEnemies, null, 99, sourceCard.id, sourceCard, random);
+    }
+    
+    // 2. 烙印を持たない敵からランダムに1体を破壊
+    const nonBrandedEnemies = opponent.field.filter(
+      enemy => !enemy.statusEffects.some(se => se.type === 'branded') && enemy.currentHealth > 0
+    );
+    
+    if (nonBrandedEnemies.length > 0) {
+      const randomEnemy = random.choice(nonBrandedEnemies);
+      if (randomEnemy) {
+        executeDamageEffect(state, [randomEnemy], null, 99, sourceCard.id, sourceCard, random);
+      }
+    }
+  },
 };
 
 /**
@@ -156,6 +223,18 @@ export function resolveDynamicEffectParameters(
   ) {
     // 不動の聖壁、ガレオン: 他の味方の数を効果値とする
     value = sourcePlayer.field.filter((c) => c.id !== sourceCard.id).length;
+  }
+
+  // --- 烙印関連カードの動的効果値解決 ---
+  if (
+    sourceCard.id === "inq_collective_confession" &&
+    effect.action === "heal"
+  ) {
+    // 集団懺悔: 基本回復2 + 烙印を持つ敵の数
+    const opponentId = getOpponentId(sourcePlayerId);
+    const opponent = state.players[opponentId];
+    const brandedCount = getBrandedCreatureCount(opponent.field);
+    value = 2 + brandedCount;
   }
 
   return { value, targets };

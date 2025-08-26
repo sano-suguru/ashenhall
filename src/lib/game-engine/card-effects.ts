@@ -30,8 +30,14 @@ import {
 } from "./action-logger";
 import {
   effectHandlers,
+  specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
+import {
+  getBrandedCreatureCount,
+  getBrandedEnemies,
+  hasAnyBrandedEnemy,
+} from "./brand-utils";
 
 /**
  * 効果ログを追加（既存コードとの互換性を保つ）
@@ -115,7 +121,7 @@ function selectTargets(
       return [...sourcePlayer.field].filter((card) => card.currentHealth > 0);
 
     case "enemy_all":
-      return [...opponent.field].filter((card) => card.currentHealth > 0);
+      return [...opponent.field].filter((card) => card.currentHealth > 0 && !card.keywords.includes('untargetable'));
 
     case "ally_random":
       const allyTargets = sourcePlayer.field.filter(
@@ -126,7 +132,7 @@ function selectTargets(
 
     case "enemy_random":
       const enemyTargets = opponent.field.filter(
-        (card) => card.currentHealth > 0
+        (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
       );
       const randomEnemy = random.choice(enemyTargets);
       return randomEnemy ? [randomEnemy] : [];
@@ -210,6 +216,12 @@ function checkEffectCondition(
     case "opponentLife":
       subjectValue = opponent.life;
       break;
+    case "brandedEnemyCount":
+      subjectValue = getBrandedCreatureCount(opponent.field);
+      break;
+    case "hasBrandedEnemy":
+      subjectValue = hasAnyBrandedEnemy(state, sourcePlayerId) ? 1 : 0;
+      break;
     default:
       return true; // 不明な subject は true
   }
@@ -243,6 +255,11 @@ export function executeCardEffect(
   sourcePlayerId: PlayerId
 ): void {
   try {
+    // 0. 効果発動条件をチェック
+    if (!checkEffectCondition(state, sourcePlayerId, effect.condition)) {
+      return; // 条件を満たさない場合は効果を実行しない
+    }
+
     const random = new SeededRandom(
       state.randomSeed + state.turnNumber + sourceCard.id
     );
@@ -273,9 +290,16 @@ export function executeCardEffect(
     );
 
     // 3. 効果ハンドラを取得して実行
-    const handler = effectHandlers[effect.action];
-    if (handler) {
-      handler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
+    if (effect.specialHandler && specialEffectHandlers[effect.specialHandler]) {
+      // 特殊効果ハンドラーがある場合はそちらを実行
+      const specialHandler = specialEffectHandlers[effect.specialHandler];
+      specialHandler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
+    } else {
+      // 通常の効果ハンドラーを実行
+      const handler = effectHandlers[effect.action];
+      if (handler) {
+        handler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
+      }
     }
   } catch (error) {
     console.error(`Error executing card effect:`, error);

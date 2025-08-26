@@ -8,6 +8,7 @@ import { describe, test, expect } from '@jest/globals';
 import { executeCardEffect, processEffectTrigger, applyPassiveEffects } from '@/lib/game-engine/card-effects';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
+import { hasBrandedStatus, getBrandedCreatureCount, hasAnyBrandedEnemy } from '@/lib/game-engine/brand-utils';
 import type { GameState, FieldCard, Card, CardEffect, CreatureCard } from '@/types/game';
 
 describe('カード効果システム', () => {
@@ -280,8 +281,1341 @@ describe('カード効果システム', () => {
       // 手札が1枚増加していることを確認
       expect(gameState.players.player1.hand.length).toBe(initialHandSize + 1);
       expect(gameState.players.player1.deck.length).toBe(initialDeckSize - 1);
-    });
   });
+});
+
+describe('Brand System', () => {
+  test('apply_brand effect adds branded status to target', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場にクリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'necro_skeleton',
+      name: '骸骨剣士',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    // 《罪の重圧》カードの烙印効果をテスト
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_sin_burden',
+      name: '罪の重圧',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      keywords: [],
+      effects: [brandEffect],
+    };
+    
+    // 烙印効果を実行
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 敵クリーチャーに烙印が付与されたことを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+    
+    // アクションログに記録されていることを確認
+    const brandAction = gameState.actionLog.find(action => 
+      action.type === 'effect_trigger' && 
+      action.data.effectType === 'apply_brand'
+    );
+    expect(brandAction).toBeDefined();
+  });
+
+  test('duplicate brand application has no effect', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場にクリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'necro_skeleton',
+      name: '骸骨剣士',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_sin_burden',
+      name: '罪の重圧',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      keywords: [],
+      effects: [brandEffect],
+    };
+    
+    // 最初の烙印付与
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 烙印が付与されたことを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+    
+    // 2回目の烙印付与試行
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 烙印が重複していないことを確認（まだ1つだけ）
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+  });
+
+  test('branded status persists across turns', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場にクリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'necro_skeleton',
+      name: '骸骨剣士',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_sin_burden',
+      name: '罪の重圧',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      keywords: [],
+      effects: [brandEffect],
+    };
+    
+    // 烙印を付与
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 烙印が付与されたことを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+    
+    // ターンを進める（毒やスタンとは異なり、烙印は持続ターン数が減らない）
+    gameState.turnNumber += 1;
+    
+    // 烙印がまだ残っていることを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+  });
+});
+
+describe('Brand Condition System', () => {
+  test('《集団懺悔》 dynamic healing based on branded enemy count', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に複数クリーチャーを配置
+    const enemy1 = createTestFieldCard({
+      id: 'enemy1',
+      name: 'エネミー1',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'enemy2',
+      name: 'エネミー2', 
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2);
+    
+    // 敵2体に烙印を付与
+    enemy1.statusEffects.push({ type: 'branded' });
+    enemy2.statusEffects.push({ type: 'branded' });
+    
+    // プレイヤー1のライフを減らしておく
+    gameState.players.player1.life = 10;
+    
+    // 《集団懺悔》の効果をテスト
+    const healEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'player',
+      action: 'heal',
+      value: 2, // 動的に解決される
+    };
+    
+    const sourceCard = {
+      id: 'inq_collective_confession',
+      name: '集団懺悔',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 2,
+      keywords: [],
+      effects: [healEffect],
+    };
+    
+    // 効果を実行
+    executeCardEffect(gameState, healEffect, sourceCard, 'player1');
+    
+    // 基本回復2 + 烙印敵2体 = 4回復されていることを確認
+    expect(gameState.players.player1.life).toBe(14); // 10 + 4 = 14
+  });
+
+  test('《信仰の鎖》 conditional draw based on branded enemy', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場にクリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'necro_skeleton',
+      name: '骸骨剣士',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    // 敵に烙印を付与
+    enemyCreature.statusEffects.push({ type: 'branded' });
+    
+    const initialHandSize = gameState.players.player1.hand.length;
+    
+    // 《信仰の鎖》の条件付きドロー効果をテスト
+    const drawEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'self',
+      action: 'draw_card',
+      value: 1,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+    };
+    
+    const sourceCard = {
+      id: 'inq_chain_of_faith',
+      name: '信仰の鎖',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 2,
+      keywords: [],
+      effects: [drawEffect],
+    };
+    
+    // 効果を実行
+    executeCardEffect(gameState, drawEffect, sourceCard, 'player1');
+    
+    // 烙印を持つ敵がいるので、ドローが発動し手札が1枚増加
+    expect(gameState.players.player1.hand.length).toBe(initialHandSize + 1);
+  });
+
+  test('《信仰の鎖》 no draw when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場にクリーチャーを配置（烙印なし）
+    const enemyCreature = createTestFieldCard({
+      id: 'necro_skeleton',
+      name: '骸骨剣士',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    const initialHandSize = gameState.players.player1.hand.length;
+    
+    // 《信仰の鎖》の条件付きドロー効果をテスト
+    const drawEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'self',
+      action: 'draw_card',
+      value: 1,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+    };
+    
+    const sourceCard = {
+      id: 'inq_chain_of_faith',
+      name: '信仰の鎖',
+      type: 'spell' as const,
+      faction: 'inquisitor' as const,
+      cost: 2,
+      keywords: [],
+      effects: [drawEffect],
+    };
+    
+    // 効果を実行
+    executeCardEffect(gameState, drawEffect, sourceCard, 'player1');
+    
+    // 烙印を持つ敵がいないので、ドローが発動せず手札は変化なし
+    expect(gameState.players.player1.hand.length).toBe(initialHandSize);
+  });
+});
+
+describe('Brand Condition System', () => {
+  test('brand utility functions work correctly', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に複数クリーチャーを配置
+    const enemy1 = createTestFieldCard({
+      id: 'enemy1',
+      name: 'エネミー1',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'enemy2', 
+      name: 'エネミー2',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2);
+    
+    // 1体だけに烙印を付与
+    enemy1.statusEffects.push({ type: 'branded' });
+    
+    // 個別判定テスト
+    expect(hasBrandedStatus(enemy1)).toBe(true);
+    expect(hasBrandedStatus(enemy2)).toBe(false);
+    
+    // カウント機能テスト  
+    expect(getBrandedCreatureCount(gameState.players.player2.field)).toBe(1);
+    
+    // 存在確認テスト
+    expect(hasAnyBrandedEnemy(gameState, 'player1')).toBe(true);
+  });
+});
+
+describe('Banish System', () => {
+  test('《神罰の執行者》 banishes branded enemy without triggering death effects', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に烙印を持つクリーチャーを配置
+    const brandedEnemy = createTestFieldCard({
+      id: 'branded_target',
+      name: '烙印付きクリーチャー',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 2,
+      attack: 2,
+      health: 2,
+      keywords: [],
+      effects: [
+        {
+          trigger: 'on_death',
+          target: 'ally_all',
+          action: 'buff_attack',
+          value: 2, // 死亡時効果
+        },
+      ],
+    }, 'player2');
+    brandedEnemy.statusEffects.push({ type: 'branded' });
+    gameState.players.player2.field.push(brandedEnemy);
+    
+    // 他の敵クリーチャーも配置（死亡時効果の確認用）
+    const otherEnemy = createTestFieldCard({
+      id: 'other_enemy',
+      name: '他の敵',
+      type: 'creature',
+      faction: 'necromancer',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(otherEnemy);
+    
+    const initialFieldSize = gameState.players.player2.field.length;
+    const initialGraveyardSize = gameState.players.player2.graveyard.length;
+    const initialBanishedSize = gameState.players.player2.banishedCards.length;
+    
+    // 《神罰の執行者》の消滅効果をテスト
+    const banishEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'self',
+      action: 'banish',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_divine_punisher',
+      name: '神罰の執行者',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 3,
+      attack: 3,
+      health: 3,
+      keywords: [],
+      effects: [banishEffect],
+    };
+    
+    // 消滅効果を実行
+    executeCardEffect(gameState, banishEffect, sourceCard, 'player1');
+    
+    // 烙印を持つ敵が場から消えたことを確認
+    expect(gameState.players.player2.field.length).toBe(initialFieldSize - 1);
+    
+    // 墓地に送られていないことを確認
+    expect(gameState.players.player2.graveyard.length).toBe(initialGraveyardSize);
+    
+    // 消滅領域に送られたことを確認
+    expect(gameState.players.player2.banishedCards.length).toBe(initialBanishedSize + 1);
+    expect(gameState.players.player2.banishedCards[0].id).toBe('branded_target');
+    
+    // 他の敵クリーチャーの攻撃力が増加していないことを確認（死亡時効果が発動していない）
+    expect(otherEnemy.attackModifier).toBe(0);
+  });
+
+  test('banish effect logs properly', () => {
+    const gameState = createTestGameState();
+    
+    // 烙印を持つ敵クリーチャーを配置
+    const brandedEnemy = createTestFieldCard({
+      id: 'test_branded',
+      name: 'テスト烙印',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    brandedEnemy.statusEffects.push({ type: 'branded' });
+    gameState.players.player2.field.push(brandedEnemy);
+    
+    const banishEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'self',
+      action: 'banish',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_divine_punisher',
+      name: '神罰の執行者',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 3,
+      attack: 3,
+      health: 3,
+      keywords: [],
+      effects: [banishEffect],
+    };
+    
+    // 消滅効果を実行
+    executeCardEffect(gameState, banishEffect, sourceCard, 'player1');
+    
+    // アクションログに消滅効果が記録されていることを確認
+    const banishAction = gameState.actionLog.find(action => 
+      action.type === 'effect_trigger' && 
+      action.data.effectType === 'banish'
+    );
+    expect(banishAction).toBeDefined();
+  });
+
+  test('banish effect does nothing when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // 烙印を持たない敵クリーチャーを配置
+    const normalEnemy = createTestFieldCard({
+      id: 'normal_enemy',
+      name: '通常の敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(normalEnemy);
+    
+    const initialFieldSize = gameState.players.player2.field.length;
+    const initialBanishedSize = gameState.players.player2.banishedCards.length;
+    
+    const banishEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'self',
+      action: 'banish',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_divine_punisher',
+      name: '神罰の執行者',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 3,
+      attack: 3,
+      health: 3,
+      keywords: [],
+      effects: [banishEffect],
+    };
+    
+    // 消滅効果を実行
+    executeCardEffect(gameState, banishEffect, sourceCard, 'player1');
+    
+    // 烙印を持たない敵は消滅しないため、場の状態は変化なし
+    expect(gameState.players.player2.field.length).toBe(initialFieldSize);
+    expect(gameState.players.player2.banishedCards.length).toBe(initialBanishedSize);
+  });
+});
+
+describe('Sanctuary Guard', () => {
+  test('《聖域の見張り》 applies brand on summoning', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に敵クリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'target_enemy',
+      name: 'ターゲット敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    // 《聖域の見張り》の烙印付与効果をテスト
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'] as any,
+      effects: [brandEffect],
+    };
+    
+    // 烙印付与効果を実行
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 敵クリーチャーに烙印が付与されたことを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+  });
+
+  test('《聖域の見張り》 self-damage when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー1の場に《聖域の見張り》を配置
+    const sanctuaryGuard = createTestFieldCard({
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'],
+      effects: [
+        {
+          trigger: 'turn_end',
+          target: 'self',
+          action: 'damage',
+          value: 2,
+          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+        },
+      ],
+    }, 'player1');
+    gameState.players.player1.field.push(sanctuaryGuard);
+    
+    // プレイヤー2の場に烙印を持たない敵を配置
+    const normalEnemy = createTestFieldCard({
+      id: 'normal_enemy',
+      name: '通常の敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(normalEnemy);
+    
+    const initialHealth = sanctuaryGuard.currentHealth;
+    
+    // ターン終了時効果を発動（player1のターンとして）
+    gameState.currentPlayer = 'player1';
+    const selfDamageEffect: CardEffect = {
+      trigger: 'turn_end',
+      target: 'self',
+      action: 'damage',
+      value: 2,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+    };
+    
+    executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
+    
+    // 自傷ダメージが発動し、体力が2減少していることを確認
+    expect(sanctuaryGuard.currentHealth).toBe(initialHealth - 2); // 5 - 2 = 3
+  });
+
+  test('《聖域の見張り》 no self-damage when branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー1の場に《聖域の見張り》を配置
+    const sanctuaryGuard = createTestFieldCard({
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'],
+      effects: [
+        {
+          trigger: 'turn_end',
+          target: 'self',
+          action: 'damage',
+          value: 2,
+          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+        },
+      ],
+    }, 'player1');
+    gameState.players.player1.field.push(sanctuaryGuard);
+    
+    // プレイヤー2の場に烙印を持つ敵を配置
+    const brandedEnemy = createTestFieldCard({
+      id: 'branded_enemy',
+      name: '烙印付き敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    brandedEnemy.statusEffects.push({ type: 'branded' });
+    gameState.players.player2.field.push(brandedEnemy);
+    
+    const initialHealth = sanctuaryGuard.currentHealth;
+    
+    // ターン終了時効果を発動（player1のターンとして）
+    gameState.currentPlayer = 'player1';
+    const selfDamageEffect: CardEffect = {
+      trigger: 'turn_end',
+      target: 'self',
+      action: 'damage',
+      value: 2,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+    };
+    
+    executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
+    
+    // 烙印を持つ敵がいるため、条件を満たさず自傷ダメージは発動しない
+    expect(sanctuaryGuard.currentHealth).toBe(initialHealth); // 体力変化なし
+  });
+});
+
+describe('Sanctuary Guard System', () => {
+  test('《聖域の見張り》 applies brand on summoning', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に敵クリーチャーを配置
+    const enemyCreature = createTestFieldCard({
+      id: 'target_enemy',
+      name: 'ターゲット敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemyCreature);
+    
+    // 《聖域の見張り》の烙印付与効果をテスト
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'],
+      effects: [brandEffect],
+    };
+    
+    // 烙印付与効果を実行
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 敵クリーチャーに烙印が付与されたことを確認
+    expect(enemyCreature.statusEffects).toEqual([{ type: 'branded' }]);
+  });
+
+  test('《聖域の見張り》 self-damage when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー1の場に《聖域の見張り》を配置
+    const sanctuaryGuard = createTestFieldCard({
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'],
+      effects: [
+        {
+          trigger: 'turn_end',
+          target: 'self',
+          action: 'damage',
+          value: 2,
+          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+        },
+      ],
+    }, 'player1');
+    gameState.players.player1.field.push(sanctuaryGuard);
+    
+    // プレイヤー2の場に烙印を持たない敵を配置
+    const normalEnemy = createTestFieldCard({
+      id: 'normal_enemy',
+      name: '通常の敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(normalEnemy);
+    
+    const initialHealth = sanctuaryGuard.currentHealth;
+    
+    // ターン終了時効果を発動（player1のターンとして）
+    gameState.currentPlayer = 'player1';
+    const selfDamageEffect: CardEffect = {
+      trigger: 'turn_end',
+      target: 'self',
+      action: 'damage',
+      value: 2,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+    };
+    
+    executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
+    
+    // 自傷ダメージが発動し、体力が2減少していることを確認
+    expect(sanctuaryGuard.currentHealth).toBe(initialHealth - 2); // 5 - 2 = 3
+  });
+
+  test('《聖域の見張り》 no self-damage when branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー1の場に《聖域の見張り》を配置
+    const sanctuaryGuard = createTestFieldCard({
+      id: 'inq_sanctuary_guard',
+      name: '聖域の見張り',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 3,
+      attack: 2,
+      health: 5,
+      keywords: ['guard'],
+      effects: [
+        {
+          trigger: 'turn_end',
+          target: 'self',
+          action: 'damage',
+          value: 2,
+          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+        },
+      ],
+    }, 'player1');
+    gameState.players.player1.field.push(sanctuaryGuard);
+    
+    // プレイヤー2の場に烙印を持つ敵を配置
+    const brandedEnemy = createTestFieldCard({
+      id: 'branded_enemy',
+      name: '烙印付き敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    brandedEnemy.statusEffects.push({ type: 'branded' });
+    gameState.players.player2.field.push(brandedEnemy);
+    
+    const initialHealth = sanctuaryGuard.currentHealth;
+    
+    // ターン終了時効果を発動（player1のターンとして）
+    gameState.currentPlayer = 'player1';
+    const selfDamageEffect: CardEffect = {
+      trigger: 'turn_end',
+      target: 'self',
+      action: 'damage',
+      value: 2,
+      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+    };
+    
+    executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
+    
+    // 烙印を持つ敵がいるため、条件を満たさず自傷ダメージは発動しない
+    expect(sanctuaryGuard.currentHealth).toBe(initialHealth); // 体力変化なし
+  });
+});
+
+describe('Repentant Succubus System', () => {
+  test('《懺悔するサキュバス》 ally destruction and enemy branding', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー1の場に味方クリーチャーを配置（破壊対象）
+    const allyTarget = createTestFieldCard({
+      id: 'ally_to_destroy',
+      name: '破壊される味方',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 2,
+      attack: 2,
+      health: 2,
+      keywords: [],
+      effects: [],
+    }, 'player1');
+    gameState.players.player1.field.push(allyTarget);
+    
+    // プレイヤー2の場に複数敵クリーチャーを配置（烙印対象）
+    const enemy1 = createTestFieldCard({
+      id: 'enemy1',
+      name: 'エネミー1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'enemy2',
+      name: 'エネミー2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2);
+    
+    const initialAllyFieldSize = gameState.players.player1.field.length;
+    const initialGraveyardSize = gameState.players.player1.graveyard.length;
+    
+    // 《懺悔するサキュバス》の味方破壊効果をテスト
+    const allyDamageEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'ally_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [allyDamageEffect],
+    };
+    
+    // 味方破壊効果を実行
+    executeCardEffect(gameState, allyDamageEffect, sourceCard, 'player1');
+    
+    // 味方が場から取り除かれ、墓地に送られたことを確認
+    expect(gameState.players.player1.field.length).toBe(initialAllyFieldSize - 1);
+    expect(gameState.players.player1.graveyard.length).toBe(initialGraveyardSize + 1);
+    expect(gameState.players.player1.graveyard[0].id).toBe('ally_to_destroy');
+  });
+
+  test('《懺悔するサキュバス》 enemy branding effects', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に複数敵クリーチャーを配置
+    const enemy1 = createTestFieldCard({
+      id: 'brand_target1',
+      name: 'ブランド対象1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'brand_target2',
+      name: 'ブランド対象2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2);
+    
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    };
+    
+    // 烙印効果を2回実行（敵2体への烙印）
+    const brandEffect1: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    executeCardEffect(gameState, brandEffect1, sourceCard, 'player1');
+    executeCardEffect(gameState, brandEffect1, sourceCard, 'player1');
+    
+    // 敵クリーチャーのうち少なくとも1体に烙印が付与されていることを確認
+    const brandedCount = getBrandedCreatureCount(gameState.players.player2.field);
+    expect(brandedCount).toBeGreaterThanOrEqual(1);
+    
+    // 最大で2体に烙印が付与されていることを確認
+    expect(brandedCount).toBeLessThanOrEqual(2);
+  });
+
+  test('《懺悔するサキュバス》 no ally destruction when no allies exist', () => {
+    const gameState = createTestGameState();
+    
+    // 味方クリーチャーを配置しない（自身のみ）
+    // プレイヤー2の場に敵クリーチャーを配置
+    const enemy = createTestFieldCard({
+      id: 'target_enemy',
+      name: 'ターゲット敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy);
+    
+    const initialGraveyardSize = gameState.players.player1.graveyard.length;
+    
+    const allyDamageEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'ally_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [allyDamageEffect],
+    };
+    
+    // 味方破壊効果を実行（対象なし）
+    executeCardEffect(gameState, allyDamageEffect, sourceCard, 'player1');
+    
+    // 墓地に変化がないことを確認
+    expect(gameState.players.player1.graveyard.length).toBe(initialGraveyardSize);
+  });
+
+  test('《懺悔するサキュバス》 no branding when no enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // 味方クリーチャーを配置
+    const ally = createTestFieldCard({
+      id: 'existing_ally',
+      name: '既存味方',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player1');
+    gameState.players.player1.field.push(ally);
+    
+    // 敵クリーチャーは配置しない
+    
+    const brandEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'apply_brand',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [brandEffect],
+    };
+    
+    // 烙印効果を実行（対象なし）
+    executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
+    
+    // 敵がいないので烙印は付与されない（エラーも発生しない）
+    expect(gameState.players.player2.field.length).toBe(0);
+  });
+});
+
+describe('Judgment Angel System', () => {
+  test('《審判の天使》 destroys branded enemy and another enemy when branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に複数敵クリーチャーを配置
+    const brandedEnemy = createTestFieldCard({
+      id: 'branded_target',
+      name: '烙印対象',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 2,
+      attack: 2,
+      health: 2,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    brandedEnemy.statusEffects.push({ type: 'branded' });
+    
+    const normalEnemy1 = createTestFieldCard({
+      id: 'normal_enemy1',
+      name: '通常敵1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    
+    const normalEnemy2 = createTestFieldCard({
+      id: 'normal_enemy2',
+      name: '通常敵2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    
+    gameState.players.player2.field.push(brandedEnemy, normalEnemy1, normalEnemy2);
+    
+    const initialEnemyCount = gameState.players.player2.field.length;
+    const initialGraveyard = gameState.players.player2.graveyard.length;
+    
+    // 《審判の天使》の効果1（条件付き破壊）をテスト
+    const conditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+    };
+    
+    // 《審判の天使》の効果2（無条件破壊）をテスト
+    const unconditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_judgment_angel',
+      name: '審判の天使',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 5,
+      attack: 4,
+      health: 5,
+      keywords: [],
+      effects: [conditionalDamage, unconditionalDamage],
+    };
+    
+    // 第1効果実行（烙印敵破壊）
+    executeCardEffect(gameState, conditionalDamage, sourceCard, 'player1');
+    
+    // 第2効果実行（追加破壊）
+    executeCardEffect(gameState, unconditionalDamage, sourceCard, 'player1');
+    
+    // 合計2体が破壊され、場から取り除かれたことを確認
+    expect(gameState.players.player2.field.length).toBe(initialEnemyCount - 2);
+    expect(gameState.players.player2.graveyard.length).toBe(initialGraveyard + 2);
+  });
+
+  test('《審判の天使》 destroys only one enemy when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に烙印なし敵クリーチャーを配置
+    const normalEnemy1 = createTestFieldCard({
+      id: 'normal_target1',
+      name: '通常対象1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    
+    const normalEnemy2 = createTestFieldCard({
+      id: 'normal_target2',
+      name: '通常対象2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    
+    gameState.players.player2.field.push(normalEnemy1, normalEnemy2);
+    
+    const initialEnemyCount = gameState.players.player2.field.length;
+    const initialGraveyard = gameState.players.player2.graveyard.length;
+    
+    // 《審判の天使》の効果1（条件付き破壊）をテスト
+    const conditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+    };
+    
+    // 《審判の天使》の効果2（無条件破壊）をテスト
+    const unconditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_judgment_angel',
+      name: '審判の天使',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 5,
+      attack: 4,
+      health: 5,
+      keywords: [],
+      effects: [conditionalDamage, unconditionalDamage],
+    };
+    
+    // 第1効果実行（条件を満たさないため発動しない）
+    executeCardEffect(gameState, conditionalDamage, sourceCard, 'player1');
+    
+    // 第2効果実行（無条件破壊）
+    executeCardEffect(gameState, unconditionalDamage, sourceCard, 'player1');
+    
+    // 1体のみが破壊され、場から取り除かれたことを確認
+    expect(gameState.players.player2.field.length).toBe(initialEnemyCount - 1);
+    expect(gameState.players.player2.graveyard.length).toBe(initialGraveyard + 1);
+  });
+
+  test('《審判の天使》 handles edge case with single enemy', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に烙印つき敵1体のみ配置
+    const singleBrandedEnemy = createTestFieldCard({
+      id: 'single_branded',
+      name: '単独烙印敵',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 2,
+      attack: 2,
+      health: 2,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    singleBrandedEnemy.statusEffects.push({ type: 'branded' });
+    gameState.players.player2.field.push(singleBrandedEnemy);
+    
+    const initialEnemyCount = gameState.players.player2.field.length;
+    const initialGraveyard = gameState.players.player2.graveyard.length;
+    
+    const conditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+    };
+    
+    const unconditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_judgment_angel',
+      name: '審判の天使',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 5,
+      attack: 4,
+      health: 5,
+      keywords: [],
+      effects: [conditionalDamage, unconditionalDamage],
+    };
+    
+    // 第1効果実行（烙印敵破壊）
+    executeCardEffect(gameState, conditionalDamage, sourceCard, 'player1');
+    
+    // 第2効果実行（敵がいない場合は何もしない）
+    executeCardEffect(gameState, unconditionalDamage, sourceCard, 'player1');
+    
+    // 1体が破壊され、2回目は対象なしで正常処理
+    expect(gameState.players.player2.field.length).toBe(0);
+    expect(gameState.players.player2.graveyard.length).toBe(initialGraveyard + 1);
+  });
+
+  test('《審判の天使》 does nothing when no enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // 敵クリーチャーを配置しない
+    
+    const initialEnemyCount = gameState.players.player2.field.length;
+    const initialGraveyard = gameState.players.player2.graveyard.length;
+    
+    const conditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+    };
+    
+    const unconditionalDamage: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'damage',
+      value: 99,
+    };
+    
+    const sourceCard = {
+      id: 'inq_judgment_angel',
+      name: '審判の天使',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 5,
+      attack: 4,
+      health: 5,
+      keywords: [],
+      effects: [conditionalDamage, unconditionalDamage],
+    };
+    
+    // 両効果実行（どちらも対象なしで正常処理）
+    executeCardEffect(gameState, conditionalDamage, sourceCard, 'player1');
+    executeCardEffect(gameState, unconditionalDamage, sourceCard, 'player1');
+    
+    // 変化なしで正常処理
+    expect(gameState.players.player2.field.length).toBe(0);
+    expect(gameState.players.player2.graveyard.length).toBe(initialGraveyard);
+  });
+});
 
   describe('効果発動タイミング', () => {
     test('on_play効果が配置時に発動する', () => {

@@ -30,6 +30,9 @@ const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> 
   ready: () => `このターン、もう一度だけ攻撃できる。`,
   guard: (e) => `${getTargetText(e.target)}に守護を付与する。`,
   destroy_all_creatures: () => '全てのクリーチャーを破壊する。',
+  apply_brand: (e) => `${getTargetText(e.target)}に烙印を刻む。`,
+  banish: (e) => `${getTargetText(e.target)}を消滅させる。`,
+  deck_search: (e) => `デッキから条件に合うカードを1枚手札に加える。`,
 };
 
 export const getEffectText = (effect: CardEffect, cardType: 'creature' | 'spell'): string => {
@@ -65,4 +68,5 @@ export const KEYWORD_DEFINITIONS: Record<string, { name: string; description: st
   formation: { name: '連携', description: 'あなたの場にいる味方クリーチャーの数を参照する' },
   rush: { name: '速攻', description: '召喚されたターンに攻撃できる' },
   trample: { name: '貫通', description: 'ブロックしたクリーチャーの体力を超えたダメージを敵プレイヤーに与える' },
+  untargetable: { name: '対象不可', description: '相手のスペルや効果の対象にならない' },
 };
