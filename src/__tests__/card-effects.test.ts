@@ -10,6 +10,7 @@ import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
 import { hasBrandedStatus, getBrandedCreatureCount, hasAnyBrandedEnemy } from '@/lib/game-engine/brand-utils';
 import type { GameState, FieldCard, Card, CardEffect, CreatureCard } from '@/types/game';
+import type { Keyword } from '@/types/effects';
 
 describe('カード効果システム', () => {
   // テスト用のゲーム状態を作成
@@ -839,7 +840,7 @@ describe('Sanctuary Guard', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'] as any,
+      keywords: ['guard'] as Keyword[],
       effects: [brandEffect],
     };
     
@@ -862,7 +863,7 @@ describe('Sanctuary Guard', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'],
+      keywords: ['guard'] as Keyword[],
       effects: [
         {
           trigger: 'turn_end',

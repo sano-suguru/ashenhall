@@ -19,6 +19,9 @@ import {
   FileX,
   Flame,
   RotateCw,
+  Target,
+  X,
+  Search,
 } from 'lucide-react';
 
 // 勢力ごとの色設定
@@ -84,6 +87,9 @@ export const EFFECT_ICONS = {
   hand_discard: FileX,
   destroy_all_creatures: Flame,
   ready: RotateCw,
+  apply_brand: Target,
+  banish: X,
+  deck_search: Search,
 } as const;
 
 // サイズ設定

@@ -11,6 +11,7 @@ const KEYWORD_NAMES: Record<Keyword, string> = {
   formation: "連携",
   rush: "速攻",
   trample: "貫通",
+  untargetable: "対象不可",
 };
 
 export function formatKeywordTriggerLog(action: GameAction, playerName: string): LogDisplayParts {

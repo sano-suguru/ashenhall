@@ -19,6 +19,9 @@ const EFFECT_NAMES: Record<EffectAction, string> = {
   hand_discard: "手札破壊",
   destroy_all_creatures: "全体破壊",
   ready: "再攻撃可能",
+  apply_brand: "烙印付与",
+  banish: "消滅",
+  deck_search: "デッキサーチ",
 };
 
 export function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisplayParts {

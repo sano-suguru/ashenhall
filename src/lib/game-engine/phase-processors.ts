@@ -258,14 +258,16 @@ export function processEndPhase(state: GameState): void {
             poisonDeaths.push(card);
           }
         }
-        effect.duration -= 1;
+        if ('duration' in effect) {
+          effect.duration -= 1;
+        }
       });
 
       // 潜伏解除と状態異常のクリーンアップ
       card.isStealthed = false;
       card.hasAttacked = false;
       card.readiedThisTurn = false; // 再攻撃準備フラグをリセット
-      card.statusEffects = card.statusEffects.filter((e) => e.duration > 0);
+      card.statusEffects = card.statusEffects.filter((e) => !('duration' in e) || e.duration > 0);
     });
 
     // 毒による死亡処理

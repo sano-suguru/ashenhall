@@ -45,8 +45,9 @@ const WinRateBar = ({ winRate }: { winRate: number }) => {
   );
 };
 
-export default async function ReportDetailPage({ params }: { params: { filename: string } }) {
-  const reportPath = path.resolve(process.cwd(), 'simulation_reports', params.filename);
+export default async function ReportDetailPage({ params }: { params: Promise<{ filename: string }> }) {
+  const { filename } = await params;
+  const reportPath = path.resolve(process.cwd(), 'simulation_reports', filename);
 
   let reportData: ReportData;
   try {
@@ -88,7 +89,7 @@ export default async function ReportDetailPage({ params }: { params: { filename:
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
           <h1 className="text-5xl font-bold text-amber-300 font-serif">シミュレーションレポート詳細</h1>
-          <p className="text-gray-400 mt-2 font-mono">{params.filename}</p>
+          <p className="text-gray-400 mt-2 font-mono">{filename}</p>
         </header>
 
         {/* サマリー */}
