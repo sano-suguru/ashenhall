@@ -7,70 +7,50 @@
  * - 5勢力の非対称性を型レベルで表現
  */
 
-// === 基本型定義 ===
+// === 基本型の再エクスポート（後方互換性のため） ===
+export type {
+  PlayerId,
+  Faction,
+  TacticsType,
+  GamePhase,
+  CardType,
+  CardProperty
+} from './core';
 
-/** 勢力 - 5つの異なる戦術思想を表現 */
-export type Faction = 
-  | 'necromancer'  // 死霊術師: 墓地活用、大量展開、復活効果
-  | 'berserker'    // 戦狂い: 自己犠牲、爆発力、高リスク高リターン
-  | 'mage'         // 魔導士: 魔法効果、エレメンタル召喚、呪文増幅
-  | 'knight'       // 騎士: 連携効果、回復、集団戦術
-  | 'inquisitor';  // 審問官: 弱体化、除去、制圧戦術
+// === 効果システム型の再エクスポート（後方互換性のため） ===
+export type {
+  Keyword,
+  EffectTrigger,
+  EffectAction,
+  EffectTarget,
+  DynamicValueType,
+  ConditionSubject,
+  ConditionOperator,
+  StatusEffect
+} from './effects';
 
-/** 戦術タイプ - AI戦闘での判断基準 */
-export type TacticsType = 
-  | 'aggressive'   // 攻撃重視: 攻撃力の高いカードを優先
-  | 'defensive'    // 守備重視: 体力の高いカードを優先
-  | 'balanced'     // バランス: コスト効率を重視
-  | 'tempo';       // テンポ重視: 低コストカードを優先
+// === 型のインポート ===
+import type {
+  PlayerId,
+  Faction,
+  TacticsType,
+  GamePhase,
+  CardType,
+  CardProperty
+} from './core';
 
-/** ゲームフェーズ - ターン進行の各段階 */
-export type GamePhase = 
-  | 'draw'         // ドロー段階: カードドロー、手札上限チェック
-  | 'energy'       // エネルギー段階: エネルギー増加
-  | 'deploy'       // 配置段階: カードの自動配置（AI判断）
-  | 'battle'       // 戦闘段階: クリーチャー同士の戦闘
-  | 'end';         // 終了段階: ターン終了効果、勝利判定
-
-/** プレイヤー識別子 */
-export type PlayerId = 'player1' | 'player2';
+import type {
+  Keyword,
+  EffectTrigger,
+  EffectAction,
+  EffectTarget,
+  DynamicValueType,
+  ConditionSubject,
+  ConditionOperator,
+  StatusEffect
+} from './effects';
 
 // === カード関連型定義 ===
-
-/** カードのキーワード能力 */
-export type Keyword =
-  | 'guard'      // 守護: このクリーチャーがいる限り、他の味方は攻撃されない
-  | 'lifesteal'  // 生命奪取: 与えたダメージ分プレイヤーを回復
-  | 'stealth'    // 潜伏: 1ターンの間、対象にならない
-  | 'poison'     // 毒: ダメージを与えた敵に継続ダメージ
-  | 'retaliate' // 反撃: 攻撃された時に反撃ダメージ
-  | 'echo' // 残響: 墓地のカード枚数を参照
-  | 'formation' // 連携: 味方クリーチャーの数を参照
-  | 'rush' // 速攻: 召喚ターンに攻撃可能
-  | 'trample' // 貫通: ブロッカーの体力を超えたダメージをプレイヤーに与える
-  | 'untargetable'; // 対象不可: 相手のスペルや効果の対象にならない
-
-/** カード効果の発動タイミング */
-export type EffectTrigger =
-  | 'on_play'      // 場に出た時
-  | 'on_death'     // 死亡時
-  | 'turn_start'   // ターン開始時
-  | 'turn_end'     // ターン終了時
-  | 'passive'      // 常時効果
-  | 'on_ally_death' // 味方が死亡した時
-  | 'on_damage_taken' // ダメージを受けた時
-  | 'on_attack'   // 攻撃する時
-  | 'on_spell_play'; // 呪文をプレイした時
-
-/** 動的値計算の種類 */
-export type DynamicValueType = 
-  | 'static'           // 固定値
-  | 'graveyard_creatures' // 墓地のクリーチャー数
-  | 'field_allies'     // 場の味方数
-  | 'field_enemies'    // 場の敵数
-  | 'life_difference'  // ライフ差（自分-相手）
-  | 'hand_size'        // 手札数
-  | 'deck_size';       // デッキ数
 
 /** 動的値計算設定 */
 export interface DynamicValue {
@@ -96,56 +76,17 @@ export interface TargetFilter {
   has_faction?: Faction;     // 指定勢力所持（デッキサーチ用）
 }
 
-/** カード効果の対象選択（拡張版） */
-export type EffectTarget = 
-  | 'self'         // 自分自身
-  | 'ally_all'     // 味方全体
-  | 'enemy_all'    // 敵全体
-  | 'ally_random'  // 味方ランダム1体
-  | 'enemy_random' // 敵ランダム1体
-  | 'player';      // プレイヤー直接
-
 /** 拡張対象選択（フィルター機能付き） */
 export interface EnhancedEffectTarget {
   base: EffectTarget;
   filters?: TargetFilter;
 }
 
-/** カード効果のアクション */
-export type EffectAction =
-  | 'damage'       // ダメージ
-  | 'heal'         // 回復
-  | 'buff_attack'  // 攻撃力強化
-  | 'buff_health'  // 体力強化
-  | 'debuff_attack'// 攻撃力弱体化
-  | 'debuff_health'// 体力弱体化
-  | 'summon'       // トークン召喚
-  | 'draw_card'    // カードドロー
-  | 'resurrect'    // 蘇生
-  | 'silence'      // 沈黙
-  | 'guard'       // 守護付与
-  | 'stun'         // スタン（行動不能）
-  | 'destroy_deck_top' // デッキトップ破壊
-  | 'swap_attack_health' // 攻撃力と体力を入れ替え
-  | 'hand_discard' // 手札破壊
-  | 'destroy_all_creatures' // 全クリーチャー破壊
-  | 'ready'        // 再攻撃準備: 攻撃済み状態を解除する
-  | 'apply_brand'  // 烙印付与
-  | 'banish'       // 消滅（墓地を経由しない除去）
-  | 'deck_search'; // デッキサーチ
-
-/** カード効果の条件 */
-export type ConditionSubject = 'graveyard' | 'allyCount' | 'playerLife' | 'opponentLife' | 'brandedEnemyCount' | 'hasBrandedEnemy';
-export type ConditionOperator = 'gte' | 'lte' | 'lt' | 'gt' | 'eq';
-
 export interface EffectCondition {
   subject: ConditionSubject;
   operator: ConditionOperator;
   value: number | 'opponentLife';
 }
-
-/** カード効果 */
-export type CardProperty = 'type' | 'cost' | 'attack' | 'health' | 'faction';
 
 /** 特殊効果ハンドラーの型 */
 export type SpecialEffectHandler = (
@@ -179,8 +120,6 @@ export interface CardEffect {
   specialHandler?: string;
 }
 
-/** カード種別 */
-export type CardType = 'creature' | 'spell';
 
 /** 全カード共通の基本情報 */
 export interface BaseCard {
@@ -208,24 +147,6 @@ export interface SpellCard extends BaseCard {
 /** カード情報（クリーチャーまたはスペル） */
 export type Card = CreatureCard | SpellCard;
 
-/** 継続的な状態異常 */
-export type StatusEffect = 
-  | {
-    type: 'poison';
-    /** 効果の持続ターン数 */
-    duration: number;
-    /** ターンごとのダメージ量 */
-    damage: number;
-  }
-  | {
-    type: 'stun';
-    /** 効果の持続ターン数 */
-    duration: number;
-  }
-  | {
-    type: 'branded';
-    /** 永続効果のため持続時間なし */
-  };
 
 /** 場のクリーチャーカード（戦闘中の状態を含む） */
 export interface FieldCard extends CreatureCard {
