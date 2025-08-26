@@ -12,9 +12,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import type { Card, FieldCard } from '@/types/game';
+import type { Card } from '@/types/game';
 import { FACTION_COLORS, SIZE_CLASSES } from '@/lib/card-constants';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
+import { useCardState } from '@/hooks/useCardState';
+import { getCardContainerClasses } from '@/lib/card-style-utils';
 import { CardTooltip } from './CardTooltip';
 import { CardHeader } from './parts/CardHeader';
 import { CardArt } from './parts/CardArt';
@@ -39,7 +41,6 @@ export default function CardComponent({
   size = 'medium',
   className = '',
 }: CardComponentProps) {
-  const fieldCard = isFieldCard ? card as FieldCard : null;
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
   
@@ -50,23 +51,20 @@ export default function CardComponent({
     handleMouseEnter, 
     handleMouseLeave 
   } = useCardTooltip();
+  
+  const { fieldCard, isDamaged, isEnhanced } = useCardState(card, isFieldCard);
   const [isMounted, setIsMounted] = useState(false);
-
-  const isDamaged = fieldCard ? fieldCard.currentHealth < (card.type === 'creature' ? card.health : 0) + (fieldCard.healthModifier || 0) : false;
-  const isEnhanced = fieldCard ? (fieldCard.attackModifier !== 0 || fieldCard.healthModifier !== 0) : false;
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const cardContainerClasses = `
-    w-full h-full rounded-lg border-2 ${factionStyle.border}
-    bg-gradient-to-b ${factionStyle.bg} text-white shadow-lg
-    transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl
-    ${isDamaged ? 'ring-2 ring-red-500' : ''}
-    ${isEnhanced ? 'ring-2 ring-green-500' : ''}
-    ${isOpponent ? 'opacity-90' : 'opacity-100'}
-  `;
+  const cardContainerClasses = getCardContainerClasses({
+    factionStyle,
+    isDamaged,
+    isEnhanced,
+    isOpponent,
+  });
 
   return (
     <div
