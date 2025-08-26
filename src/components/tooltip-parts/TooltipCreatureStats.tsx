@@ -4,6 +4,8 @@ import React from 'react';
 import type { Card, FieldCard } from '@/types/game';
 import { FACTION_ICONS } from '@/lib/card-constants';
 import { Sword, Heart } from 'lucide-react';
+import { useCreatureStatsData } from '@/hooks/useCreatureStatsData';
+import { ModifierText } from './ModifierText';
 
 interface TooltipCreatureStatsProps {
   card: Card;
@@ -54,40 +56,40 @@ const FieldStatusDisplay = ({ fieldCard }: { fieldCard: FieldCard }) => (
 );
 
 export const TooltipCreatureStats = ({ card, isFieldCard, fieldCard }: TooltipCreatureStatsProps) => {
-  if (card.type !== 'creature') {
+  const statsData = useCreatureStatsData(card, isFieldCard, fieldCard);
+  
+  if (!statsData) {
     return null;
   }
-
-  const attackValue = isFieldCard && fieldCard ? card.attack + fieldCard.attackModifier : card.attack;
-  const healthValue = isFieldCard && fieldCard ? `${fieldCard.currentHealth}/${card.health + fieldCard.healthModifier}` : card.health;
-
-  const attackModifierText = isFieldCard && fieldCard && fieldCard.attackModifier !== 0 && (
-    <span className="text-green-400 text-sm ml-1">
-      ({fieldCard.attackModifier > 0 ? '+' : ''}{fieldCard.attackModifier})
-    </span>
-  );
-
-  const healthModifierText = isFieldCard && fieldCard && fieldCard.healthModifier !== 0 && (
-    <span className="text-green-400 text-xs ml-1">
-      ({fieldCard.healthModifier > 0 ? '+' : ''}{fieldCard.healthModifier})
-    </span>
-  );
-
+  
   return (
     <div className="grid grid-cols-3 gap-3 mb-2">
       <StatDisplay 
         title="攻撃力" 
-        value={<>{attackValue}{attackModifierText}</>} 
+        value={
+          <>
+            {statsData.attackValue}
+            <ModifierText modifier={statsData.attackModifier} size="sm" />
+          </>
+        } 
         icon={Sword} 
         colorClass="text-orange-300" 
       />
       <StatDisplay 
         title="体力" 
-        value={<>{healthValue}{healthModifierText}</>} 
+        value={
+          <>
+            {statsData.healthValue}
+            <ModifierText modifier={statsData.healthModifier} size="xs" />
+          </>
+        } 
         icon={Heart} 
         colorClass="text-red-300" 
       />
-      {isFieldCard && fieldCard ? <FieldStatusDisplay fieldCard={fieldCard} /> : <FactionDisplay card={card} />}
+      {isFieldCard && fieldCard ? 
+        <FieldStatusDisplay fieldCard={fieldCard} /> : 
+        <FactionDisplay card={card} />
+      }
     </div>
   );
 };
