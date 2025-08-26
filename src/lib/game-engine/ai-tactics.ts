@@ -7,7 +7,7 @@
  * - テスト容易な純粋関数として実装
  */
 
-import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from '@/types/game';
+import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType, EffectTarget } from '@/types/game';
 import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS } from '@/types/game';
 import { SeededRandom } from './seeded-random';
 
@@ -100,13 +100,85 @@ export const calculateFactionBonus = (card: Card, gameState: GameState, playerId
 };
 
 /**
- * カード配置の評価（リファクタリング版）
+ * カード効果が有効な対象を見つけられるかチェック
+ * @param card チェック対象のカード
+ * @param gameState 現在のゲーム状態
+ * @param playerId カードをプレイするプレイヤー
+ * @returns 有効な対象が存在する場合true
+ */
+export function canEffectFindValidTargets(
+  card: Card,
+  gameState: GameState,
+  playerId: PlayerId
+): boolean {
+  // クリーチャーカードは常に配置可能
+  if (card.type === 'creature') {
+    return true;
+  }
+
+  // 効果を持たないスペルは常にプレイ可能
+  if (card.effects.length === 0) {
+    return true;
+  }
+
+  const sourcePlayer = gameState.players[playerId];
+  const opponentId: PlayerId = playerId === 'player1' ? 'player2' : 'player1';
+  const opponent = gameState.players[opponentId];
+
+  // 各効果について対象の存在をチェック
+  for (const effect of card.effects) {
+    const target = effect.target;
+    
+    switch (target) {
+      case 'self':
+      case 'player':
+        // 自分自身またはプレイヤー対象は常に有効
+        continue;
+
+      case 'ally_all':
+      case 'ally_random':
+        // 味方に有効な対象がいるかチェック
+        const validAllies = sourcePlayer.field.filter(
+          ally => ally.currentHealth > 0
+        );
+        if (validAllies.length === 0) {
+          return false;
+        }
+        break;
+
+      case 'enemy_all':
+      case 'enemy_random':
+        // 敵に有効な対象がいるかチェック（untargetableを除外）
+        const validEnemies = opponent.field.filter(
+          enemy => enemy.currentHealth > 0 && !enemy.keywords.includes('untargetable')
+        );
+        if (validEnemies.length === 0) {
+          return false;
+        }
+        break;
+
+      default:
+        // 不明な対象タイプは有効とみなす
+        continue;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * カード配置の評価（無駄撃ち防止版）
  * @param card 評価対象のカード
  * @param gameState 現在のゲーム状態
  * @param playerId AIプレイヤーのID
  * @returns カードの評価スコア
  */
 export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: PlayerId): number {
+  // 無駄撃ち防止: 対象が存在しない場合は大幅ペナルティ
+  if (!canEffectFindValidTargets(card, gameState, playerId)) {
+    return -1000; // 大幅なペナルティを適用
+  }
+
   const baseScore = calculateBaseScore(card, gameState, playerId);
   const factionBonus = calculateFactionBonus(card, gameState, playerId);
   return baseScore + factionBonus;
