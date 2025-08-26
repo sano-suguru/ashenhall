@@ -1,4 +1,4 @@
-import type { Card, CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
+import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
 
 /**
  * specialHandlerを持つカードの専用テキスト定義
@@ -76,13 +76,44 @@ const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> 
   destroy_all_creatures: () => '全てのクリーチャーを破壊する。',
   apply_brand: (e) => `${getTargetText(e.target)}に烙印を刻む。`,
   banish: (e) => `${getTargetText(e.target)}を消滅させる。`,
-  deck_search: (e) => `デッキから条件に合うカードを1枚手札に加える。`,
+  deck_search: () => `デッキから条件に合うカードを1枚手札に加える。`,
 };
 
 /**
- * 効果の発動条件をテキストに変換
+ * 烙印関連の特殊ケース処理
  */
-const getConditionText = (condition: EffectCondition): string => {
+const formatBrandedEnemyCondition = (condition: EffectCondition): string | null => {
+  if (condition.subject !== 'hasBrandedEnemy' || condition.operator !== 'eq') {
+    return null;
+  }
+  return condition.value === 1 
+    ? '烙印を刻まれた敵がいる場合、'
+    : '烙印を刻まれた敵がいない場合、';
+};
+
+/**
+ * プレイヤーライフ比較の特殊ケース処理
+ */
+const formatLifeComparisonCondition = (condition: EffectCondition): string | null => {
+  if (condition.subject !== 'playerLife' || condition.value !== 'opponentLife') {
+    return null;
+  }
+  
+  const comparisonMap: Record<ConditionOperator, string> = {
+    lt: '相手よりライフが少ない場合、',
+    gt: '相手よりライフが多い場合、', 
+    eq: '相手とライフが同じ場合、',
+    gte: '相手以上のライフの場合、',
+    lte: '相手以下のライフの場合、',
+  };
+  
+  return comparisonMap[condition.operator] || null;
+};
+
+/**
+ * 通常の数値比較処理
+ */
+const formatNumericCondition = (condition: EffectCondition): string => {
   const subjectMap: Record<ConditionSubject, string> = {
     graveyard: '墓地のカード数',
     allyCount: '味方クリーチャー数',
@@ -102,32 +133,27 @@ const getConditionText = (condition: EffectCondition): string => {
 
   const subjectText = subjectMap[condition.subject] || condition.subject;
   const operatorText = operatorMap[condition.operator] || condition.operator;
-
-  // 特殊ケースの処理
-  if (condition.subject === 'hasBrandedEnemy') {
-    if (condition.operator === 'eq' && condition.value === 1) {
-      return '烙印を刻まれた敵がいる場合、';
-    } else if (condition.operator === 'eq' && condition.value === 0) {
-      return '烙印を刻まれた敵がいない場合、';
-    }
-  }
-
-  if (condition.subject === 'playerLife' && condition.value === 'opponentLife') {
-    if (condition.operator === 'lt') {
-      return '相手よりライフが少ない場合、';
-    } else if (condition.operator === 'gt') {
-      return '相手よりライフが多い場合、';
-    } else if (condition.operator === 'eq') {
-      return '相手とライフが同じ場合、';
-    }
-  }
-
-  // 通常の数値比較
   const valueText = typeof condition.value === 'number' 
     ? condition.value.toString()
     : '相手のライフ';
 
   return `${subjectText}が${valueText}${operatorText}の場合、`;
+};
+
+/**
+ * 効果の発動条件をテキストに変換
+ */
+const getConditionText = (condition: EffectCondition): string => {
+  // 特殊ケース1: hasBrandedEnemy処理
+  const brandedResult = formatBrandedEnemyCondition(condition);
+  if (brandedResult) return brandedResult;
+  
+  // 特殊ケース2: ライフ比較処理  
+  const lifeComparisonResult = formatLifeComparisonCondition(condition);
+  if (lifeComparisonResult) return lifeComparisonResult;
+  
+  // 標準ケース: 数値比較処理
+  return formatNumericCondition(condition);
 };
 
 export const getEffectText = (
