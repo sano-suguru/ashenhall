@@ -920,7 +920,7 @@ describe('Sanctuary Guard', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'],
+      keywords: ['guard'] as Keyword[],
       effects: [
         {
           trigger: 'turn_end',
@@ -1001,7 +1001,7 @@ describe('Sanctuary Guard System', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'],
+      keywords: ['guard'] as Keyword[],
       effects: [brandEffect],
     };
     
@@ -1024,7 +1024,7 @@ describe('Sanctuary Guard System', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'],
+      keywords: ['guard'] as Keyword[],
       effects: [
         {
           trigger: 'turn_end',
@@ -1081,7 +1081,7 @@ describe('Sanctuary Guard System', () => {
       cost: 3,
       attack: 2,
       health: 5,
-      keywords: ['guard'],
+      keywords: ['guard'] as Keyword[],
       effects: [
         {
           trigger: 'turn_end',
