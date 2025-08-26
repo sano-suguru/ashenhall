@@ -14,12 +14,8 @@ import type {
   CardEffect,
   PlayerId,
   EffectAction,
-  EffectTarget,
-  GameAction,
   ValueChange,
-  TriggerEventActionData,
   EffectTrigger,
-  CreatureDestroyedActionData,
 } from "@/types/game";
 
 import { SeededRandom } from "./seeded-random";
@@ -33,11 +29,9 @@ import {
   specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
-import {
-  getBrandedCreatureCount,
-  getBrandedEnemies,
-  hasAnyBrandedEnemy,
-} from "./brand-utils";
+import { getBrandedEnemies } from "./brand-utils";
+import { selectTargets } from "./core/target-selector";
+import { checkEffectCondition } from "./core/condition-checker";
 
 /**
  * 効果ログを追加（既存コードとの互換性を保つ）
@@ -98,53 +92,6 @@ export function handleCreatureDeath(
   player.field.forEach((c, i) => (c.position = i));
 }
 
-/**
- * 対象選択ロジック
- */
-function selectTargets(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  targetType: EffectTarget,
-  random: SeededRandom
-): FieldCard[] {
-  const sourcePlayer = state.players[sourcePlayerId];
-  const opponentId: PlayerId =
-    sourcePlayerId === "player1" ? "player2" : "player1";
-  const opponent = state.players[opponentId];
-
-  switch (targetType) {
-    case "self":
-      // 効果発動者自身は特別処理が必要（場にいない可能性）
-      return [];
-
-    case "ally_all":
-      return [...sourcePlayer.field].filter((card) => card.currentHealth > 0);
-
-    case "enemy_all":
-      return [...opponent.field].filter((card) => card.currentHealth > 0 && !card.keywords.includes('untargetable'));
-
-    case "ally_random":
-      const allyTargets = sourcePlayer.field.filter(
-        (card) => card.currentHealth > 0
-      );
-      const randomAlly = random.choice(allyTargets);
-      return randomAlly ? [randomAlly] : [];
-
-    case "enemy_random":
-      const enemyTargets = opponent.field.filter(
-        (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
-      );
-      const randomEnemy = random.choice(enemyTargets);
-      return randomEnemy ? [randomEnemy] : [];
-
-    case "player":
-      // プレイヤー対象は別処理
-      return [];
-
-    default:
-      return [];
-  }
-}
 
 /**
  * ダメージ効果の処理
@@ -185,65 +132,6 @@ function applyDamage(
 
 
 
-/**
- * 効果の発動条件を判定する
- */
-function checkEffectCondition(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  condition: import("@/types/game").EffectCondition | undefined
-): boolean {
-  if (!condition) {
-    return true; // 条件がなければ常にtrue
-  }
-
-  const player = state.players[sourcePlayerId];
-  const opponent =
-    state.players[sourcePlayerId === "player1" ? "player2" : "player1"];
-
-  let subjectValue: number;
-
-  switch (condition.subject) {
-    case "graveyard":
-      subjectValue = player.graveyard.length;
-      break;
-    case "allyCount":
-      subjectValue = player.field.length;
-      break;
-    case "playerLife":
-      subjectValue = player.life;
-      break;
-    case "opponentLife":
-      subjectValue = opponent.life;
-      break;
-    case "brandedEnemyCount":
-      subjectValue = getBrandedCreatureCount(opponent.field);
-      break;
-    case "hasBrandedEnemy":
-      subjectValue = hasAnyBrandedEnemy(state, sourcePlayerId) ? 1 : 0;
-      break;
-    default:
-      return true; // 不明な subject は true
-  }
-
-  const compareValue =
-    condition.value === "opponentLife" ? opponent.life : condition.value;
-
-  switch (condition.operator) {
-    case "gte":
-      return subjectValue >= compareValue;
-    case "lte":
-      return subjectValue <= compareValue;
-    case "lt":
-      return subjectValue < compareValue;
-    case "gt":
-      return subjectValue > compareValue;
-    case "eq":
-      return subjectValue === compareValue;
-    default:
-      return true; // 不明な operator は true
-  }
-}
 
 /**
  * カードの全効果を実行
