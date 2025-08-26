@@ -1,0 +1,337 @@
+/**
+ * 審問官カード - 弱体化と除去
+ * 
+ * 設計方針:
+ * - 烙印システムによる対象マーキング
+ * - 沈黙・気絶による無力化
+ * - 条件付き強力効果による戦略性
+ */
+
+import type { Card } from '@/types/game';
+
+/** 審問官カード - 弱体化と除去 */
+export const inquisitorCards: Card[] = [
+  {
+    id: 'inq_venomtongue',
+    name: '毒牙の審問官',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 1,
+    attack: 1,
+    health: 1,
+    keywords: ['poison'],
+    effects: [],
+    flavor: '一度刺されし真実は、魂の芯まで蝕む。',
+  },
+  {
+    id: 'inq_writ_of_silence',
+    name: '沈黙の令状',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'silence',
+        value: 1,
+      },
+    ],
+    flavor: '言葉を奪われし者に、抗う術はない。',
+  },
+  {
+    id: 'inq_verdict_of_conviction',
+    name: '断罪の宣告',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'stun',
+        value: 1, // 1ターンの持続期間
+      },
+    ],
+    flavor: '汝の罪は確定した。これより、沈黙の罰を執行する。',
+  },
+  {
+    id: 'inq_truth_revealer',
+    name: '真実を暴く者',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 3,
+    attack: 2,
+    health: 3,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'self',
+        action: 'destroy_deck_top',
+        value: 3, // コスト3以上という閾値
+      },
+    ],
+    flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
+  },
+  {
+    id: 'inq_truth_extractor',
+    name: '思考検閲官',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 3,
+    attack: 2,
+    health: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'hand_discard',
+        value: 1,
+        targetFilter: { property: 'type', value: 'spell' },
+      },
+    ],
+    flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
+  },
+  {
+    id: 'inq_purifying_flame',
+    name: '浄罪の天火',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 7,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_all',
+        action: 'damage',
+        value: 4,
+      },
+      {
+        trigger: 'on_play',
+        target: 'ally_all',
+        action: 'damage',
+        value: 4,
+      },
+    ],
+    flavor: '罪も、義も、等しく灰燼に帰す。その後にこそ、揺るぎなき秩序は再建される。',
+  },
+  // 烙印システムカード
+  {
+    id: 'inq_sin_burden',
+    name: '罪の重圧',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 1,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'apply_brand',
+        value: 1,
+      },
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'debuff_attack',
+        value: 1,
+      },
+    ],
+    flavor: '真実を問う声に、偽りは崩れ落ちる',
+  },
+  {
+    id: 'inq_collective_confession',
+    name: '集団懺悔',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'player',
+        action: 'heal',
+        value: 2,
+      },
+    ],
+    flavor: '罪人の悔恨が多ければ多いほど、神の慈悲は深く降り注ぐ',
+  },
+  {
+    id: 'inq_chain_of_faith',
+    name: '信仰の鎖',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'stun',
+        value: 1,
+      },
+      {
+        trigger: 'on_play',
+        target: 'self',
+        action: 'draw_card',
+        value: 1,
+        condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+      },
+    ],
+    flavor: '罪深き者を縛る鎖は、同時に真理への道標となる',
+  },
+  {
+    id: 'inq_divine_punisher',
+    name: '神罰の執行者',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 3,
+    attack: 3,
+    health: 3,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'self',
+        action: 'banish',
+        value: 1,
+      },
+    ],
+    flavor: '神の裁きに墓地の安息はない。罪人は存在そのものを抹消される',
+  },
+  {
+    id: 'inq_sanctuary_guard',
+    name: '聖域の見張り',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 3,
+    attack: 2,
+    health: 5,
+    keywords: ['guard'],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'apply_brand',
+        value: 1,
+      },
+      {
+        trigger: 'turn_end',
+        target: 'self',
+        action: 'damage',
+        value: 2,
+        condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+      },
+    ],
+    flavor: '罪人なき世界でこそ、番人は己の使命に疑問を抱く',
+  },
+  {
+    id: 'inq_repentant_succubus',
+    name: '懺悔するサキュバス',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 1,
+    attack: 2,
+    health: 1,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'ally_random',
+        action: 'damage',
+        value: 99, // 確実に破壊するためのダメージ
+      },
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'apply_brand',
+        value: 1,
+      },
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'apply_brand',
+        value: 1,
+      },
+    ],
+    flavor: '我が罪深き過去を贖うため、仲間の血で敵の魂を縛る',
+  },
+  {
+    id: 'inq_judgment_angel',
+    name: '審判の天使',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 5,
+    attack: 4,
+    health: 5,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_all',
+        action: 'damage',
+        value: 1,
+        specialHandler: 'judgment_angel_execution',
+      },
+    ],
+    flavor: '一人一人への審判こそが、真の正義の証明である',
+  },
+  {
+    id: 'inq_pyre',
+    name: '火刑',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 3,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'damage',
+        value: 3,
+        specialHandler: 'pyre_conditional_destroy',
+      },
+    ],
+    flavor: '罪深き者には死を、悔悟せし者には贖罪の炎を',
+  },
+  {
+    id: 'inq_heretical_inquisition',
+    name: '異端審問',
+    type: 'spell',
+    faction: 'inquisitor',
+    cost: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'apply_brand',
+        value: 1,
+      },
+      {
+        trigger: 'on_play',
+        target: 'self',
+        action: 'deck_search',
+        value: 1,
+        targetFilter: { card_type: 'creature', has_faction: 'inquisitor', max_cost: 2 },
+      },
+    ],
+    flavor: '異端者を見つけ出すには、同胞の知恵が必要だ',
+  },
+  {
+    id: 'inq_stone_guardian',
+    name: '石の番人',
+    type: 'creature',
+    faction: 'inquisitor',
+    cost: 3,
+    attack: 1,
+    health: 5,
+    keywords: ['guard', 'untargetable'],
+    effects: [],
+    flavor: '揺るぎない信念の前に、いかなる邪悪も手出しはできぬ',
+  },
+];
