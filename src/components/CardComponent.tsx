@@ -21,7 +21,6 @@ import { CardTooltip } from './CardTooltip';
 import { CardHeader } from './parts/CardHeader';
 import { CardArt } from './parts/CardArt';
 import { CardBody } from './parts/CardBody';
-import { CardEffectsIcons } from './parts/CardEffectsIcons';
 import { CardStats } from './parts/CardStats';
 import { CardOverlays } from './parts/CardOverlays';
 
@@ -77,8 +76,7 @@ export default function CardComponent({
         <CardHeader card={card} />
         <CardArt card={card} size={size} factionStyle={factionStyle} />
         <CardBody card={card} sizeStyle={sizeStyle} factionStyle={factionStyle} />
-        <CardEffectsIcons card={card} />
-        <CardStats 
+        <CardStats
           card={card} 
           isFieldCard={isFieldCard} 
           sizeStyle={sizeStyle} 

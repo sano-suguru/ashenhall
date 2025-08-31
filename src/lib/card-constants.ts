@@ -4,24 +4,6 @@ import {
   Sparkles,
   Shield,
   Eye,
-  Bomb,
-  Heart,
-  ArrowUp,
-  ArrowDown,
-  ShieldCheck,
-  Users,
-  CreditCard,
-  HeartHandshake,
-  MicOff,
-  Ban,
-  Trash2,
-  Repeat,
-  FileX,
-  Flame,
-  RotateCw,
-  Target,
-  X,
-  Search,
 } from 'lucide-react';
 
 // 勢力ごとの色設定
@@ -68,29 +50,6 @@ export const CARD_TYPE_JP = {
   spell: 'スペル',
 };
 
-// カード効果アイコン
-export const EFFECT_ICONS = {
-  damage: Bomb,
-  heal: Heart,
-  buff_attack: ArrowUp,
-  buff_health: ShieldCheck,
-  debuff_attack: ArrowDown,
-  debuff_health: Skull,
-  summon: Users,
-  draw_card: CreditCard,
-  guard: Shield,
-  resurrect: HeartHandshake,
-  silence: MicOff,
-  stun: Ban,
-  destroy_deck_top: Trash2,
-  swap_attack_health: Repeat,
-  hand_discard: FileX,
-  destroy_all_creatures: Flame,
-  ready: RotateCw,
-  apply_brand: Target,
-  banish: X,
-  deck_search: Search,
-} as const;
 
 // サイズ設定
 export const SIZE_CLASSES = {
