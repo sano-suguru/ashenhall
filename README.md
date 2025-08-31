@@ -34,6 +34,13 @@
 - **Testing**: Jest + TypeScript
 - **Package Manager**: pnpm
 
+### 技術的注意事項
+
+#### Tailwind CSS v4 使用時の警告対応
+- Tailwind CSS v4（ベータ版）の`@theme inline`構文使用により、CSS警告が発生する場合があります
+- `.vscode/settings.json`でCSS警告を無効化済み（`css.lint.unknownAtRules: "ignore"`）
+- エディターの警告は無視して開発を継続してください
+
 ## 開発環境構築
 
 ### 前提条件
