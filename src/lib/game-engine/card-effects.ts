@@ -84,14 +84,11 @@ export function handleCreatureDeath(
   player.graveyard.push(removedCard);
 
   // 他の味方の`on_ally_death`効果を発動
-  player.field.forEach((allyCard) => {
-    processEffectTrigger(state, "on_ally_death", allyCard, ownerId, removedCard);
-  });
+  processEffectTrigger(state, "on_ally_death", undefined, ownerId, removedCard);
 
   // 場のカードの位置を再インデックス
   player.field.forEach((c, i) => (c.position = i));
 }
-
 
 /**
  * ダメージ効果の処理
@@ -129,9 +126,6 @@ function applyDamage(
     }
   });
 }
-
-
-
 
 /**
  * カードの全効果を実行
@@ -274,16 +268,6 @@ function handlePlayerScopedTrigger(
   sourcePlayerId?: PlayerId
 ): void {
   if (!sourcePlayerId) return;
-
-  if (trigger === "on_spell_play") {
-    const opponentId: PlayerId =
-      sourcePlayerId === "player1" ? "player2" : "player1";
-    state.players[sourcePlayerId].field.forEach((card) => {
-      if (card.id === "mag_chant_avatar" && !card.isSilenced) {
-        applyDamage(state, [], opponentId, 1, card.id);
-      }
-    });
-  }
 
   processCardsEffects(
     state,

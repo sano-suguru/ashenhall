@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { executeCardEffect, processEffectTrigger, applyPassiveEffects } from '@/lib/game-engine/card-effects';
+import { executeCardEffect, processEffectTrigger, applyPassiveEffects, handleCreatureDeath } from '@/lib/game-engine/card-effects';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
 import { hasBrandedStatus, getBrandedCreatureCount, hasAnyBrandedEnemy } from '@/lib/game-engine/brand-utils';
@@ -2061,6 +2061,125 @@ describe('Judgment Angel System', () => {
 
       // 具体的な値も確認（元の体力2 + パッシブ効果1）
       expect(healthAfterSecondApply).toBe(otherCard.health + 1);
+    });
+  });
+
+  describe('魂の収穫者効果テスト - 重複発動バグ修正検証', () => {
+    test('魂の収穫者が1体の味方死亡時に攻撃力+1を正確に1回だけ得る', () => {
+      const gameState = createTestGameState();
+      
+      // 魂の収穫者を場に配置
+      const harvester = necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard;
+      const harvesterCard = createTestFieldCard(harvester, 'player1');
+      gameState.players.player1.field.push(harvesterCard);
+      
+      // 他の味方も複数配置
+      const ally1 = createTestFieldCard(necromancerCards[0] as CreatureCard, 'player1');
+      const ally2 = createTestFieldCard(necromancerCards[1] as CreatureCard, 'player1');
+      const ally3 = createTestFieldCard(necromancerCards[2] as CreatureCard, 'player1');
+      gameState.players.player1.field.push(ally1, ally2, ally3);
+      
+      const initialAttack = harvesterCard.attack;
+      
+      // 味方1体を死亡させる
+      const dyingAlly = ally1;
+      dyingAlly.currentHealth = 0;
+      
+      // handleCreatureDeathを直接呼び出して味方死亡を処理
+      handleCreatureDeath(gameState, dyingAlly, 'combat', 'test_source');
+      
+      // 魂の収穫者の攻撃力が+1されていることを確認（+複数回ではない）
+      const harvesterOnField = gameState.players.player1.field.find(c => c.id === harvester.id)!;
+      expect(harvesterOnField.attackModifier).toBe(1);
+      expect(harvesterOnField.attack + harvesterOnField.attackModifier).toBe(initialAttack + 1);
+    });
+
+    test('複数の魂の収穫者がいる場合、それぞれ1回ずつ効果が発動する', () => {
+      const gameState = createTestGameState();
+      
+      // 魂の収穫者を2体場に配置
+      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      harvester2.id = 'necro_harvester_2'; // IDを変更して区別
+      gameState.players.player1.field.push(harvester1, harvester2);
+      
+      // 死亡する味方を配置
+      const dyingAlly = createTestFieldCard(necromancerCards[0] as CreatureCard, 'player1');
+      gameState.players.player1.field.push(dyingAlly);
+      
+      // 味方を死亡させる
+      dyingAlly.currentHealth = 0;
+      
+      handleCreatureDeath(gameState, dyingAlly, 'combat', 'test_source');
+      
+      // 両方の魂の収穫者の攻撃力が+1されていることを確認
+      const harvester1OnField = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
+      const harvester2OnField = gameState.players.player1.field.find(c => c.id === 'necro_harvester_2')!;
+      
+      expect(harvester1OnField.attackModifier).toBe(1);
+      expect(harvester2OnField.attackModifier).toBe(1);
+    });
+
+    test('魂の収穫者が複数味方存在時でも死亡1体につき1回のみ効果発動', () => {
+      const gameState = createTestGameState();
+      
+      // 魂の収穫者を場に配置
+      const harvester = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      gameState.players.player1.field.push(harvester);
+      
+      // 死亡時効果を持たない味方を4体配置（骸骨剣士を使用）
+      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
+      for (let i = 0; i < 4; i++) {
+        const ally = createTestFieldCard(skeleton, 'player1');
+        ally.id = `skeleton_${i}`;
+        gameState.players.player1.field.push(ally);
+      }
+      
+      const initialAttackModifier = harvester.attackModifier;
+      
+      // 1体目を死亡させる
+      const firstVictim = gameState.players.player1.field[1]; // 最初の骸骨
+      firstVictim.currentHealth = 0;
+      
+      handleCreatureDeath(gameState, firstVictim, 'combat', 'test_source');
+      
+      // 魂の収穫者の攻撃力が+1されていることを確認（骸骨は死亡時効果なし）
+      const harvesterAfterFirst = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
+      expect(harvesterAfterFirst.attackModifier).toBe(initialAttackModifier + 1);
+      
+      // 2体目を死亡させる  
+      const secondVictim = gameState.players.player1.field[1]; // 次の骸骨
+      secondVictim.currentHealth = 0;
+      handleCreatureDeath(gameState, secondVictim, 'combat', 'test_source');
+      
+      // 魂の収穫者の攻撃力がさらに+1されていることを確認（合計+2）
+      const harvesterAfterSecond = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
+      expect(harvesterAfterSecond.attackModifier).toBe(initialAttackModifier + 2);
+    });
+
+    test('魂の収穫者自身が死亡する場合は効果が発動しない', () => {
+      const gameState = createTestGameState();
+      
+      // 魂の収穫者を2体配置
+      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      harvester2.id = 'necro_harvester_2';
+      gameState.players.player1.field.push(harvester1, harvester2);
+      
+      const initialAttackModifier = harvester2.attackModifier;
+      
+      // harvester1を死亡させる（この場合harvester2のみ効果を得るべき）
+      harvester1.currentHealth = 0;
+      
+      handleCreatureDeath(gameState, harvester1, 'combat', 'test_source');
+      
+      // 生き残った魂の収穫者の攻撃力が+1されていることを確認
+      const survivingHarvester = gameState.players.player1.field.find(c => c.id === 'necro_harvester_2')!;
+      expect(survivingHarvester.attackModifier).toBe(initialAttackModifier + 1);
+      
+      // 死亡した魂の収穫者は場からいなくなっていることを確認
+      const deadHarvester = gameState.players.player1.field.find(c => c.id === 'necro_harvester');
+      expect(deadHarvester).toBeUndefined();
     });
   });
 

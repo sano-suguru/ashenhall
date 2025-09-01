@@ -12,8 +12,6 @@ interface FactionStyle {
 
 interface CardStyleOptions {
   factionStyle: FactionStyle;
-  isDamaged: boolean;
-  isEnhanced: boolean;
   isOpponent: boolean;
 }
 
@@ -22,8 +20,6 @@ interface CardStyleOptions {
  */
 export function getCardContainerClasses({
   factionStyle,
-  isDamaged,
-  isEnhanced,
   isOpponent,
 }: CardStyleOptions): string {
   const baseClasses = [
@@ -44,14 +40,6 @@ export function getCardContainerClasses({
 
   // 状態による追加クラス
   const conditionalClasses = [];
-  
-  if (isDamaged) {
-    conditionalClasses.push('ring-2', 'ring-red-500');
-  }
-  
-  if (isEnhanced) {
-    conditionalClasses.push('ring-2', 'ring-green-500');
-  }
   
   if (isOpponent) {
     conditionalClasses.push('opacity-90');

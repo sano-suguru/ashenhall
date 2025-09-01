@@ -60,8 +60,6 @@ export default function CardComponent({
 
   const cardContainerClasses = getCardContainerClasses({
     factionStyle,
-    isDamaged,
-    isEnhanced,
     isOpponent,
   });
 
@@ -86,8 +84,6 @@ export default function CardComponent({
         <CardOverlays 
           isFieldCard={isFieldCard} 
           fieldCard={fieldCard} 
-          isEnhanced={isEnhanced} 
-          isDamaged={isDamaged} 
         />
       </div>
 
