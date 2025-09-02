@@ -61,6 +61,7 @@ export default function CardComponent({
   const cardContainerClasses = getCardContainerClasses({
     factionStyle,
     isOpponent,
+    faction: card.faction,
   });
 
   return (
