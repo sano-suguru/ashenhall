@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { executeCardEffect, processEffectTrigger, applyPassiveEffects, handleCreatureDeath } from '@/lib/game-engine/card-effects';
+import { executeCardEffect, executeAllCardEffects, processEffectTrigger, applyPassiveEffects, handleCreatureDeath } from '@/lib/game-engine/card-effects';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
 import { hasBrandedStatus, getBrandedCreatureCount, hasAnyBrandedEnemy } from '@/lib/game-engine/brand-utils';
@@ -630,7 +630,7 @@ describe('Brand Condition System', () => {
 });
 
 describe('Banish System', () => {
-  test('《神罰の執行者》 banishes branded enemy without triggering death effects', () => {
+  test('《神罰の執行者》 banishes branded enemy when present', () => {
     const gameState = createTestGameState();
     
     // プレイヤー2の場に烙印を持つクリーチャーを配置
@@ -673,12 +673,13 @@ describe('Banish System', () => {
     const initialGraveyardSize = gameState.players.player2.graveyard.length;
     const initialBanishedSize = gameState.players.player2.banishedCards.length;
     
-    // 《神罰の執行者》の消滅効果をテスト
+    // 《神罰の執行者》の新しい効果1（烙印敵消滅）をテスト
     const banishEffect: CardEffect = {
       trigger: 'on_play',
-      target: 'self',
+      target: 'enemy_random',
       action: 'banish',
       value: 1,
+      targetFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -687,7 +688,7 @@ describe('Banish System', () => {
       type: 'creature' as const,
       faction: 'inquisitor' as const,
       cost: 3,
-      attack: 3,
+      attack: 2,
       health: 3,
       keywords: [],
       effects: [banishEffect],
@@ -710,7 +711,82 @@ describe('Banish System', () => {
     expect(otherEnemy.attackModifier).toBe(0);
   });
 
-  test('banish effect logs properly', () => {
+  test('《神罰の執行者》 brands all enemies and buffs self when no branded enemies exist', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に烙印なし敵クリーチャーを複数配置
+    const enemy1 = createTestFieldCard({
+      id: 'normal_enemy1',
+      name: '通常敵1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'normal_enemy2',
+      name: '通常敵2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2);
+    
+    // プレイヤー1の場に神罰の執行者を配置（自己バフ確認用）
+    const punisher = createTestFieldCard({
+      id: 'inq_divine_punisher',
+      name: '神罰の執行者',
+      type: 'creature',
+      faction: 'inquisitor',
+      cost: 3,
+      attack: 2,
+      health: 3,
+      keywords: [],
+      effects: [
+        {
+          trigger: 'on_play',
+          target: 'enemy_random',
+          action: 'banish',
+          value: 1,
+          targetFilter: { hasBrand: true },
+        },
+        {
+          trigger: 'on_play',
+          target: 'enemy_all',
+          action: 'apply_brand',
+          value: 1,
+          condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
+        },
+        {
+          trigger: 'on_play',
+          target: 'self',
+          action: 'buff_attack',
+          value: 2,
+          condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
+        },
+      ],
+    }, 'player1');
+    gameState.players.player1.field.push(punisher);
+    
+    // 神罰の執行者の全効果を実行（新しいexecuteAllCardEffects使用）
+    executeAllCardEffects(gameState, punisher, 'player1', 'on_play');
+    
+    // 敵全体に烙印が付与されたことを確認
+    expect(enemy1.statusEffects).toEqual([{ type: 'branded' }]);
+    expect(enemy2.statusEffects).toEqual([{ type: 'branded' }]);
+    
+    // 神罰の執行者の攻撃力が+2されたことを確認
+    expect(punisher.attackModifier).toBe(2);
+  });
+
+  test('banish effect logs properly with targetFilter', () => {
     const gameState = createTestGameState();
     
     // 烙印を持つ敵クリーチャーを配置
@@ -730,9 +806,10 @@ describe('Banish System', () => {
     
     const banishEffect: CardEffect = {
       trigger: 'on_play',
-      target: 'self',
+      target: 'enemy_random',
       action: 'banish',
       value: 1,
+      targetFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -741,7 +818,7 @@ describe('Banish System', () => {
       type: 'creature' as const,
       faction: 'inquisitor' as const,
       cost: 3,
-      attack: 3,
+      attack: 2,
       health: 3,
       keywords: [],
       effects: [banishEffect],
@@ -780,9 +857,10 @@ describe('Banish System', () => {
     
     const banishEffect: CardEffect = {
       trigger: 'on_play',
-      target: 'self',
+      target: 'enemy_random',
       action: 'banish',
       value: 1,
+      targetFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -791,7 +869,7 @@ describe('Banish System', () => {
       type: 'creature' as const,
       faction: 'inquisitor' as const,
       cost: 3,
-      attack: 3,
+      attack: 2,
       health: 3,
       keywords: [],
       effects: [banishEffect],

@@ -1,4 +1,4 @@
-import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
+import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator, TargetFilter } from '@/types/game';
 
 /**
  * specialHandlerを持つカードの専用テキスト定義
@@ -44,6 +44,33 @@ function getSpecialEffectText(cardId: string, specialHandler?: string): string |
   return null;
 }
 
+/**
+ * 対象選択フィルターを日本語テキストに変換（新命名対応 + 後方互換性）
+ */
+const getSelectionFilterText = (filter?: TargetFilter): string => {
+  if (!filter) return '';
+  
+  const filters: string[] = [];
+  
+  if (filter.hasBrand === true) {
+    filters.push('烙印を刻まれた');
+  }
+  if (filter.property === 'type') {
+    filters.push(`${filter.value}タイプの`);
+  }
+  if (filter.max_cost !== undefined) {
+    filters.push(`コスト${filter.max_cost}以下の`);
+  }
+  
+  return filters.join('');
+};
+
+/**
+ * 後方互換性のためのレガシー関数
+ * @deprecated getSelectionFilterTextを使用してください
+ */
+const getTargetFilterText = getSelectionFilterText;
+
 const getTargetText = (target: CardEffect['target']): string => {
   const targetMap: { [key: string]: string } = {
     self: '自身',
@@ -57,25 +84,61 @@ const getTargetText = (target: CardEffect['target']): string => {
 };
 
 const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> = {
-  damage: (e) => `${getTargetText(e.target)}に${e.value}ダメージを与える。`,
-  heal: (e) => `${getTargetText(e.target)}を${e.value}回復する。`,
-  buff_attack: (e) => `${getTargetText(e.target)}の攻撃力を+${e.value}する。`,
-  buff_health: (e) => `${getTargetText(e.target)}の体力を+${e.value}する。`,
-  debuff_attack: (e) => `${getTargetText(e.target)}の攻撃力を-${e.value}する。`,
-  debuff_health: (e) => `${getTargetText(e.target)}の体力を-${e.value}する。`,
+  damage: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}に${e.value}ダメージを与える。`;
+  },
+  heal: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}を${e.value}回復する。`;
+  },
+  buff_attack: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}の攻撃力を+${e.value}する。`;
+  },
+  buff_health: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}の体力を+${e.value}する。`;
+  },
+  debuff_attack: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}の攻撃力を-${e.value}する。`;
+  },
+  debuff_health: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}の体力を-${e.value}する。`;
+  },
   summon: (e) => `1/1の骸骨トークンを${e.value}体召喚する。`,
   draw_card: (e) => `カードを${e.value}枚引く。`,
   resurrect: (e) => `あなたの墓地からコスト${e.value}以下のクリーチャーを1体戦場に戻す。`,
-  silence: (e) => `${getTargetText(e.target)}を沈黙させる。`,
-  stun: (e) => `${getTargetText(e.target)}は、次のターン攻撃できない。`,
+  silence: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}を沈黙させる。`;
+  },
+  stun: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}は、次のターン攻撃できない。`;
+  },
   destroy_deck_top: (e) => `相手はデッキの上から${e.value}枚のカードを墓地に置く。`,
-  swap_attack_health: (e) => `${getTargetText(e.target)}の攻撃力と体力を入れ替える。`,
+  swap_attack_health: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}の攻撃力と体力を入れ替える。`;
+  },
   hand_discard: (e) => `相手は手札からランダムに${e.value}枚のカードを捨てる。`,
   ready: () => `このターン、もう一度だけ攻撃できる。`,
-  guard: (e) => `${getTargetText(e.target)}に守護を付与する。`,
+  guard: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}に守護を付与する。`;
+  },
   destroy_all_creatures: () => '全てのクリーチャーを破壊する。',
-  apply_brand: (e) => `${getTargetText(e.target)}に烙印を刻む。`,
-  banish: (e) => `${getTargetText(e.target)}を消滅させる。`,
+  apply_brand: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}に烙印を刻む。`;
+  },
+  banish: (e) => {
+    const filterText = getSelectionFilterText(e.selectionFilter || e.targetFilter);
+    return `${filterText}${getTargetText(e.target)}を消滅させる。`;
+  },
   deck_search: () => `デッキから条件に合うカードを1枚手札に加える。`,
 };
 
@@ -186,9 +249,10 @@ export const getEffectText = (
     ? generator(effect)
     : `[未定義アクション: ${effect.action}]`;
 
-  // 条件がある場合は条件テキストを追加
-  if (effect.condition) {
-    const conditionText = getConditionText(effect.condition);
+  // 効果発動条件がある場合は条件テキストを追加（新命名対応 + 後方互換性）
+  const activationCondition = effect.activationCondition || effect.condition;
+  if (activationCondition) {
+    const conditionText = getConditionText(activationCondition);
     return `${conditionText}${triggerText}: ${effectDescription}`;
   }
 

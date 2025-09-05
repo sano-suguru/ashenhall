@@ -16,6 +16,7 @@ import type {
   EffectAction,
   ValueChange,
   EffectTrigger,
+  TargetFilter,
 } from "@/types/game";
 
 import { SeededRandom } from "./seeded-random";
@@ -29,9 +30,81 @@ import {
   specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
-import { getBrandedEnemies } from "./brand-utils";
+import { getBrandedEnemies, hasBrandedStatus } from "./brand-utils";
 import { selectTargets } from "./core/target-selector";
 import { checkEffectCondition } from "./core/condition-checker";
+
+/**
+ * 烙印フィルターを適用
+ */
+function checkBrandFilter(target: FieldCard, filter: TargetFilter): boolean {
+  if (filter.hasBrand !== undefined) {
+    const hasBrand = hasBrandedStatus(target);
+    return filter.hasBrand === hasBrand;
+  }
+  return true;
+}
+
+/**
+ * プロパティフィルターを適用
+ */
+function checkPropertyFilter(target: FieldCard, filter: TargetFilter): boolean {
+  if (filter.property && filter.value !== undefined) {
+    return target[filter.property] === filter.value;
+  }
+  return true;
+}
+
+/**
+ * コストフィルターを適用
+ */
+function checkCostFilter(target: FieldCard, filter: TargetFilter): boolean {
+  if (filter.min_cost !== undefined && target.cost < filter.min_cost) {
+    return false;
+  }
+  if (filter.max_cost !== undefined && target.cost > filter.max_cost) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * キーワードフィルターを適用
+ */
+function checkKeywordFilter(target: FieldCard, filter: TargetFilter): boolean {
+  if (filter.has_keyword && !target.keywords.includes(filter.has_keyword)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 体力フィルターを適用
+ */
+function checkHealthFilter(target: FieldCard, filter: TargetFilter): boolean {
+  if (filter.min_health !== undefined && target.currentHealth < filter.min_health) {
+    return false;
+  }
+  if (filter.max_health !== undefined && target.currentHealth > filter.max_health) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * ターゲットフィルターを適用してクリーチャーリストをフィルタリング
+ */
+function applyCardTargetFilter(targets: FieldCard[], filter: TargetFilter): FieldCard[] {
+  return targets.filter((target) => {
+    return (
+      checkBrandFilter(target, filter) &&
+      checkPropertyFilter(target, filter) &&
+      checkCostFilter(target, filter) &&
+      checkKeywordFilter(target, filter) &&
+      checkHealthFilter(target, filter)
+    );
+  });
+}
 
 /**
  * 効果ログを追加（既存コードとの互換性を保つ）
@@ -128,43 +201,15 @@ function applyDamage(
 }
 
 /**
- * カードの全効果を実行
+ * 条件判定なしで単一カード効果を実行（内部使用）
  */
-export function executeAllCardEffects(
-  state: GameState,
-  sourceCard: Card,
-  sourcePlayerId: PlayerId,
-  trigger: string
-): void {
-  try {
-    const effectsToExecute = sourceCard.effects.filter(
-      (effect) => effect.trigger === trigger
-    );
-
-    // 効果を順番に実行（条件判定は各効果で行う）
-    effectsToExecute.forEach((effect) => {
-      executeCardEffect(state, effect, sourceCard, sourcePlayerId);
-    });
-  } catch (error) {
-    console.error(`Error executing all card effects:`, error);
-  }
-}
-
-/**
- * 単一カード効果の実行
- */
-export function executeCardEffect(
+function executeCardEffectWithoutConditionCheck(
   state: GameState,
   effect: CardEffect,
   sourceCard: Card,
   sourcePlayerId: PlayerId
 ): void {
   try {
-    // 0. 条件判定を最初に実行
-    if (!checkEffectCondition(state, sourcePlayerId, effect.condition)) {
-      return; // 条件を満たさない場合は効果を実行しない
-    }
-
     const random = new SeededRandom(
       state.randomSeed + state.turnNumber + sourceCard.id
     );
@@ -185,7 +230,13 @@ export function executeCardEffect(
       }
     }
 
-    // 2. 動的パラメータを解決
+    // 2. 対象選択フィルターを適用
+    const selectionFilter = effect.selectionFilter || effect.targetFilter; // 後方互換性
+    if (selectionFilter) {
+      initialTargets = applyCardTargetFilter(initialTargets, selectionFilter);
+    }
+
+    // 3. 動的パラメータを解決
     const { value, targets } = resolveDynamicEffectParameters(
       state,
       effect,
@@ -194,7 +245,7 @@ export function executeCardEffect(
       initialTargets
     );
 
-    // 3. 効果ハンドラを取得して実行
+    // 4. 効果ハンドラを取得して実行
     if (effect.specialHandler && specialEffectHandlers[effect.specialHandler]) {
       // 特殊効果ハンドラーがある場合はそちらを実行
       const specialHandler = specialEffectHandlers[effect.specialHandler];
@@ -208,6 +259,60 @@ export function executeCardEffect(
     }
   } catch (error) {
     console.error(`Error executing card effect:`, error);
+  }
+}
+
+/**
+ * 単一カード効果の実行
+ */
+export function executeCardEffect(
+  state: GameState,
+  effect: CardEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId
+): void {
+  try {
+    // 0. 効果発動条件を判定（新命名対応 + 後方互換性）
+    const activationCondition = effect.activationCondition || effect.condition;
+    if (!checkEffectCondition(state, sourcePlayerId, activationCondition)) {
+      return; // 条件を満たさない場合は効果を実行しない
+    }
+
+    // 条件を満たす場合は条件判定なしの関数を呼び出す
+    executeCardEffectWithoutConditionCheck(state, effect, sourceCard, sourcePlayerId);
+  } catch (error) {
+    console.error(`Error executing card effect:`, error);
+  }
+}
+
+/**
+ * カードの全効果を実行
+ */
+export function executeAllCardEffects(
+  state: GameState,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  trigger: string
+): void {
+  try {
+    const effectsToExecute = sourceCard.effects.filter(
+      (effect) => effect.trigger === trigger
+    );
+
+    // 効果実行前の初期状態で全発動条件を判定（新命名対応 + 後方互換性）
+    const effectConditions = effectsToExecute.map((effect) => ({
+      effect,
+      shouldExecute: checkEffectCondition(state, sourcePlayerId, effect.activationCondition || effect.condition),
+    }));
+
+    // 条件を満たす効果のみを順番に実行
+    effectConditions.forEach(({ effect, shouldExecute }) => {
+      if (shouldExecute) {
+        executeCardEffectWithoutConditionCheck(state, effect, sourceCard, sourcePlayerId);
+      }
+    });
+  } catch (error) {
+    console.error(`Error executing all card effects:`, error);
   }
 }
 

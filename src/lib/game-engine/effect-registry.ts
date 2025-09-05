@@ -115,17 +115,8 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeDestroyAllCreaturesEffect(state, sourceCard.id),
   'apply_brand': (state, _e, sourceCard, _sp, _r, targets, _v) => 
     executeApplyBrandEffect(state, targets, sourceCard.id),
-  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => {
-    if (sourceCard.id === "inq_divine_punisher") {
-      // 《神罰の執行者》の特殊ロジック: 烙印を持つ敵のみ対象
-      const brandedTarget = selectRandomBrandedEnemy(state, sourcePlayerId, random);
-      if (brandedTarget) {
-        executeBanishEffect(state, [brandedTarget], sourceCard.id);
-      }
-    } else {
-      executeBanishEffect(state, targets, sourceCard.id);
-    }
-  },
+  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => 
+    executeBanishEffect(state, targets, sourceCard.id),
   'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => 
     executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.targetFilter, random),
 };

@@ -52,7 +52,7 @@ export const inquisitorCards: Card[] = [
         trigger: 'on_play',
         target: 'enemy_random',
         action: 'stun',
-        value: 1, // 1ターンの持続期間
+        value: 1,
       },
     ],
     flavor: '汝の罪は確定した。これより、沈黙の罰を執行する。',
@@ -71,7 +71,7 @@ export const inquisitorCards: Card[] = [
         trigger: 'on_play',
         target: 'self',
         action: 'destroy_deck_top',
-        value: 3, // コスト3以上という閾値
+        value: 3,
       },
     ],
     flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
@@ -119,7 +119,6 @@ export const inquisitorCards: Card[] = [
     ],
     flavor: '罪も、義も、等しく灰燼に帰す。その後にこそ、揺るぎなき秩序は再建される。',
   },
-  // 烙印システムカード
   {
     id: 'inq_sin_burden',
     name: '罪の重圧',
@@ -190,15 +189,30 @@ export const inquisitorCards: Card[] = [
     type: 'creature',
     faction: 'inquisitor',
     cost: 3,
-    attack: 3,
+    attack: 2,
     health: 3,
     keywords: [],
     effects: [
       {
         trigger: 'on_play',
-        target: 'self',
+        target: 'enemy_random',
         action: 'banish',
         value: 1,
+        targetFilter: { hasBrand: true },
+      },
+      {
+        trigger: 'on_play',
+        target: 'enemy_all',
+        action: 'apply_brand',
+        value: 1,
+        condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
+      },
+      {
+        trigger: 'on_play',
+        target: 'self',
+        action: 'buff_attack',
+        value: 2,
+        condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
       },
     ],
     flavor: '神の裁きに墓地の安息はない。罪人は存在そのものを抹消される',
@@ -243,7 +257,7 @@ export const inquisitorCards: Card[] = [
         trigger: 'on_play',
         target: 'ally_random',
         action: 'damage',
-        value: 99, // 確実に破壊するためのダメージ
+        value: 99,
       },
       {
         trigger: 'on_play',

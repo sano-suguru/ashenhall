@@ -49,6 +49,7 @@ export interface TargetFilter {
   min_cost?: number;         // 最小コスト
   max_cost?: number;         // 最大コスト
   has_faction?: Faction;     // 指定勢力所持（デッキサーチ用）
+  hasBrand?: boolean;        // 烙印を持つクリーチャー（審問官効果用）
 }
 
 /** 拡張対象選択（フィルター機能付き） */
@@ -74,16 +75,22 @@ export interface CardEffect {
   action: EffectAction;
   /** 効果値（ダメージ量、回復量等） */
   value: number;
-  /** 発動条件（オプション） */
-  condition?: EffectCondition;
-  /** ターゲットを絞り込むための条件 */
-  targetFilter?: TargetFilter;
+  /** 効果発動条件（オプション） - ゲーム状態を見て「この効果を発動するか」を判定 */
+  activationCondition?: EffectCondition;
+  /** 対象選択フィルター（オプション） - 対象候補から「誰を実際の対象にするか」を絞り込み */
+  selectionFilter?: TargetFilter;
   /** 動的値計算（拡張機能） */
   dynamicValue?: DynamicValue;
   /** 拡張対象選択（拡張機能） */
   enhancedTarget?: EnhancedEffectTarget;
   /** 特殊効果ハンドラー名（拡張機能） */
   specialHandler?: string;
+  
+  // === 後方互換性 ===
+  /** @deprecated activationConditionを使用してください */
+  condition?: EffectCondition;
+  /** @deprecated selectionFilterを使用してください */
+  targetFilter?: TargetFilter;
 }
 
 // === カード定義 ===
