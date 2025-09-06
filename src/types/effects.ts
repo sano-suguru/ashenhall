@@ -70,17 +70,6 @@ export type EffectTarget =
   | 'enemy_random' // 敵ランダム1体
   | 'player';      // プレイヤー直接
 
-// === 動的値計算システム ===
-
-/** 動的値計算の種類 */
-export type DynamicValueType = 
-  | 'static'           // 固定値
-  | 'graveyard_creatures' // 墓地のクリーチャー数
-  | 'field_allies'     // 場の味方数
-  | 'field_enemies'    // 場の敵数
-  | 'life_difference'  // ライフ差（自分-相手）
-  | 'hand_size'        // 手札数
-  | 'deck_size';       // デッキ数
 
 // === 効果発動条件システム ===
 

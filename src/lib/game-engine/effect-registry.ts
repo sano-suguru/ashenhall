@@ -109,7 +109,7 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeSwapAttackHealthEffect(state, targets, sourceCard.id),
   'hand_discard': (state, effect, sourceCard, sourcePlayerId, random, _t, value) => {
     const opponentId = getOpponentId(sourcePlayerId);
-    executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.targetFilter);
+    executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.selectionFilter);
   },
   'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => 
     executeDestroyAllCreaturesEffect(state, sourceCard.id),
@@ -118,7 +118,7 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
   'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => 
     executeBanishEffect(state, targets, sourceCard.id),
   'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => 
-    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.targetFilter, random),
+    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.selectionFilter, random),
 };
 
 /**
@@ -166,6 +166,85 @@ export const specialEffectHandlers: Record<string, EffectHandler> = {
 };
 
 /**
+ * 動的値計算のタイプ
+ */
+type DynamicValueType = 
+  | 'graveyard_creatures'  // 墓地のクリーチャー数
+  | 'field_allies_count'   // 場の味方数
+  | 'field_allies_alive'   // 生存している味方数
+  | 'field_other_allies'   // 自分以外の味方数  
+  | 'branded_enemy_count'  // 烙印を持つ敵の数
+  | 'graveyard_excluding_self'; // 墓地数（自身を除く）
+
+/**
+ * カード固有の動的値計算設定
+ */
+interface DynamicValueConfig {
+  type: DynamicValueType;
+  baseValue?: number; // 基準値を加算
+}
+
+/**
+ * カード固有の動的値計算設定マップ
+ * ハードコーディングを段階的に汎用化するための移行システム
+ */
+const DYNAMIC_VALUE_CONFIGS: Record<string, Record<string, DynamicValueConfig>> = {
+  'necro_grave_giant': {
+    'buff_attack': { type: 'graveyard_creatures' }
+  },
+  'kni_sanctuary_prayer': {
+    'heal': { type: 'field_allies_alive' }
+  },
+  'necro_soul_vortex': {
+    'summon': { type: 'graveyard_excluding_self' }
+  },
+  'kni_galleon': {
+    'buff_attack': { type: 'field_other_allies' }
+  },
+  'inq_collective_confession': {
+    'heal': { type: 'branded_enemy_count', baseValue: 2 }
+  }
+};
+
+/**
+ * 動的値を計算する
+ */
+function calculateDynamicValue(
+  config: DynamicValueConfig,
+  state: GameState,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId
+): number {
+  const sourcePlayer = state.players[sourcePlayerId];
+  const opponentId = getOpponentId(sourcePlayerId);
+  const opponent = state.players[opponentId];
+  
+  let calculatedValue = 0;
+  
+  switch (config.type) {
+    case 'graveyard_creatures':
+      calculatedValue = sourcePlayer.graveyard.filter(c => c.type === 'creature').length;
+      break;
+    case 'field_allies_alive':
+      calculatedValue = sourcePlayer.field.filter(c => c.currentHealth > 0).length;
+      break;
+    case 'field_other_allies':
+      calculatedValue = sourcePlayer.field.filter(c => c.id !== sourceCard.id).length;
+      break;
+    case 'branded_enemy_count':
+      calculatedValue = getBrandedCreatureCount(opponent.field);
+      break;
+    case 'graveyard_excluding_self':
+      calculatedValue = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
+      break;
+    default:
+      calculatedValue = 0;
+  }
+  
+  return calculatedValue + (config.baseValue || 0);
+}
+
+/**
  * カード固有の動的な効果パラメータを解決する
  * @returns 解決済みの値と対象
  */
@@ -178,54 +257,19 @@ export function resolveDynamicEffectParameters(
 ): { value: number; targets: FieldCard[] } {
   let value = effect.value;
   let targets = initialTargets;
-  const sourcePlayer = state.players[sourcePlayerId];
 
-  // --- カード固有ロジック ---
-  if (
-    sourceCard.id === "necro_grave_giant" &&
-    effect.action === "buff_attack"
-  ) {
-    value = sourcePlayer.graveyard.filter(
-      (c) => c.type === "creature"
-    ).length;
+  // 動的値計算の適用
+  const cardConfig = DYNAMIC_VALUE_CONFIGS[sourceCard.id];
+  if (cardConfig) {
+    const effectConfig = cardConfig[effect.action];
+    if (effectConfig) {
+      value = calculateDynamicValue(effectConfig, state, sourceCard, sourcePlayerId);
+    }
   }
-  if (sourceCard.id === "kni_sanctuary_prayer" && effect.action === "heal") {
-    value = sourcePlayer.field.filter((c) => c.currentHealth > 0).length;
-  }
-  if (
-    sourceCard.id === "kni_white_wing_marshal" &&
-    effect.target === "ally_all"
-  ) {
+
+  // 特殊な対象フィルタリング（段階的移行のため暫定的に残す）
+  if (sourceCard.id === "kni_white_wing_marshal" && effect.target === "ally_all") {
     targets = targets.filter((t) => t.id !== sourceCard.id); // 自分自身を除く
-  }
-
-  // --- 動的効果値の解決 ---
-  if (
-    sourceCard.id === "necro_soul_vortex" &&
-    effect.action === "summon"
-  ) {
-    // 魂の渦: 墓地の枚数を効果値とする（自身は除く）
-    value = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
-  }
-  if (
-    sourceCard.id === "kni_galleon" &&
-    effect.action === "buff_attack" &&
-    effect.trigger === "passive"
-  ) {
-    // 不動の聖壁、ガレオン: 他の味方の数を効果値とする
-    value = sourcePlayer.field.filter((c) => c.id !== sourceCard.id).length;
-  }
-
-  // --- 烙印関連カードの動的効果値解決 ---
-  if (
-    sourceCard.id === "inq_collective_confession" &&
-    effect.action === "heal"
-  ) {
-    // 集団懺悔: 基本回復2 + 烙印を持つ敵の数
-    const opponentId = getOpponentId(sourcePlayerId);
-    const opponent = state.players[opponentId];
-    const brandedCount = getBrandedCreatureCount(opponent.field);
-    value = 2 + brandedCount;
   }
 
   return { value, targets };

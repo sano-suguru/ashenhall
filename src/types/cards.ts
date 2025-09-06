@@ -19,21 +19,12 @@ import type {
   EffectTrigger,
   EffectAction,
   EffectTarget,
-  DynamicValueType,
   ConditionSubject,
   ConditionOperator,
   StatusEffect
 } from './effects';
 
 // === カード効果システム ===
-
-/** 動的値計算設定 */
-export interface DynamicValue {
-  type: DynamicValueType;
-  base?: number;      // 基準値（デフォルト0）
-  multiplier?: number; // 乗数（デフォルト1）
-  max?: number;       // 上限値
-}
 
 /** 対象フィルター */
 export interface TargetFilter {
@@ -50,12 +41,6 @@ export interface TargetFilter {
   max_cost?: number;         // 最大コスト
   has_faction?: Faction;     // 指定勢力所持（デッキサーチ用）
   hasBrand?: boolean;        // 烙印を持つクリーチャー（審問官効果用）
-}
-
-/** 拡張対象選択（フィルター機能付き） */
-export interface EnhancedEffectTarget {
-  base: EffectTarget;
-  filters?: TargetFilter;
 }
 
 /** 効果発動条件 */
@@ -79,10 +64,6 @@ export interface CardEffect {
   activationCondition?: EffectCondition;
   /** 対象選択フィルター（オプション） - 対象候補から「誰を実際の対象にするか」を絞り込み */
   selectionFilter?: TargetFilter;
-  /** 動的値計算（拡張機能） */
-  dynamicValue?: DynamicValue;
-  /** 拡張対象選択（拡張機能） */
-  enhancedTarget?: EnhancedEffectTarget;
   /** 特殊効果ハンドラー名（拡張機能） */
   specialHandler?: string;
 }
