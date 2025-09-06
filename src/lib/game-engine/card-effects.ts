@@ -231,7 +231,7 @@ function executeCardEffectWithoutConditionCheck(
     }
 
     // 2. 対象選択フィルターを適用
-    const selectionFilter = effect.selectionFilter || effect.targetFilter; // 後方互換性
+    const selectionFilter = effect.selectionFilter;
     if (selectionFilter) {
       initialTargets = applyCardTargetFilter(initialTargets, selectionFilter);
     }
@@ -272,8 +272,8 @@ export function executeCardEffect(
   sourcePlayerId: PlayerId
 ): void {
   try {
-    // 0. 効果発動条件を判定（新命名対応 + 後方互換性）
-    const activationCondition = effect.activationCondition || effect.condition;
+    // 0. 効果発動条件を判定
+    const activationCondition = effect.activationCondition;
     if (!checkEffectCondition(state, sourcePlayerId, activationCondition)) {
       return; // 条件を満たさない場合は効果を実行しない
     }
@@ -299,10 +299,10 @@ export function executeAllCardEffects(
       (effect) => effect.trigger === trigger
     );
 
-    // 効果実行前の初期状態で全発動条件を判定（新命名対応 + 後方互換性）
+    // 効果実行前の初期状態で全発動条件を判定
     const effectConditions = effectsToExecute.map((effect) => ({
       effect,
-      shouldExecute: checkEffectCondition(state, sourcePlayerId, effect.activationCondition || effect.condition),
+      shouldExecute: checkEffectCondition(state, sourcePlayerId, effect.activationCondition),
     }));
 
     // 条件を満たす効果のみを順番に実行

@@ -519,7 +519,7 @@ describe('Brand Condition System', () => {
       target: 'self',
       action: 'draw_card',
       value: 1,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
     };
     
     const sourceCard = {
@@ -564,7 +564,7 @@ describe('Brand Condition System', () => {
       target: 'self',
       action: 'draw_card',
       value: 1,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
     };
     
     const sourceCard = {
@@ -679,7 +679,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      targetFilter: { hasBrand: true },
+      selectionFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -755,21 +755,21 @@ describe('Banish System', () => {
           target: 'enemy_random',
           action: 'banish',
           value: 1,
-          targetFilter: { hasBrand: true },
+          selectionFilter: { hasBrand: true },
         },
         {
           trigger: 'on_play',
           target: 'enemy_all',
           action: 'apply_brand',
           value: 1,
-          condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
         },
         {
           trigger: 'on_play',
           target: 'self',
           action: 'buff_attack',
           value: 2,
-          condition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'brandedEnemyCount', operator: 'eq', value: 0 },
         },
       ],
     }, 'player1');
@@ -809,7 +809,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      targetFilter: { hasBrand: true },
+      selectionFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -860,7 +860,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      targetFilter: { hasBrand: true },
+      selectionFilter: { hasBrand: true },
     };
     
     const sourceCard = {
@@ -948,7 +948,7 @@ describe('Sanctuary Guard', () => {
           target: 'self',
           action: 'damage',
           value: 2,
-          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
         },
       ],
     }, 'player1');
@@ -977,7 +977,7 @@ describe('Sanctuary Guard', () => {
       target: 'self',
       action: 'damage',
       value: 2,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
     };
     
     executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
@@ -1005,7 +1005,7 @@ describe('Sanctuary Guard', () => {
           target: 'self',
           action: 'damage',
           value: 2,
-          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
         },
       ],
     }, 'player1');
@@ -1035,7 +1035,7 @@ describe('Sanctuary Guard', () => {
       target: 'self',
       action: 'damage',
       value: 2,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
     };
     
     executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
@@ -1109,7 +1109,7 @@ describe('Sanctuary Guard System', () => {
           target: 'self',
           action: 'damage',
           value: 2,
-          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
         },
       ],
     }, 'player1');
@@ -1138,7 +1138,7 @@ describe('Sanctuary Guard System', () => {
       target: 'self',
       action: 'damage',
       value: 2,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
     };
     
     executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
@@ -1166,7 +1166,7 @@ describe('Sanctuary Guard System', () => {
           target: 'self',
           action: 'damage',
           value: 2,
-          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+          activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
         },
       ],
     }, 'player1');
@@ -1196,7 +1196,7 @@ describe('Sanctuary Guard System', () => {
       target: 'self',
       action: 'damage',
       value: 2,
-      condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
+      activationCondition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 0 },
     };
     
     executeCardEffect(gameState, selfDamageEffect, sanctuaryGuard, 'player1');
@@ -1485,7 +1485,7 @@ describe('Judgment Angel System', () => {
       target: 'enemy_random',
       action: 'damage',
       value: 99,
-      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+      activationCondition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
     };
     
     // 《審判の天使》の効果2（無条件破壊）をテスト
@@ -1558,7 +1558,7 @@ describe('Judgment Angel System', () => {
       target: 'enemy_random',
       action: 'damage',
       value: 99,
-      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+      activationCondition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
     };
     
     // 《審判の天使》の効果2（無条件破壊）をテスト
@@ -1618,7 +1618,7 @@ describe('Judgment Angel System', () => {
       target: 'enemy_random',
       action: 'damage',
       value: 99,
-      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+      activationCondition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
     };
     
     const unconditionalDamage: CardEffect = {
@@ -1664,7 +1664,7 @@ describe('Judgment Angel System', () => {
       target: 'enemy_random',
       action: 'damage',
       value: 99,
-      condition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
+      activationCondition: { subject: 'brandedEnemyCount', operator: 'gte', value: 1 },
     };
     
     const unconditionalDamage: CardEffect = {

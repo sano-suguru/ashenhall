@@ -103,9 +103,9 @@ describe('card-text-utils', () => {
         const card = getCardById('kni_vow_of_unity');
         expect(card).toBeDefined();
         const highAllyEffect = card!.effects.find(e => 
-          e.condition?.subject === 'allyCount' && 
-          e.condition?.operator === 'gte' && 
-          e.condition?.value === 3
+          e.activationCondition?.subject === 'allyCount' && 
+          e.activationCondition?.operator === 'gte' && 
+          e.activationCondition?.value === 3
         );
         expect(highAllyEffect).toBeDefined();
         const text = getEffectText(highAllyEffect!, card!.type);

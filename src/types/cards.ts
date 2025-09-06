@@ -85,12 +85,6 @@ export interface CardEffect {
   enhancedTarget?: EnhancedEffectTarget;
   /** 特殊効果ハンドラー名（拡張機能） */
   specialHandler?: string;
-  
-  // === 後方互換性 ===
-  /** @deprecated activationConditionを使用してください */
-  condition?: EffectCondition;
-  /** @deprecated selectionFilterを使用してください */
-  targetFilter?: TargetFilter;
 }
 
 // === カード定義 ===
