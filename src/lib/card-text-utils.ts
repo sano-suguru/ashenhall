@@ -65,12 +65,6 @@ const getSelectionFilterText = (filter?: TargetFilter): string => {
   return filters.join('');
 };
 
-/**
- * 後方互換性のためのレガシー関数
- * @deprecated getSelectionFilterTextを使用してください
- */
-const getTargetFilterText = getSelectionFilterText;
-
 const getTargetText = (target: CardEffect['target']): string => {
   const targetMap: { [key: string]: string } = {
     self: '自身',
