@@ -60,6 +60,13 @@ export interface ConditionalEffect {
   ifFalse: CardEffect[];
 }
 
+/** 動的値計算記述子 */
+export interface DynamicValueDescriptor {
+  source: 'graveyard' | 'field' | 'enemy_field';
+  filter?: 'creatures' | 'alive' | 'exclude_self' | 'has_brand';
+  baseValue?: number;
+}
+
 /** カード効果インターフェース */
 export interface CardEffect {
   /** 発動タイミング */
@@ -70,6 +77,8 @@ export interface CardEffect {
   action: EffectAction;
   /** 効果値（ダメージ量、回復量等） */
   value: number;
+  /** 動的値計算（新機能） - DYNAMIC_VALUE_CONFIGSの置き換え */
+  dynamicValue?: DynamicValueDescriptor;
   /** 効果発動条件（オプション） - ゲーム状態を見て「この効果を発動するか」を判定 */
   activationCondition?: EffectCondition;
   /** 対象選択フィルター（オプション） - 対象候補から「誰を実際の対象にするか」を絞り込み */

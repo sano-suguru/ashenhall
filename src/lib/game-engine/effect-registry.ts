@@ -52,6 +52,7 @@ import {
   getBrandedEnemies,
   selectRandomBrandedEnemy,
 } from "./brand-utils";
+import type { DynamicValueDescriptor } from "@/types/cards";
 
 /**
  * 全ての効果ハンドラが従うべき関数シグネチャ
@@ -125,21 +126,6 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
  * 特殊効果ハンドラー - カード固有の複雑なロジック
  */
 export const specialEffectHandlers: Record<string, EffectHandler> = {
-  'pyre_conditional_destroy': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
-    // 《火刑》の特殊ロジック: 烙印持ちなら破壊、そうでなければ3ダメージ
-    if (targets.length === 0) return;
-    
-    const target = targets[0];
-    const hasBrand = target.statusEffects.some(se => se.type === 'branded');
-    
-    if (hasBrand) {
-      // 烙印を持つ場合は確実に破壊
-      executeDamageEffect(state, [target], null, 99, sourceCard.id, sourceCard, random);
-    } else {
-      // 烙印を持たない場合は通常の3ダメージ
-      executeDamageEffect(state, [target], null, 3, sourceCard.id, sourceCard, random);
-    }
-  },
   'judgment_angel_execution': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
     // 《審判の天使》の特殊ロジック
     const opponentId = getOpponentId(sourcePlayerId);
@@ -207,7 +193,58 @@ const DYNAMIC_VALUE_CONFIGS: Record<string, Record<string, DynamicValueConfig>> 
 };
 
 /**
- * 動的値を計算する
+ * 新しい動的値計算システム（推奨方式）
+ */
+function calculateNewDynamicValue(
+  descriptor: DynamicValueDescriptor,
+  state: GameState,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId
+): number {
+  const sourcePlayer = state.players[sourcePlayerId];
+  const opponentId = getOpponentId(sourcePlayerId);
+  const opponent = state.players[opponentId];
+  
+  let calculatedValue = 0;
+  
+  switch (descriptor.source) {
+    case 'graveyard':
+      if (descriptor.filter === 'creatures') {
+        calculatedValue = sourcePlayer.graveyard.filter(c => c.type === 'creature').length;
+      } else if (descriptor.filter === 'exclude_self') {
+        calculatedValue = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
+      } else {
+        calculatedValue = sourcePlayer.graveyard.length;
+      }
+      break;
+      
+    case 'field':
+      if (descriptor.filter === 'alive') {
+        calculatedValue = sourcePlayer.field.filter(c => c.currentHealth > 0).length;
+      } else if (descriptor.filter === 'exclude_self') {
+        calculatedValue = sourcePlayer.field.filter(c => c.id !== sourceCard.id).length;
+      } else {
+        calculatedValue = sourcePlayer.field.length;
+      }
+      break;
+      
+    case 'enemy_field':
+      if (descriptor.filter === 'has_brand') {
+        calculatedValue = getBrandedCreatureCount(opponent.field);
+      } else {
+        calculatedValue = opponent.field.length;
+      }
+      break;
+      
+    default:
+      calculatedValue = 0;
+  }
+  
+  return calculatedValue + (descriptor.baseValue || 0);
+}
+
+/**
+ * 旧システム動的値計算（段階的廃止予定）
  */
 function calculateDynamicValue(
   config: DynamicValueConfig,
@@ -256,20 +293,20 @@ export function resolveDynamicEffectParameters(
   initialTargets: FieldCard[]
 ): { value: number; targets: FieldCard[] } {
   let value = effect.value;
-  let targets = initialTargets;
+  const targets = initialTargets;
 
-  // 動的値計算の適用
-  const cardConfig = DYNAMIC_VALUE_CONFIGS[sourceCard.id];
-  if (cardConfig) {
-    const effectConfig = cardConfig[effect.action];
-    if (effectConfig) {
-      value = calculateDynamicValue(effectConfig, state, sourceCard, sourcePlayerId);
+  // 新システム: 効果に dynamicValue がある場合はそちらを優先
+  if (effect.dynamicValue) {
+    value = calculateNewDynamicValue(effect.dynamicValue, state, sourceCard, sourcePlayerId);
+  } else {
+    // 旧システム: DYNAMIC_VALUE_CONFIGS を使用（段階的廃止予定）
+    const cardConfig = DYNAMIC_VALUE_CONFIGS[sourceCard.id];
+    if (cardConfig) {
+      const effectConfig = cardConfig[effect.action];
+      if (effectConfig) {
+        value = calculateDynamicValue(effectConfig, state, sourceCard, sourcePlayerId);
+      }
     }
-  }
-
-  // 特殊な対象フィルタリング（段階的移行のため暫定的に残す）
-  if (sourceCard.id === "kni_white_wing_marshal" && effect.target === "ally_all") {
-    targets = targets.filter((t) => t.id !== sourceCard.id); // 自分自身を除く
   }
 
   return { value, targets };

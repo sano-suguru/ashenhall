@@ -5,7 +5,6 @@ import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, Condi
  */
 const SPECIAL_HANDLER_TEXTS: Record<string, string> = {
   'judgment_angel_execution': '召喚時: 烙印を持つ敵をすべて破壊し、烙印を持たない敵からランダムに1体を破壊する。',
-  'pyre_conditional_destroy': 'ランダムな敵1体に3ダメージを与える。対象が烙印を持つ場合、代わりに破壊する。',
 };
 
 /**

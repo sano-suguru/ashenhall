@@ -48,17 +48,22 @@ describe("resolveDynamicEffectParameters", () => {
     expect(value).toBe(3);
   });
 
-  it("kni_white_wing_marshalが自身をバフの対象から除外すること", () => {
+  it("kni_white_wing_marshalが自身をバフの対象から除外すること - selectionFilterで処理", () => {
     const sourceCard = findCard("kni_white_wing_marshal");
     const effect = sourceCard.effects.find(e => e.target === 'ally_all')!;
+    
+    // 新しいシステムではselectionFilterで除外される
+    expect(effect.selectionFilter).toEqual({ exclude_self: true });
+    
+    // resolveDynamicEffectParameters自体は対象を変更しない
     const initialTargets: FieldCard[] = [
       { id: sourceCard.id } as FieldCard,
       { id: "ally2" } as FieldCard,
     ];
-
     const { targets } = resolveDynamicEffectParameters(gameState, effect, sourceCard, sourcePlayerId, initialTargets);
-    expect(targets.length).toBe(1);
-    expect(targets[0].id).toBe("ally2");
+    expect(targets.length).toBe(2); // resolveDynamicEffectParameters では変更されない
+    
+    // 実際の除外は applyCardTargetFilter で行われる
   });
 
   it("通常カードの効果パラメータは変更されないこと", () => {
