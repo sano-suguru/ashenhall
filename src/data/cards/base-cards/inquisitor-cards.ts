@@ -306,8 +306,27 @@ export const inquisitorCards: Card[] = [
         trigger: 'on_play',
         target: 'enemy_random',
         action: 'damage',
-        value: 3,
-        specialHandler: 'pyre_conditional_destroy',
+        value: 3, // この値は条件分岐で上書きされる
+        conditionalEffect: {
+          condition: { subject: 'hasBrandedEnemy', operator: 'eq', value: 1 },
+          ifTrue: [
+            {
+              trigger: 'on_play',
+              target: 'enemy_random',
+              action: 'damage',
+              value: 99, // 烙印持ちがいる場合は99ダメージ（破壊）
+              selectionFilter: { hasBrand: true }, // 烙印持ちを優先選択
+            }
+          ],
+          ifFalse: [
+            {
+              trigger: 'on_play',
+              target: 'enemy_random',
+              action: 'damage',
+              value: 3, // 烙印持ちがいない場合は通常の3ダメージ
+            }
+          ],
+        },
       },
     ],
     flavor: '罪深き者には死を、悔悟せし者には贖罪の炎を',

@@ -50,6 +50,16 @@ export interface EffectCondition {
   value: number | 'opponentLife';
 }
 
+/** 条件分岐効果定義 */
+export interface ConditionalEffect {
+  /** 分岐条件 */
+  condition: EffectCondition;
+  /** 条件が真の場合に実行する効果 */
+  ifTrue: CardEffect[];
+  /** 条件が偽の場合に実行する効果 */
+  ifFalse: CardEffect[];
+}
+
 /** カード効果インターフェース */
 export interface CardEffect {
   /** 発動タイミング */
@@ -64,8 +74,10 @@ export interface CardEffect {
   activationCondition?: EffectCondition;
   /** 対象選択フィルター（オプション） - 対象候補から「誰を実際の対象にするか」を絞り込み */
   selectionFilter?: TargetFilter;
-  /** 特殊効果ハンドラー名（拡張機能） */
+  /** 特殊効果ハンドラー名（拡張機能） - 段階的廃止予定 */
   specialHandler?: string;
+  /** 条件分岐効果（新機能） - specialHandlerの汎用化版 */
+  conditionalEffect?: ConditionalEffect;
 }
 
 // === カード定義 ===

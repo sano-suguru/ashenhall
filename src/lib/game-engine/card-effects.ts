@@ -18,6 +18,7 @@ import type {
   EffectTrigger,
   TargetFilter,
 } from "@/types/game";
+import type { ConditionalEffect } from "@/types/cards";
 
 import { SeededRandom } from "./seeded-random";
 import {
@@ -33,77 +34,35 @@ import {
 import { getBrandedEnemies, hasBrandedStatus } from "./brand-utils";
 import { selectTargets } from "./core/target-selector";
 import { checkEffectCondition } from "./core/condition-checker";
+import { applyCardTargetFilter } from "./core/target-filter";
 
 /**
- * 烙印フィルターを適用
+ * 条件分岐効果の実行
  */
-function checkBrandFilter(target: FieldCard, filter: TargetFilter): boolean {
-  if (filter.hasBrand !== undefined) {
-    const hasBrand = hasBrandedStatus(target);
-    return filter.hasBrand === hasBrand;
-  }
-  return true;
-}
-
-/**
- * プロパティフィルターを適用
- */
-function checkPropertyFilter(target: FieldCard, filter: TargetFilter): boolean {
-  if (filter.property && filter.value !== undefined) {
-    return target[filter.property] === filter.value;
-  }
-  return true;
-}
-
-/**
- * コストフィルターを適用
- */
-function checkCostFilter(target: FieldCard, filter: TargetFilter): boolean {
-  if (filter.min_cost !== undefined && target.cost < filter.min_cost) {
-    return false;
-  }
-  if (filter.max_cost !== undefined && target.cost > filter.max_cost) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * キーワードフィルターを適用
- */
-function checkKeywordFilter(target: FieldCard, filter: TargetFilter): boolean {
-  if (filter.has_keyword && !target.keywords.includes(filter.has_keyword)) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * 体力フィルターを適用
- */
-function checkHealthFilter(target: FieldCard, filter: TargetFilter): boolean {
-  if (filter.min_health !== undefined && target.currentHealth < filter.min_health) {
-    return false;
-  }
-  if (filter.max_health !== undefined && target.currentHealth > filter.max_health) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * ターゲットフィルターを適用してクリーチャーリストをフィルタリング
- */
-function applyCardTargetFilter(targets: FieldCard[], filter: TargetFilter): FieldCard[] {
-  return targets.filter((target) => {
-    return (
-      checkBrandFilter(target, filter) &&
-      checkPropertyFilter(target, filter) &&
-      checkCostFilter(target, filter) &&
-      checkKeywordFilter(target, filter) &&
-      checkHealthFilter(target, filter)
+function executeConditionalEffect(
+  state: GameState,
+  conditionalEffect: ConditionalEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId
+): void {
+  try {
+    const conditionMet = checkEffectCondition(
+      state,
+      sourcePlayerId,
+      conditionalEffect.condition
     );
-  });
+    
+    const effectsToExecute = conditionMet 
+      ? conditionalEffect.ifTrue 
+      : conditionalEffect.ifFalse;
+    
+    // 選択された効果群を順次実行
+    effectsToExecute.forEach((effect: CardEffect) => {
+      executeCardEffectWithoutConditionCheck(state, effect, sourceCard, sourcePlayerId);
+    });
+  } catch (error) {
+    console.error(`Error executing conditional effect:`, error);
+  }
 }
 
 /**
@@ -233,7 +192,7 @@ function executeCardEffectWithoutConditionCheck(
     // 2. 対象選択フィルターを適用
     const selectionFilter = effect.selectionFilter;
     if (selectionFilter) {
-      initialTargets = applyCardTargetFilter(initialTargets, selectionFilter);
+      initialTargets = applyCardTargetFilter(initialTargets, selectionFilter, sourceCard.id);
     }
 
     // 3. 動的パラメータを解決
@@ -246,8 +205,11 @@ function executeCardEffectWithoutConditionCheck(
     );
 
     // 4. 効果ハンドラを取得して実行
-    if (effect.specialHandler && specialEffectHandlers[effect.specialHandler]) {
-      // 特殊効果ハンドラーがある場合はそちらを実行
+    if (effect.conditionalEffect) {
+      // 新しい条件分岐効果システムを実行
+      executeConditionalEffect(state, effect.conditionalEffect, sourceCard, sourcePlayerId);
+    } else if (effect.specialHandler && specialEffectHandlers[effect.specialHandler]) {
+      // 特殊効果ハンドラーがある場合はそちらを実行（段階的廃止予定）
       const specialHandler = specialEffectHandlers[effect.specialHandler];
       specialHandler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
     } else {
