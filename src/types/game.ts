@@ -23,7 +23,6 @@ export type {
   EffectTrigger,
   EffectAction,
   EffectTarget,
-  DynamicValueType,
   ConditionSubject,
   ConditionOperator,
   StatusEffect
@@ -31,10 +30,9 @@ export type {
 
 // === カードシステム型 ===
 export type {
-  DynamicValue,
   TargetFilter,
-  EnhancedEffectTarget,
   EffectCondition,
+  ConditionalEffect,
   CardEffect,
   BaseCard,
   CreatureCard,
