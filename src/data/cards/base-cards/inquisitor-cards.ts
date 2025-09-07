@@ -288,8 +288,15 @@ export const inquisitorCards: Card[] = [
         trigger: 'on_play',
         target: 'enemy_all',
         action: 'damage',
-        value: 1,
-        specialHandler: 'judgment_angel_execution',
+        value: 99, // 烙印持ち敵を全破壊
+        selectionFilter: { hasBrand: true },
+      },
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'damage',
+        value: 99, // 烙印なし敵をランダム1体破壊
+        selectionFilter: { hasBrand: false },
       },
     ],
     flavor: '一人一人への審判こそが、真の正義の証明である',
