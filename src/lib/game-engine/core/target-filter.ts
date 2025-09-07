@@ -2,103 +2,33 @@
  * 統合ターゲットフィルターエンジン
  * 
  * 設計方針:
- * - 個別フィルター関数を統一インターフェースで統合
- * - 新しいフィルター追加時の拡張性を確保  
- * - 既存コードとの後方互換性を維持
+ * - FilterRule[]による統一フィルタリングシステム
+ * - Card[]とFieldCard[]の両方に対応した汎用設計
+ * - 新しいフィルター追加時の拡張性を確保
+ * - 型安全性とパフォーマンスの両立
  */
 
-import type { FieldCard, TargetFilter, Keyword } from "@/types/game";
+import type { FieldCard, Card, Keyword, FilterRule, CardType, Faction } from "@/types/game";
 import { hasBrandedStatus } from "../brand-utils";
 
 /**
- * フィルタールールの種類
+ * フィルタリング可能なカード属性の共通インターフェース
  */
-type FilterRuleType = 
-  | 'brand'      // 烙印状態
-  | 'property'   // カードプロパティ  
-  | 'cost'       // コスト範囲
-  | 'keyword'    // キーワード所持
-  | 'health'     // 体力範囲
-  | 'exclude_self'; // 自分自身除外
-
-/**
- * フィルタールール評価インターフェース
- */
-interface FilterRule {
-  type: FilterRuleType;
-  operator: 'eq' | 'gte' | 'lte' | 'has' | 'not_has' | 'range';
-  value?: string | number | boolean | Keyword | { property: string; expectedValue: unknown };
-  minValue?: number;
-  maxValue?: number;
+interface FilterableCard {
+  id: string;
+  type: CardType;
+  faction: Faction;
+  cost: number;
+  keywords: Keyword[];
+  // オプションプロパティでFieldCard特有のプロパティも含める
+  currentHealth?: number;
+  statusEffects?: Array<{ type: string; [key: string]: unknown }>;
 }
 
 /**
- * 統合ターゲットフィルターエンジン
+ * 統合フィルターエンジン (Card[]とFieldCard[]両対応)
  */
-export class TargetFilterEngine {
-  /**
-   * TargetFilterから統一フィルタールールに変換
-   */
-  private static convertLegacyFilter(filter: TargetFilter): FilterRule[] {
-    const rules: FilterRule[] = [];
-
-    // 烙印フィルター
-    if (filter.hasBrand !== undefined) {
-      rules.push({
-        type: 'brand',
-        operator: filter.hasBrand ? 'has' : 'not_has'
-      });
-    }
-
-    // プロパティフィルター  
-    if (filter.property && filter.value !== undefined) {
-      rules.push({
-        type: 'property',
-        operator: 'eq',
-        value: { property: filter.property, expectedValue: filter.value }
-      });
-    }
-
-    // コストフィルター
-    if (filter.min_cost !== undefined || filter.max_cost !== undefined) {
-      rules.push({
-        type: 'cost',
-        operator: 'range',
-        minValue: filter.min_cost,
-        maxValue: filter.max_cost
-      });
-    }
-
-    // キーワードフィルター
-    if (filter.has_keyword) {
-      rules.push({
-        type: 'keyword',
-        operator: 'has',
-        value: filter.has_keyword
-      });
-    }
-
-    // 体力フィルター
-    if (filter.min_health !== undefined || filter.max_health !== undefined) {
-      rules.push({
-        type: 'health',
-        operator: 'range',
-        minValue: filter.min_health,
-        maxValue: filter.max_health
-      });
-    }
-
-    // 自分自身除外フィルター
-    if (filter.exclude_self) {
-      rules.push({
-        type: 'exclude_self',
-        operator: 'eq',
-        value: true
-      });
-    }
-
-    return rules;
-  }
+export class UniversalFilterEngine {
 
   /**
    * 範囲チェック共通ロジック（cost/health共通）
@@ -113,77 +43,104 @@ export class TargetFilterEngine {
   }
 
   /**
-   * 烙印フィルター評価
+   * 烙印フィルター評価（FieldCard限定）
    */
-  private static evaluateBrandRule(target: FieldCard, rule: FilterRule): boolean {
-    const hasBrand = hasBrandedStatus(target);
-    return rule.operator === 'has' ? hasBrand : !hasBrand;
+  private static evaluateBrandRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
+    // FieldCardの場合のみ烙印チェック可能
+    if ('statusEffects' in target && Array.isArray(target.statusEffects)) {
+      const hasBrand = hasBrandedStatus(target as unknown as FieldCard);
+      return rule.operator === 'has' ? hasBrand : !hasBrand;
+    }
+    // Card（デッキ・手札）には烙印概念なし
+    return rule.operator === 'not_has';
   }
 
   /**
-   * プロパティフィルター評価
+   * プロパティフィルター評価（汎用）
    */
-  private static evaluatePropertyRule(target: FieldCard, rule: FilterRule): boolean {
+  private static evaluatePropertyRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
     if (typeof rule.value !== 'object' || rule.value === null || !('property' in rule.value)) {
       return true;
     }
     const propertyRule = rule.value as { property: string; expectedValue: unknown };
-    const actualValue = target[propertyRule.property as keyof FieldCard];
+    const actualValue = (target as Record<string, unknown>)[propertyRule.property];
     return actualValue === propertyRule.expectedValue;
   }
 
   /**
-   * コストフィルター評価
+   * コストフィルター評価（汎用）
    */
-  private static evaluateCostRule(target: FieldCard, rule: FilterRule): boolean {
+  private static evaluateCostRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
     return this.evaluateRangeRule(target.cost, rule);
   }
 
   /**
-   * キーワードフィルター評価
+   * キーワードフィルター評価（汎用）
    */
-  private static evaluateKeywordRule(target: FieldCard, rule: FilterRule): boolean {
+  private static evaluateKeywordRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
     const hasKeyword = target.keywords.includes(rule.value as Keyword);
     return rule.operator === 'has' ? hasKeyword : !hasKeyword;
   }
 
   /**
-   * 体力フィルター評価
+   * 体力フィルター評価（FieldCard限定）
    */
-  private static evaluateHealthRule(target: FieldCard, rule: FilterRule): boolean {
-    return this.evaluateRangeRule(target.currentHealth, rule);
+  private static evaluateHealthRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
+    if ('currentHealth' in target && typeof target.currentHealth === 'number') {
+      return this.evaluateRangeRule(target.currentHealth, rule);
+    }
+    // Card（デッキ・手札）には現在体力なし
+    return true;
   }
 
   /**
-   * 自分自身除外フィルター評価
+   * 自分自身除外フィルター評価（汎用）
    */
-  private static evaluateExcludeSelfRule(target: FieldCard, rule: FilterRule, sourceCardId?: string): boolean {
+  private static evaluateExcludeSelfRule<T extends FilterableCard>(target: T, rule: FilterRule, sourceCardId?: string): boolean {
     return sourceCardId ? target.id !== sourceCardId : true;
   }
 
   /**
-   * 評価戦略マップ（型安全なStrategy Pattern）
+   * カード種別フィルター評価（汎用）
+   */
+  private static evaluateCardTypeRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
+    return target.type === rule.value;
+  }
+
+  /**
+   * 勢力フィルター評価（汎用）
+   */
+  private static evaluateFactionRule<T extends FilterableCard>(target: T, rule: FilterRule): boolean {
+    return target.faction === rule.value;
+  }
+
+  /**
+   * 評価戦略マップ（汎用型安全なStrategy Pattern）
    */
   private static readonly ruleEvaluators = {
-    brand: (target: FieldCard, rule: FilterRule) => 
-      TargetFilterEngine.evaluateBrandRule(target, rule),
-    property: (target: FieldCard, rule: FilterRule) => 
-      TargetFilterEngine.evaluatePropertyRule(target, rule),
-    cost: (target: FieldCard, rule: FilterRule) => 
-      TargetFilterEngine.evaluateCostRule(target, rule),
-    keyword: (target: FieldCard, rule: FilterRule) => 
-      TargetFilterEngine.evaluateKeywordRule(target, rule),
-    health: (target: FieldCard, rule: FilterRule) => 
-      TargetFilterEngine.evaluateHealthRule(target, rule),
-    exclude_self: (target: FieldCard, rule: FilterRule, sourceCardId?: string) => 
-      TargetFilterEngine.evaluateExcludeSelfRule(target, rule, sourceCardId),
+    brand: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateBrandRule(target, rule),
+    property: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluatePropertyRule(target, rule),
+    cost: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateCostRule(target, rule),
+    keyword: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateKeywordRule(target, rule),
+    health: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateHealthRule(target, rule),
+    exclude_self: <T extends FilterableCard>(target: T, rule: FilterRule, sourceCardId?: string) => 
+      UniversalFilterEngine.evaluateExcludeSelfRule(target, rule, sourceCardId),
+    card_type: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateCardTypeRule(target, rule),
+    faction: <T extends FilterableCard>(target: T, rule: FilterRule) => 
+      UniversalFilterEngine.evaluateFactionRule(target, rule),
   } as const;
 
   /**
-   * 単一ルールの評価（Strategy Pattern適用済み）
+   * 単一ルールの評価（汎用Strategy Pattern適用済み）
    */
-  private static evaluateRule(
-    target: FieldCard,
+  private static evaluateRule<T extends FilterableCard>(
+    target: T,
     rule: FilterRule,
     sourceCardId?: string
   ): boolean {
@@ -208,51 +165,31 @@ export class TargetFilterEngine {
   }
 
   /**
-   * 統合フィルター適用（新しいインターフェース）
+   * 汎用フィルタールール適用（Card[]とFieldCard[]両対応）
+   */
+  static applyRules<T extends Card | FieldCard>(
+    targets: T[],
+    rules: FilterRule[],
+    sourceCardId?: string
+  ): T[] {
+    return targets.filter(target =>
+      rules.every(rule => this.evaluateRule(target as FilterableCard, rule, sourceCardId))
+    );
+  }
+}
+
+/**
+ * 後方互換性のためのエイリアス（段階的移行用）
+ */
+export class TargetFilterEngine {
+  /**
+   * @deprecated UniversalFilterEngine.applyRules を使用してください
    */
   static applyRules(
     targets: FieldCard[],
     rules: FilterRule[],
     sourceCardId?: string
   ): FieldCard[] {
-    return targets.filter(target =>
-      rules.every(rule => this.evaluateRule(target, rule, sourceCardId))
-    );
+    return UniversalFilterEngine.applyRules(targets, rules, sourceCardId) as FieldCard[];
   }
-
-  /**
-   * レガシーTargetFilter適用（後方互換性）
-   */
-  static applyLegacyFilter(
-    targets: FieldCard[],
-    filter: TargetFilter,
-    sourceCardId?: string
-  ): FieldCard[] {
-    const rules = this.convertLegacyFilter(filter);
-    return this.applyRules(targets, rules, sourceCardId);
-  }
-
-  /**
-   * 複数フィルター条件の統合適用
-   */
-  static applyMultipleFilters(
-    targets: FieldCard[],
-    filters: TargetFilter[],
-    sourceCardId?: string
-  ): FieldCard[] {
-    return filters.reduce((filteredTargets, filter) => {
-      return this.applyLegacyFilter(filteredTargets, filter, sourceCardId);
-    }, targets);
-  }
-}
-
-/**
- * 既存コードとの互換性を保つヘルパー関数
- */
-export function applyCardTargetFilter(
-  targets: FieldCard[],
-  filter: TargetFilter,
-  sourceCardId?: string
-): FieldCard[] {
-  return TargetFilterEngine.applyLegacyFilter(targets, filter, sourceCardId);
 }

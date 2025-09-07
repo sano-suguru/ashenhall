@@ -16,7 +16,6 @@ import type {
   EffectAction,
   ValueChange,
   EffectTrigger,
-  TargetFilter,
 } from "@/types/game";
 import type { ConditionalEffect } from "@/types/cards";
 
@@ -34,7 +33,7 @@ import {
 import { getBrandedEnemies, hasBrandedStatus } from "./brand-utils";
 import { selectTargets } from "./core/target-selector";
 import { checkEffectCondition } from "./core/condition-checker";
-import { applyCardTargetFilter } from "./core/target-filter";
+import { TargetFilterEngine } from "./core/target-filter";
 
 /**
  * 条件分岐効果の実行
@@ -190,9 +189,10 @@ function executeCardEffectWithoutConditionCheck(
     }
 
     // 2. 対象選択フィルターを適用
-    const selectionFilter = effect.selectionFilter;
-    if (selectionFilter) {
-      initialTargets = applyCardTargetFilter(initialTargets, selectionFilter, sourceCard.id);
+    const selectionRules = effect.selectionRules;
+    
+    if (selectionRules) {
+      initialTargets = TargetFilterEngine.applyRules(initialTargets, selectionRules, sourceCard.id);
     }
 
     // 3. 動的パラメータを解決

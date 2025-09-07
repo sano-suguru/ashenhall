@@ -679,7 +679,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      selectionFilter: { hasBrand: true },
+      selectionRules: [{ type: 'brand', operator: 'has' }],
     };
     
     const sourceCard = {
@@ -750,13 +750,13 @@ describe('Banish System', () => {
       health: 3,
       keywords: [],
       effects: [
-        {
-          trigger: 'on_play',
-          target: 'enemy_random',
-          action: 'banish',
-          value: 1,
-          selectionFilter: { hasBrand: true },
-        },
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'banish',
+        value: 1,
+        selectionRules: [{ type: 'brand', operator: 'has' }],
+      },
         {
           trigger: 'on_play',
           target: 'enemy_all',
@@ -809,7 +809,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      selectionFilter: { hasBrand: true },
+      selectionRules: [{ type: 'brand', operator: 'has' }],
     };
     
     const sourceCard = {
@@ -860,7 +860,7 @@ describe('Banish System', () => {
       target: 'enemy_random',
       action: 'banish',
       value: 1,
-      selectionFilter: { hasBrand: true },
+      selectionRules: [{ type: 'brand', operator: 'has' }],
     };
     
     const sourceCard = {

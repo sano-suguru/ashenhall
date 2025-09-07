@@ -13,9 +13,11 @@ import type {
   PlayerId,
   ValueChange,
 } from "@/types/game";
+import type { FilterRule } from "@/types/cards";
 import {
   addEffectTriggerAction,
 } from "./effect-types";
+import { UniversalFilterEngine } from "../core/target-filter";
 
 /**
  * 沈黙効果の処理
@@ -142,7 +144,7 @@ export function executeDeckSearchEffect(
   state: GameState,
   targetPlayerId: PlayerId,
   sourceCardId: string,
-  filter?: import("@/types/game").TargetFilter,
+  filter?: FilterRule[],
   random?: { choice: <T>(array: T[]) => T | undefined }
 ): void {
   const player = state.players[targetPlayerId];
@@ -152,25 +154,11 @@ export function executeDeckSearchEffect(
     return;
   }
   
-  // デッキからフィルタリング
+  // UniversalFilterEngineを使用してデッキフィルタリング（複雑度削減）
   let searchTargets = player.deck;
   
-  if (filter) {
-    searchTargets = player.deck.filter(card => {
-      // 新フォーマット対応
-      if (filter.card_type && card.type !== filter.card_type) return false;
-      if (filter.has_faction && card.faction !== filter.has_faction) return false;
-      if (filter.max_cost !== undefined && card.cost > filter.max_cost) return false;
-      if (filter.min_cost !== undefined && card.cost < filter.min_cost) return false;
-      
-      // 既存フォーマット対応（後方互換性）
-      if (filter.property && filter.value !== undefined) {
-        // @ts-expect-error: filter.property is a dynamic key, but it's safe because CardProperty type ensures it exists on Card.
-        if (card[filter.property] !== filter.value) return false;
-      }
-      
-      return true;
-    });
+  if (filter && Array.isArray(filter)) {
+    searchTargets = UniversalFilterEngine.applyRules(player.deck, filter, sourceCardId);
   }
   
   if (searchTargets.length === 0) {

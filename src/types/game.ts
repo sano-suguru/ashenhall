@@ -30,7 +30,7 @@ export type {
 
 // === カードシステム型 ===
 export type {
-  TargetFilter,
+  FilterRule,
   EffectCondition,
   ConditionalEffect,
   CardEffect,

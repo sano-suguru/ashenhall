@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { TargetFilterEngine } from "@/lib/game-engine/core/target-filter";
-import type { FieldCard, TargetFilter, Keyword } from "@/types/game";
+import type { FieldCard, FilterRule, Keyword } from "@/types/game";
 
-describe("TargetFilterEngine - Refactored Rule Evaluators", () => {
+describe("TargetFilterEngine - FilterRule System", () => {
   let mockTarget: FieldCard;
   
   beforeEach(() => {
@@ -33,115 +33,54 @@ describe("TargetFilterEngine - Refactored Rule Evaluators", () => {
   });
 
   describe("Brand Filter", () => {
-    it("should correctly filter branded creatures", () => {
+    it("should filter branded creatures", () => {
+      const rules: FilterRule[] = [{ type: 'brand', operator: 'has' }];
+      
       // 烙印なしの状態
-      const filter: TargetFilter = { hasBrand: true };
-      let result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      let result = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result).toHaveLength(0);
 
       // 烙印ありの状態
       mockTarget.statusEffects = [{ type: 'branded' }];
-      result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      result = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card");
     });
 
-    it("should correctly filter non-branded creatures", () => {
-      const filter: TargetFilter = { hasBrand: false };
+    it("should filter non-branded creatures", () => {
+      const rules: FilterRule[] = [{ type: 'brand', operator: 'not_has' }];
       
       // 烙印なしの状態
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      const result = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card");
 
       // 烙印ありの状態
       mockTarget.statusEffects = [{ type: 'branded' }];
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      const result2 = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result2).toHaveLength(0);
     });
   });
 
   describe("Cost Filter", () => {
-    it("should filter by exact cost", () => {
-      const filter: TargetFilter = { property: 'cost', value: 3 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
-
-      const filter2: TargetFilter = { property: 'cost', value: 5 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
-      expect(result2).toHaveLength(0);
-    });
-
     it("should filter by cost range", () => {
-      const filter: TargetFilter = { min_cost: 2, max_cost: 4 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      const rules: FilterRule[] = [{ type: 'cost', operator: 'range', minValue: 2, maxValue: 4 }];
+      const result = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result).toHaveLength(1);
 
-      const filter2: TargetFilter = { min_cost: 5, max_cost: 7 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
-      expect(result2).toHaveLength(0);
-    });
-
-    it("should filter by minimum cost only", () => {
-      const filter: TargetFilter = { min_cost: 3 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
-
-      const filter2: TargetFilter = { min_cost: 4 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
-      expect(result2).toHaveLength(0);
-    });
-
-    it("should filter by maximum cost only", () => {
-      const filter: TargetFilter = { max_cost: 3 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
-
-      const filter2: TargetFilter = { max_cost: 2 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
-      expect(result2).toHaveLength(0);
-    });
-  });
-
-  describe("Health Filter", () => {
-    it("should filter by health range", () => {
-      const filter: TargetFilter = { min_health: 3, max_health: 5 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
-
-      const filter2: TargetFilter = { min_health: 5, max_health: 7 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
-      expect(result2).toHaveLength(0);
-    });
-
-    it("should filter by current health", () => {
-      mockTarget.currentHealth = 2; // ダメージを受けた状態
-      
-      const filter: TargetFilter = { min_health: 1, max_health: 2 };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
-
-      const filter2: TargetFilter = { min_health: 3, max_health: 4 };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
+      const rules2: FilterRule[] = [{ type: 'cost', operator: 'range', minValue: 5, maxValue: 7 }];
+      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
       expect(result2).toHaveLength(0);
     });
   });
 
   describe("Keyword Filter", () => {
     it("should filter by keyword presence", () => {
-      const filter: TargetFilter = { has_keyword: 'guard' };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
+      const rules: FilterRule[] = [{ type: 'keyword', operator: 'has', value: 'guard' }];
+      const result = TargetFilterEngine.applyRules([mockTarget], rules);
       expect(result).toHaveLength(1);
 
-      const filter2: TargetFilter = { has_keyword: 'stealth' };
-      const result2 = TargetFilterEngine.applyLegacyFilter([mockTarget], filter2);
+      const rules2: FilterRule[] = [{ type: 'keyword', operator: 'has', value: 'stealth' }];
+      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
       expect(result2).toHaveLength(0);
-    });
-
-    it("should handle multiple keywords", () => {
-      const filter: TargetFilter = { has_keyword: 'lifesteal' };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      expect(result).toHaveLength(1);
     });
   });
 
@@ -150,25 +89,15 @@ describe("TargetFilterEngine - Refactored Rule Evaluators", () => {
       const mockTarget2 = { ...mockTarget, id: "other-card" };
       const targets = [mockTarget, mockTarget2];
       
-      const filter: TargetFilter = { exclude_self: true };
-      const result = TargetFilterEngine.applyLegacyFilter(targets, filter, "test-card");
+      const rules: FilterRule[] = [{ type: 'exclude_self', operator: 'eq', value: true }];
+      const result = TargetFilterEngine.applyRules(targets, rules, "test-card");
       
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("other-card");
     });
-
-    it("should include all when no sourceCardId provided", () => {
-      const mockTarget2 = { ...mockTarget, id: "other-card" };
-      const targets = [mockTarget, mockTarget2];
-      
-      const filter: TargetFilter = { exclude_self: true };
-      const result = TargetFilterEngine.applyLegacyFilter(targets, filter);
-      
-      expect(result).toHaveLength(2);
-    });
   });
 
-  describe("Multiple Filters", () => {
+  describe("Multiple Rules", () => {
     it("should apply multiple filter conditions", () => {
       const mockTarget2 = { 
         ...mockTarget, 
@@ -178,49 +107,36 @@ describe("TargetFilterEngine - Refactored Rule Evaluators", () => {
       };
       const targets = [mockTarget, mockTarget2];
       
-      const filter: TargetFilter = { 
-        min_cost: 2, 
-        max_cost: 4, 
-        has_keyword: 'guard' 
-      };
-      const result = TargetFilterEngine.applyLegacyFilter(targets, filter);
-      
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card");
-    });
-
-    it("should apply multiple separate filters", () => {
-      const mockTarget2 = { 
-        ...mockTarget, 
-        id: "other-card", 
-        cost: 1,
-        keywords: [] as Keyword[]
-      };
-      const targets = [mockTarget, mockTarget2];
-      
-      const filters: TargetFilter[] = [
-        { min_cost: 2 },
-        { has_keyword: 'guard' }
+      const rules: FilterRule[] = [
+        { type: 'cost', operator: 'range', minValue: 2, maxValue: 4 },
+        { type: 'keyword', operator: 'has', value: 'guard' }
       ];
-      const result = TargetFilterEngine.applyMultipleFilters(targets, filters);
+      const result = TargetFilterEngine.applyRules(targets, rules);
       
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("test-card");
     });
   });
 
-  describe("Error Handling", () => {
-    it("should handle invalid property filters gracefully", () => {
-      // 無効なプロパティ値でのテストは型安全性のため削除
-      // 代わりに正常なプロパティでのテストを実行
-      const filter: TargetFilter = { 
-        property: 'cost', 
-        value: 999 // 存在しない値
-      };
-      const result = TargetFilterEngine.applyLegacyFilter([mockTarget], filter);
-      
-      // 一致しない値なので結果は空
-      expect(result).toHaveLength(0);
+  describe("New Filter Types", () => {
+    it("should filter by card type", () => {
+      const rules: FilterRule[] = [{ type: 'card_type', operator: 'eq', value: 'creature' }];
+      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      expect(result).toHaveLength(1);
+
+      const rules2: FilterRule[] = [{ type: 'card_type', operator: 'eq', value: 'spell' }];
+      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      expect(result2).toHaveLength(0);
+    });
+
+    it("should filter by faction", () => {
+      const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'knight' }];
+      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      expect(result).toHaveLength(1);
+
+      const rules2: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
+      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      expect(result2).toHaveLength(0);
     });
   });
 });

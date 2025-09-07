@@ -174,7 +174,7 @@ export const knightCards: Card[] = [
         target: 'ally_all',
         action: 'buff_attack',
         value: 1,
-        selectionFilter: { exclude_self: true },
+        selectionRules: [{ type: 'exclude_self', operator: 'eq', value: true }],
       },
     ],
     flavor: '恐れるな、我が翼の元に集え！光は我らと共にある！',

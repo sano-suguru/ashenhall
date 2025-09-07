@@ -91,7 +91,7 @@ export const inquisitorCards: Card[] = [
         target: 'enemy_random',
         action: 'hand_discard',
         value: 1,
-        selectionFilter: { property: 'type', value: 'spell' },
+        selectionRules: [{ type: 'property', operator: 'eq', value: { property: 'type', expectedValue: 'spell' } }],
       },
     ],
     flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
@@ -198,7 +198,7 @@ export const inquisitorCards: Card[] = [
         target: 'enemy_random',
         action: 'banish',
         value: 1,
-        selectionFilter: { hasBrand: true },
+        selectionRules: [{ type: 'brand', operator: 'has' }],
       },
       {
         trigger: 'on_play',
@@ -289,14 +289,14 @@ export const inquisitorCards: Card[] = [
         target: 'enemy_all',
         action: 'damage',
         value: 99, // 烙印持ち敵を全破壊
-        selectionFilter: { hasBrand: true },
+        selectionRules: [{ type: 'brand', operator: 'has' }],
       },
       {
         trigger: 'on_play',
         target: 'enemy_random',
         action: 'damage',
         value: 99, // 烙印なし敵をランダム1体破壊
-        selectionFilter: { hasBrand: false },
+        selectionRules: [{ type: 'brand', operator: 'not_has' }],
       },
     ],
     flavor: '一人一人への審判こそが、真の正義の証明である',
@@ -322,7 +322,7 @@ export const inquisitorCards: Card[] = [
               target: 'enemy_random',
               action: 'damage',
               value: 99, // 烙印持ちがいる場合は99ダメージ（破壊）
-              selectionFilter: { hasBrand: true }, // 烙印持ちを優先選択
+              selectionRules: [{ type: 'brand', operator: 'has' }], // 烙印持ちを優先選択
             }
           ],
           ifFalse: [
@@ -357,7 +357,11 @@ export const inquisitorCards: Card[] = [
         target: 'self',
         action: 'deck_search',
         value: 1,
-        selectionFilter: { card_type: 'creature', has_faction: 'inquisitor', max_cost: 2 },
+        selectionRules: [
+          { type: 'card_type', operator: 'eq', value: 'creature' },
+          { type: 'faction', operator: 'eq', value: 'inquisitor' },
+          { type: 'cost', operator: 'range', maxValue: 2 }
+        ],
       },
     ],
     flavor: '異端者を見つけ出すには、同胞の知恵が必要だ',

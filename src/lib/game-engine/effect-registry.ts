@@ -110,7 +110,7 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeSwapAttackHealthEffect(state, targets, sourceCard.id),
   'hand_discard': (state, effect, sourceCard, sourcePlayerId, random, _t, value) => {
     const opponentId = getOpponentId(sourcePlayerId);
-    executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.selectionFilter);
+    executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.selectionRules);
   },
   'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => 
     executeDestroyAllCreaturesEffect(state, sourceCard.id),
@@ -118,8 +118,9 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeApplyBrandEffect(state, targets, sourceCard.id),
   'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => 
     executeBanishEffect(state, targets, sourceCard.id),
-  'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => 
-    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.selectionFilter, random),
+  'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => {
+    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.selectionRules, random);
+  },
 };
 
 /**

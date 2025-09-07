@@ -13,12 +13,14 @@ import type {
   PlayerId,
   ValueChange,
 } from "@/types/game";
+import type { FilterRule } from "@/types/cards";
 import { SeededRandom } from "../seeded-random";
 import {
   addEffectTriggerAction,
   getOpponentId,
   createValueChange,
 } from "./effect-types";
+import { UniversalFilterEngine } from "../core/target-filter";
 
 /**
  * デッキトップ破壊効果の処理
@@ -114,7 +116,7 @@ export function executeHandDiscardEffect(
   count: number,
   sourceCardId: string,
   random: SeededRandom,
-  filter?: import("@/types/game").TargetFilter
+  filter?: FilterRule[]
 ): void {
   const player = state.players[targetPlayerId];
   if (player.hand.length === 0) return;
@@ -122,11 +124,9 @@ export function executeHandDiscardEffect(
   for (let i = 0; i < count; i++) {
     let potentialTargets = player.hand;
 
-    if (filter) {
-      potentialTargets = potentialTargets.filter((card) => {
-        // @ts-expect-error: filter.property is a dynamic key, but it's safe because CardProperty type ensures it exists on Card.
-        return card[filter.property] === filter.value;
-      });
+    // UniversalFilterEngineを使用して手札フィルタリング（実装完成）
+    if (filter && Array.isArray(filter)) {
+      potentialTargets = UniversalFilterEngine.applyRules(player.hand, filter, sourceCardId);
     }
 
     if (potentialTargets.length === 0) return;

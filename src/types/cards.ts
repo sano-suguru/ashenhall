@@ -26,21 +26,13 @@ import type {
 
 // === カード効果システム ===
 
-/** 対象フィルター */
-export interface TargetFilter {
-  // 既存フォーマット（後方互換性）
-  property?: CardProperty;
-  value?: 'spell' | 'creature' | number | Faction;
-  // 新フォーマット（拡張機能）
-  exclude_self?: boolean;    // 自分自身を除外
-  min_health?: number;       // 最小体力
-  max_health?: number;       // 最大体力
-  has_keyword?: Keyword;     // 指定キーワード所持
-  card_type?: CardType;      // カード種別
-  min_cost?: number;         // 最小コスト
-  max_cost?: number;         // 最大コスト
-  has_faction?: Faction;     // 指定勢力所持（デッキサーチ用）
-  hasBrand?: boolean;        // 烙印を持つクリーチャー（審問官効果用）
+/** フィルタールール（統一インターフェース） */
+export interface FilterRule {
+  type: 'brand' | 'property' | 'cost' | 'keyword' | 'health' | 'exclude_self' | 'card_type' | 'faction';
+  operator: 'eq' | 'gte' | 'lte' | 'has' | 'not_has' | 'range';
+  value?: string | number | boolean | Keyword | { property: string; expectedValue: unknown };
+  minValue?: number;
+  maxValue?: number;
 }
 
 /** 効果発動条件 */
@@ -81,8 +73,8 @@ export interface CardEffect {
   dynamicValue?: DynamicValueDescriptor;
   /** 効果発動条件（オプション） - ゲーム状態を見て「この効果を発動するか」を判定 */
   activationCondition?: EffectCondition;
-  /** 対象選択フィルター（オプション） - 対象候補から「誰を実際の対象にするか」を絞り込み */
-  selectionFilter?: TargetFilter;
+  /** 対象選択ルール - FilterRule[]形式 */
+  selectionRules?: FilterRule[];
   /** 特殊効果ハンドラー名（拡張機能） - 段階的廃止予定 */
   specialHandler?: string;
   /** 条件分岐効果（新機能） - specialHandlerの汎用化版 */
