@@ -101,52 +101,109 @@ export class TargetFilterEngine {
   }
 
   /**
-   * 単一ルールの評価
+   * 範囲チェック共通ロジック（cost/health共通）
+   */
+  private static evaluateRangeRule(value: number, rule: FilterRule): boolean {
+    if (rule.operator === 'range') {
+      const minOk = rule.minValue === undefined || value >= rule.minValue;
+      const maxOk = rule.maxValue === undefined || value <= rule.maxValue;
+      return minOk && maxOk;
+    }
+    return rule.operator === 'eq' ? value === rule.value : value !== rule.value;
+  }
+
+  /**
+   * 烙印フィルター評価
+   */
+  private static evaluateBrandRule(target: FieldCard, rule: FilterRule): boolean {
+    const hasBrand = hasBrandedStatus(target);
+    return rule.operator === 'has' ? hasBrand : !hasBrand;
+  }
+
+  /**
+   * プロパティフィルター評価
+   */
+  private static evaluatePropertyRule(target: FieldCard, rule: FilterRule): boolean {
+    if (typeof rule.value !== 'object' || rule.value === null || !('property' in rule.value)) {
+      return true;
+    }
+    const propertyRule = rule.value as { property: string; expectedValue: unknown };
+    const actualValue = target[propertyRule.property as keyof FieldCard];
+    return actualValue === propertyRule.expectedValue;
+  }
+
+  /**
+   * コストフィルター評価
+   */
+  private static evaluateCostRule(target: FieldCard, rule: FilterRule): boolean {
+    return this.evaluateRangeRule(target.cost, rule);
+  }
+
+  /**
+   * キーワードフィルター評価
+   */
+  private static evaluateKeywordRule(target: FieldCard, rule: FilterRule): boolean {
+    const hasKeyword = target.keywords.includes(rule.value as Keyword);
+    return rule.operator === 'has' ? hasKeyword : !hasKeyword;
+  }
+
+  /**
+   * 体力フィルター評価
+   */
+  private static evaluateHealthRule(target: FieldCard, rule: FilterRule): boolean {
+    return this.evaluateRangeRule(target.currentHealth, rule);
+  }
+
+  /**
+   * 自分自身除外フィルター評価
+   */
+  private static evaluateExcludeSelfRule(target: FieldCard, rule: FilterRule, sourceCardId?: string): boolean {
+    return sourceCardId ? target.id !== sourceCardId : true;
+  }
+
+  /**
+   * 評価戦略マップ（型安全なStrategy Pattern）
+   */
+  private static readonly ruleEvaluators = {
+    brand: (target: FieldCard, rule: FilterRule) => 
+      TargetFilterEngine.evaluateBrandRule(target, rule),
+    property: (target: FieldCard, rule: FilterRule) => 
+      TargetFilterEngine.evaluatePropertyRule(target, rule),
+    cost: (target: FieldCard, rule: FilterRule) => 
+      TargetFilterEngine.evaluateCostRule(target, rule),
+    keyword: (target: FieldCard, rule: FilterRule) => 
+      TargetFilterEngine.evaluateKeywordRule(target, rule),
+    health: (target: FieldCard, rule: FilterRule) => 
+      TargetFilterEngine.evaluateHealthRule(target, rule),
+    exclude_self: (target: FieldCard, rule: FilterRule, sourceCardId?: string) => 
+      TargetFilterEngine.evaluateExcludeSelfRule(target, rule, sourceCardId),
+  } as const;
+
+  /**
+   * 単一ルールの評価（Strategy Pattern適用済み）
    */
   private static evaluateRule(
     target: FieldCard,
     rule: FilterRule,
     sourceCardId?: string
   ): boolean {
-    switch (rule.type) {
-      case 'brand':
-        const hasBrand = hasBrandedStatus(target);
-        return rule.operator === 'has' ? hasBrand : !hasBrand;
-
-      case 'property':
-        if (typeof rule.value !== 'object' || rule.value === null || !('property' in rule.value)) return true;
-        const propertyRule = rule.value as { property: string; expectedValue: unknown };
-        const actualValue = target[propertyRule.property as keyof FieldCard];
-        return actualValue === propertyRule.expectedValue;
-
-      case 'cost':
-        const cost = target.cost;
-        if (rule.operator === 'range') {
-          const minOk = rule.minValue === undefined || cost >= rule.minValue;
-          const maxOk = rule.maxValue === undefined || cost <= rule.maxValue;
-          return minOk && maxOk;
-        }
-        return rule.operator === 'eq' ? cost === rule.value : cost !== rule.value;
-
-      case 'keyword':
-        const hasKeyword = target.keywords.includes(rule.value as Keyword);
-        return rule.operator === 'has' ? hasKeyword : !hasKeyword;
-
-      case 'health':
-        const health = target.currentHealth;
-        if (rule.operator === 'range') {
-          const minOk = rule.minValue === undefined || health >= rule.minValue;
-          const maxOk = rule.maxValue === undefined || health <= rule.maxValue;
-          return minOk && maxOk;
-        }
-        return rule.operator === 'eq' ? health === rule.value : health !== rule.value;
-
-      case 'exclude_self':
-        return sourceCardId ? target.id !== sourceCardId : true;
-
-      default:
+    try {
+      // exclude_selfの場合は直接呼び出し（型安全）
+      if (rule.type === 'exclude_self') {
+        return this.ruleEvaluators.exclude_self(target, rule, sourceCardId);
+      }
+      
+      // その他のevaluatorは2パラメータで呼び出し
+      const evaluator = this.ruleEvaluators[rule.type];
+      if (!evaluator) {
         console.warn(`Unknown filter rule type: ${rule.type}`);
         return true;
+      }
+      
+      return evaluator(target, rule);
+    } catch (error) {
+      console.error(`Error evaluating filter rule:`, error);
+      return true;
     }
   }
 
