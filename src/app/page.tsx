@@ -9,15 +9,17 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import type { Faction, TacticsType, GameState, LocalStats, Card } from '@/types/game';
+import type { Faction, TacticsType, GameState, Card } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
-import { createInitialGameState, processGameStep } from '@/lib/game-engine/core';
-import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
+import { createInitialGameState } from '@/lib/game-engine/core';
 import GameSetup from '@/components/GameSetup';
 import GameBoard from '@/components/GameBoard';
+import { useGameControls } from '@/hooks/useGameControls';
+import { useLocalStats } from '@/hooks/useLocalStats';
+import { useGameProgress } from '@/hooks/useGameProgress';
 import { Zap, AlertCircle } from 'lucide-react';
 
 type AppState = 'setup' | 'playing' | 'finished';
@@ -25,17 +27,22 @@ type AppState = 'setup' | 'playing' | 'finished';
 export default function Home() {
   const [appState, setAppState] = useState<AppState>('setup');
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [localStats, setLocalStats] = useState<LocalStats | null>(null);
   
-  // 新しいシンプルな状態管理
-  const [isPlaying, setIsPlaying] = useState(true);     // 再生/一時停止
-  const [currentTurn, setCurrentTurn] = useState(-1);   // 現在表示ターン (-1=最新)
-  const [gameSpeed, setGameSpeed] = useState(1.0);      // 再生速度
-
-  // 統計データを読み込む
-  useEffect(() => {
-    setLocalStats(loadStats());
-  }, []);
+  // フック責務分離
+  const gameControls = useGameControls();
+  const localStats = useLocalStats();
+  const gameProgress = useGameProgress({
+    gameState,
+    isPlaying: gameControls.isPlaying,
+    currentTurn: gameControls.currentTurn,
+    gameSpeed: gameControls.gameSpeed,
+    onGameStateChange: setGameState,
+    onGameFinished: () => {
+      gameControls.setIsPlaying(false);
+      setAppState('finished');
+    },
+    onStatsUpdate: localStats.updateWithGameResult,
+  });
 
   // AIデッキを生成する関数（勢力のカードから定数で定義された枚数を選択）
   const generateAIDeck = (faction: Faction): Card[] => {
@@ -76,77 +83,18 @@ export default function Home() {
     
     setGameState(initialState);
     setAppState('playing');
-    setIsPlaying(true);     // 自動再生開始
-    setCurrentTurn(-1);     // 最新ターンに設定
-  };
-
-  // ゲーム進行処理（自動実行）
-  useEffect(() => {
-    if (!gameState || !isPlaying || gameState.result) {
-      return;
-    }
-
-    // 過去ターン表示中の場合
-    if (currentTurn !== -1 && currentTurn < gameState.turnNumber) {
-      // 過去ターンから最新まで段階的に進行
-      const timer = setTimeout(() => {
-        const nextTurn = currentTurn + 1;
-        if (nextTurn >= gameState.turnNumber) {
-          // 最新に到達したらライブモードに戻る
-          setCurrentTurn(-1);
-        } else {
-          // 次のターンに進む
-          setCurrentTurn(nextTurn);
-        }
-      }, Math.max(200, 1000 / gameSpeed)); // 最小200ms、速度調整可能
-      
-      return () => clearTimeout(timer);
-    }
     
-    // 最新ターンの場合のみ実際のゲーム進行
-    if (currentTurn === -1 || currentTurn >= gameState.turnNumber) {
-      const processNextStep = () => {
-        const nextState = processGameStep(gameState);
-        setGameState(nextState);
-        
-        // ゲームが終了した場合
-        if (nextState.result) {
-          setIsPlaying(false);
-          setAppState('finished');
-
-          // 統計データを更新して保存
-          if (localStats) {
-            const updatedStats = updateStatsWithGameResult(localStats, nextState);
-            saveStats(updatedStats);
-            setLocalStats(updatedStats);
-          }
-        }
-      };
-
-      // フェーズ別の基本遅延時間
-      const phaseDelays = {
-        draw: 300,
-        energy: 200,
-        deploy: 800,
-        battle: 1200,
-        end: 300,
-      };
-
-      // 現在のフェーズに応じた遅延時間を計算
-      const baseDelay = phaseDelays[gameState.phase] || 500;
-      const adjustedDelay = Math.max(50, baseDelay / gameSpeed); // 最小50ms
-
-      const timer = setTimeout(processNextStep, adjustedDelay);
-      return () => clearTimeout(timer);
-    }
-  }, [gameState, isPlaying, currentTurn, gameSpeed, localStats]);
+    // ゲーム制御の初期化
+    gameControls.setIsPlaying(true);
+    gameControls.setCurrentTurn(-1);
+  };
 
   // セットアップ画面に戻る
   const handleReturnToSetup = () => {
     setAppState('setup');
     setGameState(null);
-    setIsPlaying(true);
-    setCurrentTurn(-1);
+    gameControls.setIsPlaying(true);
+    gameControls.setCurrentTurn(-1);
   };
 
   // ゲーム状態に応じて表示を切り替え
@@ -154,7 +102,7 @@ export default function Home() {
     case 'setup':
       return (
         <div className="relative min-h-screen">
-          <GameSetup onGameStart={handleGameStart} stats={localStats} />
+          <GameSetup onGameStart={handleGameStart} stats={localStats.localStats} />
           <div className="absolute top-4 right-4">
             <Link href="/stats" className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
               戦績を見る
@@ -167,14 +115,15 @@ export default function Home() {
     case 'finished':
       return gameState ? (
         <GameBoard 
-          gameState={gameState} 
+          gameState={gameProgress.displayState || gameState} 
           onReturnToSetup={handleReturnToSetup}
-          isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
-          currentTurn={currentTurn}
-          setCurrentTurn={setCurrentTurn}
-          gameSpeed={gameSpeed}
-          setGameSpeed={setGameSpeed}
+          isPlaying={gameControls.isPlaying}
+          setIsPlaying={gameControls.setIsPlaying}
+          currentTurn={gameControls.currentTurn}
+          setCurrentTurn={gameControls.setCurrentTurn}
+          gameSpeed={gameControls.gameSpeed}
+          setGameSpeed={gameControls.setGameSpeed}
+          currentAttackAction={gameProgress.currentAttackAction}
         />
       ) : (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex items-center justify-center">

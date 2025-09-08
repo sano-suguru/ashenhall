@@ -20,13 +20,7 @@ interface GameBoardProps {
   setCurrentTurn: (turn: number) => void;
   gameSpeed: number;
   setGameSpeed: (speed: number) => void;
-}
-
-// 攻撃シーケンス状態の型定義
-interface AttackSequenceState {
-  isShowingAttackSequence: boolean;
-  currentAttackIndex: number;
-  attackActions: GameAction[];
+  currentAttackAction?: GameAction | null;
 }
 
 export default function GameBoard({ 
@@ -37,17 +31,11 @@ export default function GameBoard({
   currentTurn,
   setCurrentTurn,
   gameSpeed,
-  setGameSpeed
+  setGameSpeed,
+  currentAttackAction
 }: GameBoardProps) {
   const [showLog, setShowLog] = useState(false);
   const [showDetailedLog, setShowDetailedLog] = useState(false);
-  
-  // 攻撃シーケンス状態
-  const [attackSequenceState, setAttackSequenceState] = useState<AttackSequenceState>({
-    isShowingAttackSequence: false,
-    currentAttackIndex: 0,
-    attackActions: []
-  });
 
   const calculateSequenceForTurn = (gs: GameState, targetTurn: number): number => {
     if (targetTurn <= 1) return 0;
@@ -97,69 +85,6 @@ export default function GameBoard({
     setShowDetailedLog(false);
   };
 
-  // 指定ターンの攻撃アクションを抽出
-  const getAttackActionsForTurn = (gs: GameState, targetTurn: number): GameAction[] => {
-    return gs.actionLog.filter(action => {
-      if (action.type !== 'card_attack') return false;
-      const actionTurn = getTurnNumberForAction(action, gs);
-      return actionTurn === targetTurn;
-    });
-  };
-
-  // 攻撃シーケンスが完了したかチェック
-  const isAttackSequenceComplete = (): boolean => {
-    return attackSequenceState.currentAttackIndex >= attackSequenceState.attackActions.length;
-  };
-
-  // 現在表示中の攻撃アクションを取得
-  const getCurrentAttackAction = (): GameAction | null => {
-    if (!attackSequenceState.isShowingAttackSequence) return null;
-    if (attackSequenceState.currentAttackIndex >= attackSequenceState.attackActions.length) return null;
-    return attackSequenceState.attackActions[attackSequenceState.currentAttackIndex] || null;
-  };
-
-  const currentAttackAction = getCurrentAttackAction();
-
-  // 攻撃シーケンス開始の検出（表示のみ、ゲーム進行には介入しない）
-  useEffect(() => {
-    // 最新ターン表示かつ再生中の場合のみ攻撃演出を実行
-    if (isPlaying && (currentTurn === -1 || currentTurn >= gameState.turnNumber)) {
-      const attackActions = getAttackActionsForTurn(gameState, gameState.turnNumber);
-      
-      if (attackActions.length > 0 && !attackSequenceState.isShowingAttackSequence) {
-        // 攻撃アクションがある場合は攻撃シーケンス開始（表示のみ）
-        setAttackSequenceState({
-          isShowingAttackSequence: true,
-          currentAttackIndex: 0,
-          attackActions: attackActions
-        });
-      }
-    }
-  }, [gameState.turnNumber, gameState.actionLog.length, isPlaying, currentTurn]);
-
-  // 攻撃シーケンス進行の制御（表示のみ）
-  useEffect(() => {
-    if (attackSequenceState.isShowingAttackSequence) {
-      if (isAttackSequenceComplete()) {
-        // 攻撃シーケンス完了（表示終了のみ）
-        setAttackSequenceState({
-          isShowingAttackSequence: false,
-          currentAttackIndex: 0,
-          attackActions: []
-        });
-      } else {
-        // 次の攻撃アクションを表示
-        const timer = setTimeout(() => {
-          setAttackSequenceState(prev => ({
-            ...prev,
-            currentAttackIndex: prev.currentAttackIndex + 1
-          }));
-        }, 800 / gameSpeed);
-
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [attackSequenceState.currentAttackIndex, attackSequenceState.isShowingAttackSequence, gameSpeed]);
 
   useEffect(() => {
     if (gameState.result) {
