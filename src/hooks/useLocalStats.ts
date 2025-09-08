@@ -62,7 +62,7 @@ export const useLocalStats = (): LocalStatsReturn => {
       await refreshStats();
     };
     initializeStats();
-  }, []);
+  }, [refreshStats]);
 
   // ゲーム結果による統計更新
   const updateWithGameResult = useCallback((gameState: GameState) => {

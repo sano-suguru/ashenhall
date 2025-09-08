@@ -11,7 +11,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
-import { GAME_CONSTANTS } from '@/types/game';
 
 // AttackSequenceState インターフェース（GameBoard.tsx から移植）
 interface AttackSequenceState {
@@ -194,7 +193,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       const timer = setTimeout(processNextStep, adjustedDelay);
       return () => clearTimeout(timer);
     }
-  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed]);
+  }, [config]);
 
   // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
   useEffect(() => {
@@ -213,7 +212,13 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
         });
       }
     }
-  }, [config.gameState?.turnNumber, config.gameState?.actionLog.length, config.isPlaying, config.currentTurn, getAttackActionsForTurn]);
+  }, [
+    config.gameState, 
+    config.isPlaying, 
+    config.currentTurn, 
+    attackSequenceState.isShowingAttackSequence,
+    getAttackActionsForTurn
+  ]);
 
   // 攻撃シーケンス進行の制御（GameBoard.tsx から移植）
   useEffect(() => {
