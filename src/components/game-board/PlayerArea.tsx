@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { PlayerState } from '@/types/game';
+import type { PlayerState, GameAction } from '@/types/game';
 import CardComponent from '../CardComponent';
 import { Bot, User, Heart, Zap, Layers, WalletCards as Wallet, Skull } from 'lucide-react';
 
@@ -35,6 +35,7 @@ interface PlayerAreaProps {
   player: PlayerState;
   energyLimit: number;
   isOpponent: boolean;
+  currentAttackAction?: GameAction | null;
 }
 
 const PlayerStatus: React.FC<{ player: PlayerState; energyLimit: number; isOpponent: boolean }> = ({ player, energyLimit, isOpponent }) => (
@@ -98,7 +99,20 @@ const PlayerInfo: React.FC<{ player: PlayerState; isOpponent: boolean }> = ({ pl
   );
 };
 
-const PlayerArea: React.FC<PlayerAreaProps> = ({ player, energyLimit, isOpponent }) => {
+const PlayerArea: React.FC<PlayerAreaProps> = ({ player, energyLimit, isOpponent, currentAttackAction }) => {
+  // 攻撃状態を判定するヘルパー関数
+  const getCardAttackState = (cardId: string) => {
+    if (!currentAttackAction || currentAttackAction.type !== 'card_attack') {
+      return { isAttacking: false, isBeingAttacked: false, damageAmount: 0 };
+    }
+
+    const attackData = currentAttackAction.data;
+    const isAttacking = attackData.attackerCardId === cardId;
+    const isBeingAttacked = attackData.targetId === cardId;
+    const damageAmount = isBeingAttacked ? attackData.damage : 0;
+
+    return { isAttacking, isBeingAttacked, damageAmount };
+  };
   const playerInfo = (
     <div className="flex items-center justify-between mb-4">
       <PlayerInfo player={player} isOpponent={isOpponent} />
@@ -115,15 +129,21 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({ player, energyLimit, isOpponent
             場にカードがありません
           </div>
         ) : (
-          player.field.map((card, index) => (
-            <CardComponent
-              key={`${player.id}-field-${card.id}-${index}`}
-              card={card}
-              isFieldCard={true}
-              isOpponent={isOpponent}
-              size="medium"
-            />
-          ))
+          player.field.map((card, index) => {
+            const attackState = getCardAttackState(card.id);
+            return (
+              <CardComponent
+                key={`${player.id}-field-${card.id}-${index}`}
+                card={card}
+                isFieldCard={true}
+                isOpponent={isOpponent}
+                size="medium"
+                isAttacking={attackState.isAttacking}
+                isBeingAttacked={attackState.isBeingAttacked}
+                damageAmount={attackState.damageAmount}
+              />
+            );
+          })
         )}
       </div>
     </div>

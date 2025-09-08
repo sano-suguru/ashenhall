@@ -30,6 +30,10 @@ interface CardComponentProps {
   isOpponent?: boolean;
   size?: 'small' | 'medium' | 'large';
   className?: string;
+  // 攻撃演出用のprops
+  isAttacking?: boolean;
+  isBeingAttacked?: boolean;
+  damageAmount?: number;
 }
 
 
@@ -39,6 +43,9 @@ export default function CardComponent({
   isOpponent = false,
   size = 'medium',
   className = '',
+  isAttacking = false,
+  isBeingAttacked = false,
+  damageAmount = 0,
 }: CardComponentProps) {
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
@@ -64,6 +71,12 @@ export default function CardComponent({
     faction: card.faction,
   });
 
+  // 攻撃演出用のクラス名を生成
+  const attackAnimationClasses = [
+    isAttacking && 'card-attacking',
+    isBeingAttacked && 'card-being-attacked'
+  ].filter(Boolean).join(' ');
+
   return (
     <div
       ref={tooltipRef}
@@ -71,7 +84,7 @@ export default function CardComponent({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={cardContainerClasses.trim()}>
+      <div className={`${cardContainerClasses.trim()} ${attackAnimationClasses}`.trim()}>
         <CardHeader card={card} />
         <CardArt card={card} size={size} factionStyle={factionStyle} />
         <CardBody card={card} sizeStyle={sizeStyle} factionStyle={factionStyle} />
@@ -87,6 +100,15 @@ export default function CardComponent({
           fieldCard={fieldCard} 
         />
       </div>
+
+      {/* ダメージポップアップ */}
+      {isBeingAttacked && damageAmount > 0 && (
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full z-20 pointer-events-none">
+          <div className="bg-red-500 text-white text-lg font-bold px-2 py-1 rounded shadow-lg animate-damage-popup">
+            -{damageAmount}
+          </div>
+        </div>
+      )}
 
       {isMounted && showTooltip && createPortal(
         <CardTooltip card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} tooltipStyle={tooltipStyle} />,
