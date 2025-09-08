@@ -59,8 +59,9 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
   
   const [progressError, setProgressError] = useState<Error | null>(null);
 
-  // GameBoard.tsx の calculateSequenceForTurn を移植
-  const calculateSequenceForTurn = useCallback((gs: GameState, targetTurn: number): number => {
+  // GameBoard.tsx の calculateSequenceForTurn を移植（null対応追加）
+  const calculateSequenceForTurn = useCallback((gs: GameState | null, targetTurn: number): number => {
+    if (!gs) return 0; // null チェック追加
     if (targetTurn <= 1) return 0;
     if (targetTurn > gs.turnNumber) return gs.actionLog[gs.actionLog.length - 1]?.sequence ?? 0;
 
