@@ -1,0 +1,46 @@
+/* Ashenhallゲーム演出CSS */
+
+/* 攻撃演出用アニメーション */
+.card-attacking {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+}
+
+.card-being-attacked {
+  border: 2px solid #eab308 !important;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.6) !important;
+  animation: damage-shake 0.4s ease;
+}
+
+@keyframes damage-shake {
+  0%, 100% { 
+    transform: translateX(0); 
+  }
+  25% { 
+    transform: translateX(-4px); 
+  }
+  75% { 
+    transform: translateX(4px); 
+  }
+}
+
+.animate-damage-popup {
+  animation: damagePopup 1.0s ease-out forwards;
+}
+
+@keyframes damagePopup {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(1.0);
+  }
+}

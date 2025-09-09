@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Zap
 } from 'lucide-react';
+import styles from '@/styles/components/BattlePlayback.module.css';
 
 interface BattlePlaybackControlsProps {
   isPlaying: boolean;
@@ -118,7 +119,7 @@ export default function BattlePlaybackControls({
           max={maxTurn}
           value={displayTurn}
           onChange={handleSliderChange}
-          className="w-full h-3 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+          className={`w-full h-3 bg-gray-600 rounded-lg appearance-none cursor-pointer ${styles.slider}`}
           style={{
             background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(displayTurn / maxTurn) * 100}%, #4b5563 ${(displayTurn / maxTurn) * 100}%, #4b5563 100%)`
           }}
