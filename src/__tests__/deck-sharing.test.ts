@@ -37,6 +37,9 @@ describe('Deck Sharing Utilities (v2)', () => {
     const invalidCode = 'this is not base64';
     const decoded = decodeDeck(invalidCode);
     expect(decoded).toBeNull();
+    
+    // console.errorが正しく呼ばれたことを検証
+    expect(errorSpy).toHaveBeenCalledWith('Failed to decode deck code:', expect.any(Error));
   });
 
   it('should return null for a code with an incorrect version', () => {
@@ -46,6 +49,9 @@ describe('Deck Sharing Utilities (v2)', () => {
     const code = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(code);
     expect(decoded).toBeNull();
+    
+    // console.errorが正しく呼ばれたことを検証
+    expect(errorSpy).toHaveBeenCalledWith('Invalid deck code format or version.');
   });
 
   it('should return null for a code with invalid card integer IDs', () => {
@@ -54,6 +60,9 @@ describe('Deck Sharing Utilities (v2)', () => {
     const badCode = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(badCode);
     expect(decoded).toBeNull();
+    
+    // console.errorが正しく呼ばれたことを検証
+    expect(errorSpy).toHaveBeenCalledWith('Deck code contains invalid card IDs.');
   });
 
   it('should return null for a code with an invalid faction integer ID', () => {
@@ -62,6 +71,9 @@ describe('Deck Sharing Utilities (v2)', () => {
     const badCode = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(badCode);
     expect(decoded).toBeNull();
+    
+    // console.errorが正しく呼ばれたことを検証
+    expect(errorSpy).toHaveBeenCalledWith('Invalid faction ID in deck code.');
   });
 
   it('should handle empty core card and card arrays', () => {

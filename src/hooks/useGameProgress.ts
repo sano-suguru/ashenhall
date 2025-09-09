@@ -1,10 +1,10 @@
 /**
- * ゲーム進行管理フック
+ * ゲーム進行管理フック - アクション単位演出システム
  * 
  * 設計方針:
- * - page.tsx と GameBoard.tsx の複雑な進行ロジックを統合
- * - AttackSequence演出の完全な移植
- * - Phase 1 リプレイ機能への拡張準備
+ * - アクションタイプ別の統一演出制御
+ * - フェーズ依存の冗長性を排除
+ * - 将来の演出拡張への準備完了
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -12,11 +12,42 @@ import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
 
-// AttackSequenceState インターフェース（GameBoard.tsx から移植）
+// アクションタイプ別演出時間（ms）
+const ACTION_DELAYS = {
+  card_play: 600,        // カード召喚: 視覚的に重要
+  card_attack: 500,      // 攻撃アクション: 戦闘の核心
+  creature_destroyed: 800, // クリーチャー破壊: ドラマティック
+  effect_trigger: 400,   // 効果発動: 中程度重要
+  keyword_trigger: 450,  // キーワード効果: 特殊演出
+  energy_update: 150,    // エネルギー更新: 数値変更
+  phase_change: 250,     // フェーズ変更: UI切替
+  trigger_event: 100,    // 内部イベント: 最小限
+} as const;
+
+// AttackSequenceState インターフェース（統合演出システム用）
 interface AttackSequenceState {
   isShowingAttackSequence: boolean;
   currentAttackIndex: number;
   attackActions: GameAction[];
+}
+
+/**
+ * アクション単位の演出遅延時間を計算
+ */
+function getActionDelay(action: GameAction, gameSpeed: number): number {
+  const baseDelay = ACTION_DELAYS[action.type] || 300;
+  return Math.max(50, baseDelay / gameSpeed);
+}
+
+/**
+ * 現在のゲームステップで発生したアクションを取得
+ * 防御的プログラミング: null/undefined セーフティ
+ */
+function getCurrentStepActions(gameState: GameState | null | undefined, previousActionCount: number): GameAction[] {
+  if (!gameState || !gameState.actionLog) {
+    return [];
+  }
+  return gameState.actionLog.slice(previousActionCount);
 }
 
 export interface GameProgressConfig {
@@ -134,7 +165,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     setProgressError(null);
   }, [config.gameState, config.currentTurn, config.mode, config.replayData]);
 
-  // メインのゲーム進行useEffect（page.tsx から移植）
+  // メインのゲーム進行useEffect（アクション単位演出システム）
   useEffect(() => {
     if (!config.gameState || !config.isPlaying || config.gameState.result) {
       return;
@@ -161,9 +192,27 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     
     // 最新ターンの場合のみ実際のゲーム進行
     if (config.currentTurn === -1 || config.currentTurn >= config.gameState.turnNumber) {
+      // 現在のアクション数を記録（新アクション検出用）
+      const previousActionCount = config.gameState.actionLog.length;
+      
       const processNextStep = () => {
         try {
           const nextState = processGameStep(config.gameState!);
+          
+          // 戻り値の検証（防御的プログラミング）
+          if (!nextState || !nextState.actionLog) {
+            console.warn('processGameStep returned invalid state, skipping step');
+            return;
+          }
+          
+          // 新しく追加されたアクションを取得
+          const newActions = getCurrentStepActions(nextState, previousActionCount);
+          
+          // 新アクションがある場合、最初のアクションの遅延時間を使用
+          const actionDelay = newActions.length > 0 
+            ? getActionDelay(newActions[0], config.gameSpeed)
+            : Math.max(50, 200 / config.gameSpeed); // デフォルト遅延
+          
           config.onGameStateChange(nextState);
           
           // ゲームが終了した場合
@@ -177,23 +226,12 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
         }
       };
 
-      // フェーズ別の基本遅延時間（page.tsx から移植）
-      const phaseDelays = {
-        draw: 300,
-        energy: 200,
-        deploy: 800,
-        battle: 1200,
-        end: 300,
-      };
-
-      // 現在のフェーズに応じた遅延時間を計算
-      const baseDelay = phaseDelays[config.gameState.phase] || 500;
-      const adjustedDelay = Math.max(50, baseDelay / config.gameSpeed); // 最小50ms
-
-      const timer = setTimeout(processNextStep, adjustedDelay);
+      // アクション演出時間後に次のステップを実行
+      const actionDelay = Math.max(50, 250 / config.gameSpeed); // 基本遅延
+      const timer = setTimeout(processNextStep, actionDelay);
       return () => clearTimeout(timer);
     }
-  }, [config]);
+  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed]);
 
   // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
   useEffect(() => {

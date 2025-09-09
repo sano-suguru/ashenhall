@@ -33,6 +33,12 @@ const mockProcessGameStep = processGameStep as jest.MockedFunction<typeof proces
 const mockReconstructStateAtSequence = reconstructStateAtSequence as jest.MockedFunction<typeof reconstructStateAtSequence>;
 
 describe('useGameProgress', () => {
+  // コンソールモック用スパイ
+  let consoleSpy: {
+    warn: jest.SpyInstance;
+    error: jest.SpyInstance;
+  };
+
   // テスト用ゲーム状態
   const createTestGameState = (): GameState => {
     const deck1 = necromancerCards.slice(0, 20);
@@ -66,11 +72,21 @@ describe('useGameProgress', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.useFakeTimers();
+    
+    // コンソール出力をモック（クリーンなテスト出力のため）
+    consoleSpy = {
+      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+      error: jest.spyOn(console, 'error').mockImplementation(() => {})
+    };
   });
 
   afterEach(() => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
+    
+    // コンソールモックの復元
+    consoleSpy.warn.mockRestore();
+    consoleSpy.error.mockRestore();
   });
 
   describe('基本機能', () => {
@@ -270,6 +286,9 @@ describe('useGameProgress', () => {
       });
 
       expect(result.current.progressError).toEqual(mockError);
+      
+      // console.errorが正しく呼ばれたことを検証
+      expect(consoleSpy.error).toHaveBeenCalledWith('Game step processing failed:', mockError);
     });
 
     test('基本的なエラー状態管理', () => {

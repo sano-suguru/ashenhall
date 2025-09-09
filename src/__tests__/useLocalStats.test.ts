@@ -52,6 +52,13 @@ const mockSaveStats = saveStats as jest.MockedFunction<typeof saveStats>;
 const mockUpdateStatsWithGameResult = updateStatsWithGameResult as jest.MockedFunction<typeof updateStatsWithGameResult>;
 
 describe('useLocalStats', () => {
+  // コンソールモック用スパイ
+  let consoleSpy: {
+    warn: jest.SpyInstance;
+    error: jest.SpyInstance;
+    log: jest.SpyInstance;
+  };
+
   // テスト用データ
   const mockInitialStats: LocalStats = {
     totalGames: 5,
@@ -108,6 +115,20 @@ describe('useLocalStats', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockLocalStorage.clear();
+    
+    // コンソール出力をモック（クリーンなテスト出力のため）
+    consoleSpy = {
+      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+      error: jest.spyOn(console, 'error').mockImplementation(() => {}),
+      log: jest.spyOn(console, 'log').mockImplementation(() => {})
+    };
+  });
+
+  afterEach(() => {
+    // コンソールモックの復元
+    consoleSpy.warn.mockRestore();
+    consoleSpy.error.mockRestore();
+    consoleSpy.log.mockRestore();
   });
 
   describe('初期化と統計読み込み', () => {
@@ -142,6 +163,9 @@ describe('useLocalStats', () => {
       expect(result.current.localStats).toBeNull();
       expect(result.current.loadError).toEqual(mockError);
       expect(result.current.isLoading).toBe(false);
+      
+      // console.errorが正しく呼ばれたことを検証
+      expect(consoleSpy.error).toHaveBeenCalledWith('Failed to load stats:', mockError);
     });
 
     test('統計データが存在しない場合の初期化', async () => {
@@ -224,6 +248,9 @@ describe('useLocalStats', () => {
 
       expect(result.current.localStats).toBeNull();
       expect(result.current.loadError).toEqual(mockError);
+      
+      // console.errorが正しく呼ばれたことを検証
+      expect(consoleSpy.error).toHaveBeenCalledWith('Failed to load stats:', mockError);
     });
 
     test('ゲーム結果未確定時のスキップ動作', async () => {
@@ -244,6 +271,9 @@ describe('useLocalStats', () => {
 
       // スキップされることを確認
       expect(mockUpdateStatsWithGameResult).not.toHaveBeenCalled();
+      
+      // console.warnが正しく呼ばれたことを検証
+      expect(consoleSpy.warn).toHaveBeenCalledWith('ゲーム結果が未確定のため統計更新をスキップします');
     });
   });
 });

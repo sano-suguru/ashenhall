@@ -12,8 +12,17 @@ import type { Card, FieldCard, FilterRule, Keyword } from "@/types/game";
 describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () => {
   let mockCard: Card;
   let mockFieldCard: FieldCard;
+  let consoleSpy: {
+    warn: jest.SpyInstance;
+    error: jest.SpyInstance;
+  };
   
   beforeEach(() => {
+    // コンソール出力をモック（クリーンなテスト出力のため）
+    consoleSpy = {
+      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+      error: jest.spyOn(console, 'error').mockImplementation(() => {})
+    };
     // テスト用Card (デッキ・手札用)
     mockCard = {
       id: "test-card-deck",
@@ -52,6 +61,12 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       statusEffects: [],
       readiedThisTurn: false,
     };
+  });
+
+  afterEach(() => {
+    // コンソールモックの復元
+    consoleSpy.warn.mockRestore();
+    consoleSpy.error.mockRestore();
   });
 
   describe("Card[]フィルタリング (デッキ・手札用)", () => {
@@ -201,6 +216,9 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       
       const result = UniversalFilterEngine.applyRules(cards, rules);
       expect(result).toHaveLength(1); // 無効なルールは無視されて正常処理
+      
+      // 警告が正しく呼び出されたかを検証（ターミナルには出力されない）
+      expect(consoleSpy.warn).toHaveBeenCalledWith('Unknown filter rule type: invalid_type');
     });
 
     it("空のFilterRuleで全要素を返す", () => {
