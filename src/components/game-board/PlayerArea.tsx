@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { PlayerState, GameAction } from '@/types/game';
+import type { PlayerState, GameAction, FieldCard } from '@/types/game';
 import CardComponent from '../CardComponent';
 import { Bot, User, Heart, Zap, Layers, WalletCards as Wallet, Skull } from 'lucide-react';
 
@@ -36,6 +36,13 @@ interface PlayerAreaProps {
   energyLimit: number;
   isOpponent: boolean;
   currentAttackAction?: GameAction | null;
+  getCardAnimationState?: (cardId: string) => {
+    isAttacking: boolean;
+    isBeingAttacked: boolean;
+    isDying: boolean;
+    damageAmount: number;
+  };
+  getPendingDestructionCards?: (playerId: string) => FieldCard[];
 }
 
 const PlayerStatus: React.FC<{ player: PlayerState; energyLimit: number; isOpponent: boolean }> = ({ player, energyLimit, isOpponent }) => (
@@ -99,11 +106,23 @@ const PlayerInfo: React.FC<{ player: PlayerState; isOpponent: boolean }> = ({ pl
   );
 };
 
-const PlayerArea: React.FC<PlayerAreaProps> = ({ player, energyLimit, isOpponent, currentAttackAction }) => {
-  // 攻撃状態を判定するヘルパー関数
+const PlayerArea: React.FC<PlayerAreaProps> = ({ 
+  player, 
+  energyLimit, 
+  isOpponent, 
+  currentAttackAction,
+  getCardAnimationState 
+}) => {
+  // 攻撃状態を判定するヘルパー関数（新アニメーションシステム統合版）
   const getCardAttackState = (cardId: string) => {
+    // 新しいアニメーションシステムを優先使用
+    if (getCardAnimationState) {
+      return getCardAnimationState(cardId);
+    }
+    
+    // 従来システムとの後方互換性（段階的廃止予定）
     if (!currentAttackAction || currentAttackAction.type !== 'card_attack') {
-      return { isAttacking: false, isBeingAttacked: false, damageAmount: 0 };
+      return { isAttacking: false, isBeingAttacked: false, isDying: false, damageAmount: 0 };
     }
 
     const attackData = currentAttackAction.data;
@@ -111,7 +130,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({ player, energyLimit, isOpponent
     const isBeingAttacked = attackData.targetId === cardId;
     const damageAmount = isBeingAttacked ? attackData.damage : 0;
 
-    return { isAttacking, isBeingAttacked, damageAmount };
+    return { isAttacking, isBeingAttacked, isDying: false, damageAmount };
   };
   const playerInfo = (
     <div className="flex items-center justify-between mb-4">

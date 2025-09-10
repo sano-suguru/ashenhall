@@ -124,6 +124,7 @@ export default function Home() {
           gameSpeed={gameControls.gameSpeed}
           setGameSpeed={gameControls.setGameSpeed}
           currentAttackAction={gameProgress.currentAttackAction}
+          getCardAnimationState={gameProgress.getCardAnimationState}
         />
       ) : (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex items-center justify-center">

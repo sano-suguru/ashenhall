@@ -21,6 +21,12 @@ interface GameBoardProps {
   gameSpeed: number;
   setGameSpeed: (speed: number) => void;
   currentAttackAction?: GameAction | null;
+  getCardAnimationState?: (cardId: string) => {
+    isAttacking: boolean;
+    isBeingAttacked: boolean;
+    isDying: boolean;
+    damageAmount: number;
+  };
 }
 
 export default function GameBoard({ 
@@ -32,7 +38,8 @@ export default function GameBoard({
   setCurrentTurn,
   gameSpeed,
   setGameSpeed,
-  currentAttackAction
+  currentAttackAction,
+  getCardAnimationState
 }: GameBoardProps) {
   const [showLog, setShowLog] = useState(false);
   const [showDetailedLog, setShowDetailedLog] = useState(false);
@@ -114,6 +121,7 @@ export default function GameBoard({
               energyLimit={currentEnergyLimit} 
               isOpponent={true}
               currentAttackAction={currentAttackAction}
+              getCardAnimationState={getCardAnimationState}
             />
             {showLog && <RecentLog actions={recentActions} gameState={gameState} />}
             <PlayerArea 
@@ -121,6 +129,7 @@ export default function GameBoard({
               energyLimit={currentEnergyLimit} 
               isOpponent={false}
               currentAttackAction={currentAttackAction}
+              getCardAnimationState={getCardAnimationState}
             />
           </div>
 

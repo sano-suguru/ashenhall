@@ -11,18 +11,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
+import { AnimationManager, AnimationIntegration } from '@/lib/animation-manager';
+import { ACTION_ANIMATION_DURATIONS } from '@/types/animation';
+import type { AnimationState } from '@/types/animation';
 
-// アクションタイプ別演出時間（ms）
-const ACTION_DELAYS = {
-  card_play: 600,        // カード召喚: 視覚的に重要
-  card_attack: 500,      // 攻撃アクション: 戦闘の核心
-  creature_destroyed: 800, // クリーチャー破壊: ドラマティック
-  effect_trigger: 400,   // 効果発動: 中程度重要
-  keyword_trigger: 450,  // キーワード効果: 特殊演出
-  energy_update: 150,    // エネルギー更新: 数値変更
-  phase_change: 250,     // フェーズ変更: UI切替
-  trigger_event: 100,    // 内部イベント: 最小限
-} as const;
+// 旧ACTION_DELAYSは新しいACTION_ANIMATION_DURATIONSに統合済み
+// （後方互換性のため残存、段階的に廃止予定）
 
 // AttackSequenceState インターフェース（統合演出システム用）
 interface AttackSequenceState {
@@ -32,10 +26,10 @@ interface AttackSequenceState {
 }
 
 /**
- * アクション単位の演出遅延時間を計算
+ * アクション単位の演出遅延時間を計算（新システム統合版）
  */
 function getActionDelay(action: GameAction, gameSpeed: number): number {
-  const baseDelay = ACTION_DELAYS[action.type] || 300;
+  const baseDelay = ACTION_ANIMATION_DURATIONS[action.type] || 300;
   return Math.max(50, baseDelay / gameSpeed);
 }
 
@@ -72,6 +66,14 @@ export interface GameProgressReturn {
   attackSequenceState: AttackSequenceState;
   currentAttackAction: GameAction | null;
   
+  // アニメーション状態管理
+  getCardAnimationState: (cardId: string) => {
+    isAttacking: boolean;
+    isBeingAttacked: boolean;
+    isDying: boolean;
+    damageAmount: number;
+  };
+  
   // エラー状態
   progressError: Error | null;
 }
@@ -88,6 +90,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
   });
   
   const [progressError, setProgressError] = useState<Error | null>(null);
+  const [enhancedGameState, setEnhancedGameState] = useState<GameState & { animationState: AnimationState } | null>(null);
 
   // GameBoard.tsx の calculateSequenceForTurn を移植（null対応追加）
   const calculateSequenceForTurn = useCallback((gs: GameState | null, targetTurn: number): number => {
@@ -160,6 +163,70 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     return attackSequenceState.attackActions[attackSequenceState.currentAttackIndex] || null;
   }, [attackSequenceState]);
 
+  // カードのアニメーション状態を取得する関数
+  const getCardAnimationState = useCallback((cardId: string) => {
+    if (!enhancedGameState?.animationState) {
+      return {
+        isAttacking: false,
+        isBeingAttacked: false,
+        isDying: false,
+        damageAmount: 0,
+      };
+    }
+    
+    return AnimationManager.getCardAnimationState(
+      enhancedGameState.animationState,
+      cardId
+    );
+  }, [enhancedGameState]);
+
+  // GameState変更時のenhancedGameState同期
+  useEffect(() => {
+    if (config.gameState) {
+      if ('animationState' in config.gameState) {
+        setEnhancedGameState(config.gameState as GameState & { animationState: AnimationState });
+      } else {
+        const enhanced = AnimationIntegration.enhanceGameState(config.gameState);
+        setEnhancedGameState(enhanced);
+      }
+    }
+  }, [config.gameState]);
+
+  // 演出完了監視システム（100ms間隔）
+  useEffect(() => {
+    if (!enhancedGameState?.animationState || config.gameState?.result || !config.isPlaying) {
+      return;
+    }
+    
+    const animationTimer = setInterval(() => {
+      const currentState = enhancedGameState;
+      const updatedState = AnimationIntegration.updateWithAnimations(
+        currentState,
+        config.gameSpeed
+      );
+      
+      // 破壊処理が実行された場合のみ状態更新
+      const destructionCountChanged = 
+        updatedState.animationState.pendingDestructions.length !== 
+        currentState.animationState.pendingDestructions.length;
+      
+      const animationCountChanged = 
+        updatedState.animationState.activeAnimations.length !== 
+        currentState.animationState.activeAnimations.length;
+      
+      if (destructionCountChanged || animationCountChanged) {
+        console.log('🔄 Animation state updated:', {
+          pendingDestructions: updatedState.animationState.pendingDestructions.length,
+          activeAnimations: updatedState.animationState.activeAnimations.length
+        });
+        setEnhancedGameState(updatedState);
+        config.onGameStateChange(updatedState);
+      }
+    }, 100);
+    
+    return () => clearInterval(animationTimer);
+  }, [enhancedGameState, config.gameSpeed, config.gameState, config.isPlaying]);
+
   // エラーリセット用useEffect
   useEffect(() => {
     setProgressError(null);
@@ -208,6 +275,16 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
           // 新しく追加されたアクションを取得
           const newActions = getCurrentStepActions(nextState, previousActionCount);
           
+          // アニメーション統合システムで状態を更新
+          const updatedEnhancedState = enhancedGameState 
+            ? AnimationIntegration.updateWithAnimations({
+                ...enhancedGameState,
+                ...nextState
+              }, config.gameSpeed)
+            : AnimationIntegration.enhanceGameState(nextState);
+          
+          setEnhancedGameState(updatedEnhancedState);
+          
           // 新アクションがある場合、最初のアクションの遅延時間を使用
           const actionDelay = newActions.length > 0 
             ? getActionDelay(newActions[0], config.gameSpeed)
@@ -231,7 +308,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       const timer = setTimeout(processNextStep, actionDelay);
       return () => clearTimeout(timer);
     }
-  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed]);
+  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed, enhancedGameState]);
 
   // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
   useEffect(() => {
@@ -286,6 +363,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     displayState,
     attackSequenceState,
     currentAttackAction: getCurrentAttackAction(),
+    getCardAnimationState,
     progressError,
   };
 };
