@@ -18,7 +18,6 @@ import {
 // デッキコードのバージョンと区切り文字を定義
 const DECK_CODE_VERSION = 'v2'; // バージョンを更新
 const PART_SEPARATOR = ':';
-const CORE_CARD_SEPARATOR = ';';
 const CARD_SEPARATOR = ',';
 
 /**
@@ -56,56 +55,133 @@ export function encodeDeck(deck: Pick<CustomDeck, 'faction' | 'coreCardIds' | 'c
 }
 
 /**
+ * Base64文字列をプレーンテキストにデコードします（環境対応）
+ * @param code - デコードするBase64コード
+ * @returns デコードされた文字列
+ * @throws エラーが発生した場合は例外をスロー
+ */
+function decodeBase64String(code: string): string {
+  if (typeof window !== 'undefined') {
+    // Browser environment
+    let base64 = code.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    return decodeURIComponent(escape(window.atob(base64)));
+  } else {
+    // Node.js environment
+    return Buffer.from(code, 'base64url').toString('utf-8');
+  }
+}
+
+/**
+ * デッキコード文字列を構成要素に分割し、バージョンを検証します
+ * @param decodedString - デコードされたプレーンテキスト
+ * @returns パースされたデッキデータ、またはエラーの場合はnull
+ */
+function parseDeckCodeParts(decodedString: string): {
+  factionStr: string;
+  coreStr: string;
+  cardsStr: string;
+} | null {
+  const parts = decodedString.split(PART_SEPARATOR);
+
+  if (parts.length !== 4 || parts[0] !== DECK_CODE_VERSION) {
+    console.error('Invalid deck code format or version.');
+    return null;
+  }
+
+  const [, factionStr, coreStr, cardsStr] = parts;
+  return { factionStr, coreStr, cardsStr };
+}
+
+/**
+ * 文字列形式のID群を実際のオブジェクトIDに変換します
+ * @param parsedData - パースされたデッキデータ
+ * @returns 変換されたデッキデータ、またはエラーの場合はnull
+ */
+function convertDeckData(parsedData: {
+  factionStr: string;
+  coreStr: string;
+  cardsStr: string;
+}): {
+  faction: Faction;
+  coreCardIds: string[];
+  cards: string[];
+  originalCoreParts: string[];
+  originalCardParts: string[];
+} | null {
+  const { factionStr, coreStr, cardsStr } = parsedData;
+  
+  const factionInt = parseInt(factionStr, 10);
+  const faction = integerToFactionMap.get(factionInt);
+
+  if (!faction) {
+    console.error('Invalid faction ID in deck code.');
+    return null;
+  }
+
+  const originalCoreParts = coreStr ? coreStr.split(CARD_SEPARATOR) : [];
+  const originalCardParts = cardsStr ? cardsStr.split(CARD_SEPARATOR) : [];
+
+  const coreCardIds = originalCoreParts.map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined);
+  const cards = originalCardParts.map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined);
+
+  return {
+    faction,
+    coreCardIds,
+    cards,
+    originalCoreParts,
+    originalCardParts,
+  };
+}
+
+/**
+ * 変換されたデータの完全性を検証します
+ * @param convertedData - 変換されたデッキデータ
+ * @returns 検証結果（true: 正常, false: エラー）
+ */
+function validateDeckIntegrity(convertedData: {
+  coreCardIds: string[];
+  cards: string[];
+  originalCoreParts: string[];
+  originalCardParts: string[];
+}): boolean {
+  const { coreCardIds, cards, originalCoreParts, originalCardParts } = convertedData;
+  
+  // IDの完全性を検証
+  if (coreCardIds.length !== originalCoreParts.length ||
+      cards.length !== originalCardParts.length) {
+    console.error('Deck code contains invalid card IDs.');
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * URLセーフなBase64エンコードされたデッキコードをデッキオブジェクトにデコードします。
  * @param code - デコードするデッキコード文字列
  * @returns デコードされたデッキデータ、またはエラーの場合はnull
  */
 export function decodeDeck(code: string): Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'> | null {
   try {
-    let decodedString: string;
-    if (typeof window !== 'undefined') {
-      // Browser environment
-      let base64 = code.replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) {
-        base64 += '=';
-      }
-      decodedString = decodeURIComponent(escape(window.atob(base64)));
-    } else {
-      // Node.js environment
-      decodedString = Buffer.from(code, 'base64url').toString('utf-8');
-    }
+    const decodedString = decodeBase64String(code);
+    if (!decodedString) return null;
     
-    const parts = decodedString.split(PART_SEPARATOR);
-
-    if (parts.length !== 4 || parts[0] !== DECK_CODE_VERSION) {
-      console.error('Invalid deck code format or version.');
-      return null;
-    }
-
-    const [, factionStr, coreStr, cardsStr] = parts;
+    const parsedData = parseDeckCodeParts(decodedString);
+    if (!parsedData) return null;
     
-    const factionInt = parseInt(factionStr, 10);
-    const faction = integerToFactionMap.get(factionInt);
-
-    if (!faction) {
-      console.error('Invalid faction ID in deck code.');
-      return null;
-    }
-
-    const coreCardIds = coreStr ? coreStr.split(CARD_SEPARATOR).map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined) : [];
-    const cards = cardsStr ? cardsStr.split(CARD_SEPARATOR).map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined) : [];
-
-    // IDの完全性を検証
-    if (coreCardIds.length !== (coreStr ? coreStr.split(CARD_SEPARATOR).length : 0) ||
-        cards.length !== (cardsStr ? cardsStr.split(CARD_SEPARATOR).length : 0)) {
-      console.error('Deck code contains invalid card IDs.');
-      return null;
-    }
-
+    const convertedData = convertDeckData(parsedData);
+    if (!convertedData) return null;
+    
+    const isValid = validateDeckIntegrity(convertedData);
+    if (!isValid) return null;
+    
     return {
-      faction,
-      coreCardIds,
-      cards,
+      faction: convertedData.faction,
+      coreCardIds: convertedData.coreCardIds,
+      cards: convertedData.cards,
     };
   } catch (error) {
     console.error('Failed to decode deck code:', error);
