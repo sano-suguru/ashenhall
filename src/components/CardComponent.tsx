@@ -10,12 +10,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import type { Card } from '@/types/game';
 import { FACTION_COLORS, SIZE_CLASSES } from '@/lib/card-constants';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
 import { useCardState } from '@/hooks/useCardState';
+import { useCardAnimation } from '@/hooks/useCardAnimation';
+import { useCardPortal } from '@/hooks/useCardPortal';
 import { getCardContainerClasses } from '@/lib/card-style-utils';
 import { CardTooltip } from './CardTooltip';
 import { CardHeader } from './parts/CardHeader';
@@ -62,24 +63,25 @@ export default function CardComponent({
   } = useCardTooltip();
   
   const { fieldCard, isDamaged, isEnhanced } = useCardState(card, isFieldCard);
-  const [isMounted, setIsMounted] = useState(false);
+  
+  const { animationClasses, damagePopupElement } = useCardAnimation({
+    isAttacking,
+    isBeingAttacked,
+    isDying,
+    damageAmount,
+  });
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const tooltipContent = (
+    <CardTooltip card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} tooltipStyle={tooltipStyle} />
+  );
+  
+  const { portalElement } = useCardPortal(showTooltip, tooltipContent);
 
   const cardContainerClasses = getCardContainerClasses({
     factionStyle,
     isOpponent,
     faction: card.faction,
   });
-
-  // 演出用のクラス名を生成
-  const animationClasses = [
-    isAttacking && 'card-attacking',
-    isBeingAttacked && 'card-being-attacked',
-    isDying && 'card-dying'
-  ].filter(Boolean).join(' ');
 
   return (
     <div
@@ -105,19 +107,8 @@ export default function CardComponent({
         />
       </div>
 
-      {/* ダメージポップアップ */}
-      {isBeingAttacked && damageAmount > 0 && (
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full z-20 pointer-events-none">
-          <div className="bg-red-500 text-white text-lg font-bold px-2 py-1 rounded shadow-lg animate-damage-popup">
-            -{damageAmount}
-          </div>
-        </div>
-      )}
-
-      {isMounted && showTooltip && createPortal(
-        <CardTooltip card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} tooltipStyle={tooltipStyle} />,
-        document.body
-      )}
+      {damagePopupElement}
+      {portalElement}
     </div>
   );
 }
