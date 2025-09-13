@@ -42,7 +42,6 @@ interface PlayerAreaProps {
     isDying: boolean;
     damageAmount: number;
   };
-  getPendingDestructionCards?: (playerId: string) => FieldCard[];
 }
 
 const PlayerStatus: React.FC<{ player: PlayerState; energyLimit: number; isOpponent: boolean }> = ({ player, energyLimit, isOpponent }) => (
@@ -132,6 +131,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
 
     return { isAttacking, isBeingAttacked, isDying: false, damageAmount };
   };
+
   const playerInfo = (
     <div className="flex items-center justify-between mb-4">
       <PlayerInfo player={player} isOpponent={isOpponent} />
@@ -160,6 +160,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
                 isAttacking={attackState.isAttacking}
                 isBeingAttacked={attackState.isBeingAttacked}
                 damageAmount={attackState.damageAmount}
+                isDying={attackState.isDying}
               />
             );
           })

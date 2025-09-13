@@ -44,3 +44,27 @@
     transform: translateY(-30px) scale(1.0);
   }
 }
+
+/* 破壊演出用アニメーション */
+.card-dying {
+  opacity: 0.5;
+  filter: grayscale(1);
+  border: 2px solid #6b7280 !important;
+  box-shadow: 0 0 8px rgba(107, 114, 128, 0.4) !important;
+  animation: deathFade 1.0s ease-out forwards;
+}
+
+@keyframes deathFade {
+  0% {
+    opacity: 0.5;
+    transform: scale(1.0);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}

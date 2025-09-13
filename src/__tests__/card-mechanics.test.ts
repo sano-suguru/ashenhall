@@ -36,7 +36,11 @@ describe('Card Mechanics Tests', () => {
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
-    gameState = processGameStep(gameState);
+    // 新仕様：戦闘フェーズ分割対応
+    gameState = processGameStep(gameState); // battle → battle_attack
+    while (gameState.phase === 'battle_attack') {
+      gameState = processGameStep(gameState); // 攻撃継続
+    }
 
     expect(gameState.players[p1].life).toBe(10 + (bloodCraver.attack));
   });
@@ -51,7 +55,11 @@ describe('Card Mechanics Tests', () => {
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
-    gameState = processGameStep(gameState);
+    // 新仕様：戦闘フェーズ分割対応
+    gameState = processGameStep(gameState); // battle → battle_attack
+    while (gameState.phase === 'battle_attack') {
+      gameState = processGameStep(gameState); // 攻撃継続
+    }
     
     const targetOnField = gameState.players[p2].field[0];
     expect(targetOnField.statusEffects.some(e => e.type === 'poison')).toBe(true);
@@ -76,7 +84,11 @@ describe('Card Mechanics Tests', () => {
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
-    gameState = processGameStep(gameState);
+    // 新仕様：戦闘フェーズ分割対応
+    gameState = processGameStep(gameState); // battle → battle_attack
+    while (gameState.phase === 'battle_attack') {
+      gameState = processGameStep(gameState); // 攻撃継続
+    }
 
     const attacker = gameState.players[p1].field[0];
     const retaliateDamage = Math.ceil(vindicator.attack / 2);
@@ -207,7 +219,11 @@ describe('Card Mechanics Tests', () => {
     state.phase = 'battle';
     state.currentPlayer = p1;
 
-    state = processGameStep(state);
+    // 新仕様：戦闘フェーズ分割対応
+    state = processGameStep(state); // battle → battle_attack
+    while (state.phase === 'battle_attack') {
+      state = processGameStep(state); // 攻撃継続
+    }
     
     expect(state.players[p2].life).toBe(10 - rushCreature.attack);
   });

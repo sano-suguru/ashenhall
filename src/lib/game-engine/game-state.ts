@@ -167,7 +167,7 @@ export function checkGameEnd(state: GameState): GameResult | null {
  * フェーズを進める
  */
 export function advancePhase(state: GameState): void {
-  const phaseOrder: GamePhase[] = ["draw", "energy", "deploy", "battle", "end"];
+  const phaseOrder: GamePhase[] = ["draw", "energy", "deploy", "battle", "battle_attack", "end"];
   const currentIndex = phaseOrder.indexOf(state.phase);
   const nextPhase = phaseOrder[(currentIndex + 1) % phaseOrder.length];
 

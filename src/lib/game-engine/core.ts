@@ -25,7 +25,7 @@ import {
   processDeployPhase,
   processEndPhase,
 } from "./phase-processors";
-import { processBattlePhase } from "./battle-system";
+import { processBattlePhase, processAttackPhase } from "./battle-system";
 
 /**
  * Re-export createInitialGameState from game-state module
@@ -58,6 +58,9 @@ export function processGameStep(state: GameState): GameState {
       break;
     case "battle":
       processBattlePhase(newState);
+      break;
+    case "battle_attack":
+      processAttackPhase(newState);
       break;
     case "end":
       processEndPhase(newState);

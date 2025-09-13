@@ -11,9 +11,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
-import { AnimationManager, AnimationIntegration } from '@/lib/animation-manager';
 import { ACTION_ANIMATION_DURATIONS } from '@/types/animation';
-import type { AnimationState } from '@/types/animation';
 
 // 旧ACTION_DELAYSは新しいACTION_ANIMATION_DURATIONSに統合済み
 // （後方互換性のため残存、段階的に廃止予定）
@@ -90,7 +88,6 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
   });
   
   const [progressError, setProgressError] = useState<Error | null>(null);
-  const [enhancedGameState, setEnhancedGameState] = useState<GameState & { animationState: AnimationState } | null>(null);
 
   // GameBoard.tsx の calculateSequenceForTurn を移植（null対応追加）
   const calculateSequenceForTurn = useCallback((gs: GameState | null, targetTurn: number): number => {
@@ -163,9 +160,12 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     return attackSequenceState.attackActions[attackSequenceState.currentAttackIndex] || null;
   }, [attackSequenceState]);
 
-  // カードのアニメーション状態を取得する関数
+  // カードのアニメーション状態を取得する関数（GameActionベース）
   const getCardAnimationState = useCallback((cardId: string) => {
-    if (!enhancedGameState?.animationState) {
+    // 現在のアクションログから最新のcard_attackアクションを取得
+    const currentAction = getCurrentAttackAction();
+    
+    if (!currentAction || currentAction.type !== 'card_attack') {
       return {
         isAttacking: false,
         isBeingAttacked: false,
@@ -174,65 +174,22 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       };
     }
     
-    return AnimationManager.getCardAnimationState(
-      enhancedGameState.animationState,
-      cardId
-    );
-  }, [enhancedGameState]);
-
-  // GameState変更時のenhancedGameState同期
-  useEffect(() => {
-    if (config.gameState) {
-      if ('animationState' in config.gameState) {
-        setEnhancedGameState(config.gameState as GameState & { animationState: AnimationState });
-      } else {
-        const enhanced = AnimationIntegration.enhanceGameState(config.gameState);
-        setEnhancedGameState(enhanced);
-      }
-    }
-  }, [config.gameState]);
-
-  // 演出完了監視システム（100ms間隔）
-  useEffect(() => {
-    if (!enhancedGameState?.animationState || config.gameState?.result || !config.isPlaying) {
-      return;
-    }
+    const animationData = currentAction.data.animation;
     
-    const animationTimer = setInterval(() => {
-      const currentState = enhancedGameState;
-      const updatedState = AnimationIntegration.updateWithAnimations(
-        currentState,
-        config.gameSpeed
-      );
-      
-      // 破壊処理が実行された場合のみ状態更新
-      const destructionCountChanged = 
-        updatedState.animationState.pendingDestructions.length !== 
-        currentState.animationState.pendingDestructions.length;
-      
-      const animationCountChanged = 
-        updatedState.animationState.activeAnimations.length !== 
-        currentState.animationState.activeAnimations.length;
-      
-      if (destructionCountChanged || animationCountChanged) {
-        console.log('🔄 Animation state updated:', {
-          pendingDestructions: updatedState.animationState.pendingDestructions.length,
-          activeAnimations: updatedState.animationState.activeAnimations.length
-        });
-        setEnhancedGameState(updatedState);
-        config.onGameStateChange(updatedState);
-      }
-    }, 100);
-    
-    return () => clearInterval(animationTimer);
-  }, [enhancedGameState, config.gameSpeed, config.gameState, config.isPlaying]);
+    return {
+      isAttacking: animationData.attackingCardId === cardId,
+      isBeingAttacked: animationData.beingAttackedCardId === cardId,
+      isDying: animationData.isTargetDestroyed && animationData.beingAttackedCardId === cardId,
+      damageAmount: animationData.beingAttackedCardId === cardId ? animationData.displayDamage : 0,
+    };
+  }, [getCurrentAttackAction]);
 
   // エラーリセット用useEffect
   useEffect(() => {
     setProgressError(null);
   }, [config.gameState, config.currentTurn, config.mode, config.replayData]);
 
-  // メインのゲーム進行useEffect（アクション単位演出システム）
+  // メインのゲーム進行useEffect（シンプル版）
   useEffect(() => {
     if (!config.gameState || !config.isPlaying || config.gameState.result) {
       return;
@@ -247,52 +204,27 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
           // 最新に到達したらライブモードに戻る
           config.onGameStateChange({ 
             ...config.gameState!, 
-            /* currentTurn を -1 に設定するロジックは上位コンポーネントで処理 */
           });
-        } else {
-          // 次のターンに進む（上位コンポーネントのsetCurrentTurnで処理）
         }
-      }, Math.max(200, 1000 / config.gameSpeed)); // 最小200ms、速度調整可能
+      }, Math.max(200, 1000 / config.gameSpeed));
       
       return () => clearTimeout(timer);
     }
     
     // 最新ターンの場合のみ実際のゲーム進行
     if (config.currentTurn === -1 || config.currentTurn >= config.gameState.turnNumber) {
-      // 現在のアクション数を記録（新アクション検出用）
-      const previousActionCount = config.gameState.actionLog.length;
-      
       const processNextStep = () => {
         try {
           const nextState = processGameStep(config.gameState!);
           
-          // 戻り値の検証（防御的プログラミング）
           if (!nextState || !nextState.actionLog) {
             console.warn('processGameStep returned invalid state, skipping step');
             return;
           }
           
-          // 新しく追加されたアクションを取得
-          const newActions = getCurrentStepActions(nextState, previousActionCount);
-          
-          // アニメーション統合システムで状態を更新
-          const updatedEnhancedState = enhancedGameState 
-            ? AnimationIntegration.updateWithAnimations({
-                ...enhancedGameState,
-                ...nextState
-              }, config.gameSpeed)
-            : AnimationIntegration.enhanceGameState(nextState);
-          
-          setEnhancedGameState(updatedEnhancedState);
-          
-          // 新アクションがある場合、最初のアクションの遅延時間を使用
-          const actionDelay = newActions.length > 0 
-            ? getActionDelay(newActions[0], config.gameSpeed)
-            : Math.max(50, 200 / config.gameSpeed); // デフォルト遅延
-          
           config.onGameStateChange(nextState);
           
-          // ゲームが終了した場合
+          // ゲーム終了時のコールバック
           if (nextState.result) {
             config.onGameFinished?.();
             config.onStatsUpdate?.(nextState);
@@ -304,11 +236,11 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       };
 
       // アクション演出時間後に次のステップを実行
-      const actionDelay = Math.max(50, 250 / config.gameSpeed); // 基本遅延
+      const actionDelay = Math.max(50, 250 / config.gameSpeed);
       const timer = setTimeout(processNextStep, actionDelay);
       return () => clearTimeout(timer);
     }
-  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed, enhancedGameState]);
+  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed]);
 
   // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
   useEffect(() => {

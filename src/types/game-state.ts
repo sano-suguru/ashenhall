@@ -79,6 +79,19 @@ export interface CardAttackActionData {
   attackerHealth?: { before: number; after: number };
   targetHealth?: { before: number; after: number };
   targetPlayerLife?: { before: number; after: number };
+  // 演出情報統合（AnimationManager依存削除のため）
+  animation: {
+    /** 攻撃演出対象カードID */
+    attackingCardId: string;
+    /** 被攻撃演出対象カードID */
+    beingAttackedCardId?: string;
+    /** 表示ダメージ量 */
+    displayDamage: number;
+    /** ターゲット破壊フラグ */
+    isTargetDestroyed: boolean;
+    /** 演出開始時刻（決定論的） */
+    startTime: number;
+  };
 }
 
 /** クリーチャー破壊アクションデータ */

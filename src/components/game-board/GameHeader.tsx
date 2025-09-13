@@ -9,6 +9,7 @@ const PHASE_DATA = {
   energy: { name: 'エネルギー', icon: Zap, color: 'text-yellow-400' },
   deploy: { name: '配置', icon: Target, color: 'text-green-400' },
   battle: { name: '戦闘', icon: Swords, color: 'text-red-400' },
+  battle_attack: { name: '攻撃', icon: Swords, color: 'text-red-500' },
   end: { name: '終了', icon: Flag, color: 'text-purple-400' },
 } as const;
 

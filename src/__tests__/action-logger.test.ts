@@ -32,6 +32,7 @@ describe('Action Logger システム', () => {
         hand: [],
         field: [],
         graveyard: [],
+        banishedCards: [],
       },
       player2: {
         id: 'player2',
@@ -44,6 +45,7 @@ describe('Action Logger システム', () => {
         hand: [],
         field: [],
         graveyard: [],
+        banishedCards: [],
       },
     },
     actionLog: [],
@@ -89,6 +91,13 @@ describe('Action Logger システム', () => {
         targetId: 'target',
         damage: 3,
         targetHealth: { before: 5, after: 2 },
+        animation: {
+          attackingCardId: 'attacker',
+          beingAttackedCardId: 'target',
+          displayDamage: 3,
+          isTargetDestroyed: false,
+          startTime: 1,
+        },
       });
 
       expect(gameState.actionLog).toHaveLength(2);
@@ -122,6 +131,13 @@ describe('Action Logger システム', () => {
         targetId: 'necro_skeleton',
         damage: 2,
         targetHealth: { before: 2, after: 0 },
+        animation: {
+          attackingCardId: 'ber_warrior',
+          beingAttackedCardId: 'necro_skeleton',
+          displayDamage: 2,
+          isTargetDestroyed: true,
+          startTime: 0,
+        },
       });
 
       expect(gameState.actionLog).toHaveLength(1);
@@ -174,6 +190,13 @@ describe('Action Logger システム', () => {
         targetId: 'enemy-1',
         damage: 3,
         targetHealth: { before: 4, after: 1 },
+        animation: {
+          attackingCardId: 'card-1',
+          beingAttackedCardId: 'enemy-1',
+          displayDamage: 3,
+          isTargetDestroyed: false,
+          startTime: 2,
+        },
       });
 
       expect(gameState.actionLog).toHaveLength(3);
@@ -204,6 +227,13 @@ describe('Action Logger システム', () => {
         targetId: 'card-1',
         damage: 2,
         targetHealth: { before: 3, after: 1 },
+        animation: {
+          attackingCardId: 'card-2',
+          beingAttackedCardId: 'card-1',
+          displayDamage: 2,
+          isTargetDestroyed: false,
+          startTime: 3,
+        },
       });
       
       const endTime = gameState.actionLog[1].timestamp;

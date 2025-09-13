@@ -83,7 +83,9 @@ function addEffectTriggerAction(
 }
 
 /**
- * クリーチャー死亡処理を一元化
+ * クリーチャー死亡処理（統一アクションシステム互換版）
+ * 
+ * 統一アクションシステムと同じロジックで動作し、テスト互換性を保持
  */
 export function handleCreatureDeath(
   state: GameState,

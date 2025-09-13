@@ -34,6 +34,8 @@ interface CardComponentProps {
   isAttacking?: boolean;
   isBeingAttacked?: boolean;
   damageAmount?: number;
+  // 破壊演出用のprops
+  isDying?: boolean;
 }
 
 
@@ -46,6 +48,7 @@ export default function CardComponent({
   isAttacking = false,
   isBeingAttacked = false,
   damageAmount = 0,
+  isDying = false,
 }: CardComponentProps) {
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
@@ -71,10 +74,11 @@ export default function CardComponent({
     faction: card.faction,
   });
 
-  // 攻撃演出用のクラス名を生成
-  const attackAnimationClasses = [
+  // 演出用のクラス名を生成
+  const animationClasses = [
     isAttacking && 'card-attacking',
-    isBeingAttacked && 'card-being-attacked'
+    isBeingAttacked && 'card-being-attacked',
+    isDying && 'card-dying'
   ].filter(Boolean).join(' ');
 
   return (
@@ -84,7 +88,7 @@ export default function CardComponent({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={`${cardContainerClasses.trim()} ${attackAnimationClasses}`.trim()}>
+      <div className={`${cardContainerClasses.trim()} ${animationClasses}`.trim()}>
         <CardHeader card={card} />
         <CardArt card={card} size={size} factionStyle={factionStyle} />
         <CardBody card={card} sizeStyle={sizeStyle} factionStyle={factionStyle} />
