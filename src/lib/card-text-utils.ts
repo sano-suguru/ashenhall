@@ -44,31 +44,87 @@ function getSpecialEffectText(cardId: string, specialHandler?: string): string |
 }
 
 /**
+ * プロパティルール値の型ガード関数
+ */
+function isPropertyRuleValue(value: unknown): value is { property: string; expectedValue: unknown } {
+  return typeof value === 'object' && value !== null && 'property' in value;
+}
+
+/**
+ * 烙印関連ルールのフォーマット処理
+ */
+function formatBrandRule(rule: import('@/types/cards').FilterRule): string | null {
+  if (rule.type !== 'brand') return null;
+  
+  switch (rule.operator) {
+    case 'has': return '烙印を刻まれた';
+    case 'not_has': return '烙印を刻まれていない';
+    default: return null;
+  }
+}
+
+/**
+ * プロパティ関連ルールのフォーマット処理
+ */
+function formatPropertyRule(rule: import('@/types/cards').FilterRule): string | null {
+  if (rule.type !== 'property') return null;
+  if (!isPropertyRuleValue(rule.value)) return null;
+  
+  const propRule = rule.value;
+  if (propRule.property === 'type') {
+    return `${propRule.expectedValue}タイプの`;
+  }
+  return null;
+}
+
+/**
+ * コスト関連ルールのフォーマット処理
+ */
+function formatCostRule(rule: import('@/types/cards').FilterRule): string | null {
+  if (rule.type !== 'cost') return null;
+  if (rule.operator === 'range' && rule.maxValue !== undefined) {
+    return `コスト${rule.maxValue}以下の`;
+  }
+  return null;
+}
+
+/**
+ * カードタイプ関連ルールのフォーマット処理
+ */
+function formatCardTypeRule(rule: import('@/types/cards').FilterRule): string | null {
+  return rule.type === 'card_type' ? `${rule.value}タイプの` : null;
+}
+
+/**
+ * 勢力関連ルールのフォーマット処理
+ */
+function formatFactionRule(rule: import('@/types/cards').FilterRule): string | null {
+  return rule.type === 'faction' ? `${rule.value}勢力の` : null;
+}
+
+/**
  * FilterRule[]を日本語テキストに変換（新インターフェース）
  */
 const getSelectionRulesText = (rules?: import('@/types/cards').FilterRule[]): string => {
   if (!rules || rules.length === 0) return '';
   
+  const formatters = [
+    formatBrandRule,
+    formatPropertyRule, 
+    formatCostRule,
+    formatCardTypeRule,
+    formatFactionRule
+  ];
+  
   const filters: string[] = [];
   
   rules.forEach(rule => {
-    if (rule.type === 'brand') {
-      if (rule.operator === 'has') {
-        filters.push('烙印を刻まれた');
-      } else if (rule.operator === 'not_has') {
-        filters.push('烙印を刻まれていない');
+    for (const formatter of formatters) {
+      const result = formatter(rule);
+      if (result) {
+        filters.push(result);
+        break;
       }
-    } else if (rule.type === 'property' && typeof rule.value === 'object' && rule.value && 'property' in rule.value) {
-      const propRule = rule.value as { property: string; expectedValue: unknown };
-      if (propRule.property === 'type') {
-        filters.push(`${propRule.expectedValue}タイプの`);
-      }
-    } else if (rule.type === 'cost' && rule.operator === 'range' && rule.maxValue !== undefined) {
-      filters.push(`コスト${rule.maxValue}以下の`);
-    } else if (rule.type === 'card_type') {
-      filters.push(`${rule.value}タイプの`);
-    } else if (rule.type === 'faction') {
-      filters.push(`${rule.value}勢力の`);
     }
   });
   
