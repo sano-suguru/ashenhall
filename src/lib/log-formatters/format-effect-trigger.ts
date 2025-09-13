@@ -1,4 +1,4 @@
-import type { GameAction, LogDisplayParts, PlayerId, EffectAction } from "@/types/game";
+import type { GameAction, LogDisplayParts, PlayerId, EffectAction, ValueChange, EffectTriggerActionData } from "@/types/game";
 import { getCardName, getPlayerName, getSourceDisplayName } from "../game-state-utils";
 
 const EFFECT_NAMES: Record<EffectAction, string> = {
@@ -24,37 +24,80 @@ const EFFECT_NAMES: Record<EffectAction, string> = {
   deck_search: "デッキサーチ",
 };
 
+/**
+ * ターゲットの表示名を解決する
+ */
+function resolveTargetName(targetId: string): string {
+  return (targetId === 'player1' || targetId === 'player2') 
+    ? getPlayerName(targetId as PlayerId) 
+    : `《${getCardName(targetId)}》`;
+}
+
+/**
+ * 値変更を文字列配列にフォーマットする
+ */
+function formatValueChanges(valueChange: ValueChange): string[] {
+  const changes: string[] = [];
+  
+  if (valueChange.attack) {
+    const diff = valueChange.attack.after - valueChange.attack.before;
+    changes.push(`攻撃力 ${valueChange.attack.before}→${valueChange.attack.after} (${diff >= 0 ? '+' : ''}${diff})`);
+  }
+  
+  if (valueChange.health) {
+    const diff = valueChange.health.after - valueChange.health.before;
+    changes.push(`体力 ${valueChange.health.before}→${valueChange.health.after} (${diff >= 0 ? '+' : ''}${diff})`);
+  }
+  
+  if (valueChange.life) {
+    const diff = valueChange.life.after - valueChange.life.before;
+    changes.push(`ライフ ${valueChange.life.before}→${valueChange.life.after} (${diff >= 0 ? '+' : ''}${diff})`);
+  }
+  
+  if (valueChange.energy) {
+    const diff = valueChange.energy.after - valueChange.energy.before;
+    changes.push(`エネルギー ${valueChange.energy.before}→${valueChange.energy.after} (${diff >= 0 ? '+' : ''}${diff})`);
+  }
+  
+  return changes;
+}
+
+/**
+ * 値変更がない場合の効果説明を生成する
+ */
+function formatEffectDescription(targetName: string, effectType: EffectAction, effectValue: number): string {
+  const effectName = EFFECT_NAMES[effectType] || effectType;
+  
+  if (effectType === 'ready') {
+    return `${targetName}が${effectName}になった`;
+  }
+  
+  return `${targetName}に${effectName}(${effectValue})`;
+}
+
+/**
+ * 単一ターゲットの効果をフォーマットする
+ */
+function formatSingleTargetEffect(targetId: string, valueChange: ValueChange, data: EffectTriggerActionData): string {
+  const targetName = resolveTargetName(targetId);
+  const changes = formatValueChanges(valueChange);
+  
+  if (changes.length === 0) {
+    return formatEffectDescription(targetName, data.effectType, data.effectValue);
+  }
+  
+  return `${targetName} ${changes.join(', ')}`;
+}
+
 export function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'effect_trigger') throw new Error('Invalid action type for formatEffectTriggerLog');
 
   const { data } = action;
   const sourceCardName = getSourceDisplayName(data.sourceCardId);
 
-  const detailsParts = Object.entries(data.targets).map(([targetId, valueChange]) => {
-    const targetName = (targetId === 'player1' || targetId === 'player2') ? getPlayerName(targetId as PlayerId) : `《${getCardName(targetId)}》`;
-    const changes = [];
-    if (valueChange.attack) {
-      const diff = valueChange.attack.after - valueChange.attack.before;
-      changes.push(`攻撃力 ${valueChange.attack.before}→${valueChange.attack.after} (${diff >= 0 ? '+' : ''}${diff})`);
-    }
-    if (valueChange.health) {
-      const diff = valueChange.health.after - valueChange.health.before;
-      changes.push(`体力 ${valueChange.health.before}→${valueChange.health.after} (${diff >= 0 ? '+' : ''}${diff})`);
-    }
-    if (valueChange.life) {
-      const diff = valueChange.life.after - valueChange.life.before;
-      changes.push(`ライフ ${valueChange.life.before}→${valueChange.life.after} (${diff >= 0 ? '+' : ''}${diff})`);
-    }
-    
-    if (changes.length === 0) {
-      const effectName = EFFECT_NAMES[data.effectType] || data.effectType;
-      if (data.effectType === 'ready') {
-        return `${targetName}が${effectName}になった`;
-      }
-      return `${targetName}に${effectName}(${data.effectValue})`;
-    }
-    return `${targetName} ${changes.join(', ')}`;
-  });
+  const detailsParts = Object.entries(data.targets).map(([targetId, valueChange]) =>
+    formatSingleTargetEffect(targetId, valueChange, data)
+  );
 
   return {
     type: 'effect_trigger',
