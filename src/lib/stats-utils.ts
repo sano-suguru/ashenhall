@@ -1,6 +1,7 @@
-import type { GameState, GameAction, GameResult, LocalStats, Faction } from '@/types/game';
+import type { GameState, GameAction, GameResult, LocalStats } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getTurnNumberForAction } from './game-state-utils';
+import { determineTurnSignificance as newDetermineTurnSignificance, type TurnContext } from '@/lib/battle-analysis';
 
 const STATS_STORAGE_KEY = 'ashenhall_local_stats';
 
@@ -118,14 +119,16 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
       currentPlayer1Life -= player1Damage;
       currentPlayer2Life -= player2Damage;
 
-      const significance = determineTurnSignificance(
-        turnNumber, 
-        player1Damage, 
-        player2Damage, 
-        currentPlayer1Life, 
-        currentPlayer2Life, 
-        actions
-      );
+      const turnContext: TurnContext = {
+        turnNumber,
+        player1Damage,
+        player2Damage,
+        player1LifeAfter: currentPlayer1Life,
+        player2LifeAfter: currentPlayer2Life,
+        actions,
+      };
+
+      const significance = newDetermineTurnSignificance(turnContext);
 
       if (player1Damage > 0 || player2Damage > 0 || significance) {
         summaries.push({
@@ -144,28 +147,6 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
   return summaries;
 }
 
-// ターンの重要性を判定
-function determineTurnSignificance(
-  turnNumber: number,
-  player1Damage: number,
-  player2Damage: number,
-  player1LifeAfter: number,
-  player2LifeAfter: number,
-  actions: GameAction[]
-): string | null {
-  if (player1Damage >= 5 || player2Damage >= 5) return '大ダメージターン';
-  if (player1Damage >= 3 || player2Damage >= 3) return '中ダメージターン';
-
-  const hasPlayerAttack = actions.some(action => 
-    action.type === 'card_attack' && (action.data.targetId === 'player1' || action.data.targetId === 'player2')
-  );
-  
-  if (hasPlayerAttack && turnNumber <= 5) return '初回プレイヤー攻撃';
-  if (player1LifeAfter <= 5 || player2LifeAfter <= 5) return '危険ライフ';
-  if (turnNumber >= 8 && (player1Damage >= 2 || player2Damage >= 2)) return '攻勢転換点';
-
-  return null;
-}
 
 // 戦況の全体分析
 export function analyzeBattleTrend(summaries: TurnSummary[], gameResult: GameResult | undefined): {
