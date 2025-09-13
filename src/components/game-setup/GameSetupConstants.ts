@@ -9,7 +9,6 @@ import {
   Gauge,
   Scale,
 } from 'lucide-react';
-import type { Faction, TacticsType } from '@/types/game';
 import { FACTION_DESCRIPTIONS } from '@/types/game';
 
 // 勢力の表示データ

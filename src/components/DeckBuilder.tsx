@@ -9,7 +9,7 @@
  */
 
 import { useState, useMemo, useRef } from 'react';
-import type { CustomDeck, Faction, Card } from '@/types/game';
+import type { CustomDeck, Card } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
 import { validateDeck } from '@/lib/deck-utils';
 import { GAME_CONSTANTS } from '@/types/game';

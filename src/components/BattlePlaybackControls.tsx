@@ -17,7 +17,6 @@ import {
   SkipForward,
   Rewind,
   FastForward,
-  RotateCcw,
   Zap
 } from 'lucide-react';
 import styles from '@/styles/components/BattlePlayback.module.css';

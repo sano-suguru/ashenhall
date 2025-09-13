@@ -12,7 +12,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useGameProgress, type GameProgressConfig } from '@/hooks/useGameProgress';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
-import type { GameState, GameAction } from '@/types/game';
+import type { GameState } from '@/types/game';
 
 // game-engine/core のモック（processGameStep のみ）
 jest.mock('@/lib/game-engine/core', () => ({

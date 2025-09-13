@@ -7,11 +7,11 @@
  * - エラーハンドリングとデータ整合性の確保
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useLocalStats } from '@/hooks/useLocalStats';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
-import type { LocalStats, GameState, Card } from '@/types/game';
+import type { LocalStats, GameState } from '@/types/game';
 
 // localStorage のモック
 const mockLocalStorage = (() => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { PlayerState, GameAction, FieldCard } from '@/types/game';
+import type { PlayerState, GameAction } from '@/types/game';
 import CardComponent from '../CardComponent';
 import { Bot, User, Heart, Zap, Layers, WalletCards as Wallet, Skull } from 'lucide-react';
 

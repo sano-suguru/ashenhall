@@ -73,7 +73,6 @@ function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
     deckCollection,
     editingDeck,
     activeDeckId,
-    factionDecks,
     setSelectedFaction,
     setSelectedTactics,
     handleCreateNewDeck,

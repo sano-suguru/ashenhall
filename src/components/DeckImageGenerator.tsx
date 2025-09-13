@@ -2,7 +2,7 @@
 
 import type { CustomDeck, Card } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
-import { getCardsByFaction, getCardById } from '@/data/cards/base-cards';
+import { getCardById } from '@/data/cards/base-cards';
 import CardComponent from './CardComponent';
 import { Star } from 'lucide-react';
 
@@ -11,7 +11,6 @@ interface DeckImageGeneratorProps {
 }
 
 export default function DeckImageGenerator({ deck }: DeckImageGeneratorProps) {
-  const availableCards = getCardsByFaction(deck.faction);
   const sortedCards = deck.cards
     .map(id => getCardById(id))
     .filter((c): c is Card => c !== undefined)

@@ -6,7 +6,7 @@ import {
   getTurnNumberForAction,
   getFinalGameState,
 } from '@/lib/game-state-utils';
-import { calculateTurnSummaries, analyzeBattleTrend, TurnSummary } from '@/lib/stats-utils';
+import { calculateTurnSummaries, TurnSummary } from '@/lib/stats-utils';
 
 export function useBattleLog(gameState: GameState) {
   const [searchTerm, setSearchTerm] = useState('');

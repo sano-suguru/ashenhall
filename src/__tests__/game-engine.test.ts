@@ -158,7 +158,6 @@ describe('Ashenhall ゲームエンジン', () => {
         testSeed
       );
 
-      const initialPlayer = gameState.currentPlayer;
       const initialPhase = gameState.phase;
 
       // 1ステップ進行
@@ -494,8 +493,6 @@ describe('守護キーワード処理テスト', () => {
     gameState.phase = 'battle';
 
     const initialPlayer2Life = gameState.players.player2.life;
-    const initialGuardHealth = gameState.players.player2.field[0].currentHealth;
-    const initialNormalHealth = gameState.players.player2.field[1].currentHealth;
 
     gameState = processGameStep(gameState); // battle → battle_attack
     

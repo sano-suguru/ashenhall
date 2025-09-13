@@ -1,7 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import type { GameState, GameAction } from "@/types/game";
 import { formatActionAsText, findDecisiveAction, getTurnNumberForAction } from "@/lib/game-state-utils";
-import { getCardById } from "@/data/cards/base-cards";
 
 // Mock getCardById to avoid dependency on actual card data
 jest.mock("@/data/cards/base-cards", () => ({
@@ -99,6 +98,13 @@ describe("formatActionAsText", () => {
         targetId: "some_target",
         damage: 3,
         targetHealth: { before: 5, after: 2 },
+        animation: {
+          attackingCardId: "some_attacker",
+          beingAttackedCardId: "some_target",
+          displayDamage: 3,
+          isTargetDestroyed: false,
+          startTime: 5,
+        },
       },
       timestamp: 0,
     };
@@ -117,6 +123,13 @@ describe("formatActionAsText", () => {
         targetId: "player2",
         damage: 2,
         targetPlayerLife: { before: 15, after: 13 },
+        animation: {
+          attackingCardId: "some_attacker",
+          beingAttackedCardId: undefined,
+          displayDamage: 2,
+          isTargetDestroyed: false,
+          startTime: 6,
+        },
       },
       timestamp: 0,
     };
@@ -242,7 +255,18 @@ describe("findDecisiveAction", () => {
       type: "card_attack",
       playerId: "player1",
       sequence: 2,
-      data: { attackerCardId: "C001", targetId: "player2", damage: 2 },
+      data: { 
+        attackerCardId: "C001", 
+        targetId: "player2", 
+        damage: 2,
+        animation: {
+          attackingCardId: "C001",
+          beingAttackedCardId: undefined,
+          displayDamage: 2,
+          isTargetDestroyed: false,
+          startTime: 2,
+        },
+      },
       timestamp: 0,
     };
     const gameState = {
@@ -254,7 +278,18 @@ describe("findDecisiveAction", () => {
           type: "card_attack",
           playerId: 'player1',
           sequence: 3,
-          data: { attackerCardId: "C002", targetId: "player2", damage: 0 },
+          data: { 
+            attackerCardId: "C002", 
+            targetId: "player2", 
+            damage: 0,
+            animation: {
+              attackingCardId: "C002",
+              beingAttackedCardId: undefined,
+              displayDamage: 0,
+              isTargetDestroyed: false,
+              startTime: 3,
+            },
+          },
           timestamp: 0,
         },
       ],
@@ -284,7 +319,18 @@ describe("findDecisiveAction", () => {
           type: "card_attack",
           playerId: 'player1',
           sequence: 2,
-          data: { attackerCardId: "C002", targetId: "player2", damage: 0 },
+          data: { 
+            attackerCardId: "C002", 
+            targetId: "player2", 
+            damage: 0,
+            animation: {
+              attackingCardId: "C002",
+              beingAttackedCardId: undefined,
+              displayDamage: 0,
+              isTargetDestroyed: false,
+              startTime: 2,
+            },
+          },
           timestamp: 0,
         },
       ],
@@ -301,7 +347,18 @@ describe("findDecisiveAction", () => {
           type: "card_attack",
           playerId: 'player1',
           sequence: 1,
-          data: { attackerCardId: "C001", targetId: "player2", damage: 0 },
+          data: { 
+            attackerCardId: "C001", 
+            targetId: "player2", 
+            damage: 0,
+            animation: {
+              attackingCardId: "C001",
+              beingAttackedCardId: undefined,
+              displayDamage: 0,
+              isTargetDestroyed: false,
+              startTime: 1,
+            },
+          },
           timestamp: 0,
         },
       ],

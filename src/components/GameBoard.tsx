@@ -5,7 +5,7 @@ import type { GameState, GameAction } from '@/types/game';
 import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
 import { GAME_CONSTANTS } from '@/types/game';
 import BattleLogModal from './BattleLogModal';
-import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
+import { reconstructStateAtSequence } from '@/lib/game-state-utils';
 import GameHeader from './game-board/GameHeader';
 import PlayerArea from './game-board/PlayerArea';
 import RecentLog from './game-board/RecentLog';

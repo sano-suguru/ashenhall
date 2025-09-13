@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import type { LocalStats, Faction } from '@/types/game';
 import { loadStats } from '@/lib/stats-utils';
 import Link from 'next/link';
-import { ArrowLeft, BarChart2, Swords, Trophy } from 'lucide-react';
+import { ArrowLeft, BarChart2, Trophy } from 'lucide-react';
 
 const FACTION_NAMES: Record<Faction, string> = {
   necromancer: '死霊術師',

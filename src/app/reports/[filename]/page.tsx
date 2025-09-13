@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { notFound } from 'next/navigation';
 import type { Faction } from '@/types/game';
-import { BarChart, Calendar, Hash, Swords, Trophy, Percent } from 'lucide-react';
+import { Calendar, Hash, Swords, Trophy } from 'lucide-react';
 
 // 型定義
 interface SimulationResult {
@@ -34,7 +34,6 @@ const FACTION_NAMES: Record<Faction, string> = {
 
 // 勝率バーコンポーネント
 const WinRateBar = ({ winRate }: { winRate: number }) => {
-  const filledSegments = Math.round(winRate / 10);
   return (
     <div className="flex items-center" title={`${winRate.toFixed(1)}%`}>
       <div className="font-mono text-sm w-12 text-right mr-2">{winRate.toFixed(1)}%</div>
@@ -53,7 +52,7 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
   try {
     const fileContents = fs.readFileSync(reportPath, 'utf8');
     reportData = JSON.parse(fileContents);
-  } catch (error) {
+  } catch {
     return notFound();
   }
 

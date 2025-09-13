@@ -9,7 +9,7 @@ import { executeCardEffect, executeAllCardEffects, processEffectTrigger, applyPa
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
 import { hasBrandedStatus, getBrandedCreatureCount, hasAnyBrandedEnemy } from '@/lib/game-engine/brand-utils';
-import type { GameState, FieldCard, Card, CardEffect, CreatureCard } from '@/types/game';
+import type { GameState, FieldCard, CardEffect, CreatureCard } from '@/types/game';
 import type { Keyword } from '@/types/effects';
 
 describe('カード効果システム', () => {
@@ -1476,7 +1476,6 @@ describe('Judgment Angel System', () => {
     
     gameState.players.player2.field.push(brandedEnemy, normalEnemy1, normalEnemy2);
     
-    const initialEnemyCount = gameState.players.player2.field.length;
     const initialGraveyard = gameState.players.player2.graveyard.length;
     
     // 《審判の天使》の効果1（条件付き破壊）をテスト
@@ -1515,7 +1514,7 @@ describe('Judgment Angel System', () => {
     executeCardEffect(gameState, unconditionalDamage, sourceCard, 'player1');
     
     // 合計2体が破壊され、場から取り除かれたことを確認
-    expect(gameState.players.player2.field.length).toBe(initialEnemyCount - 2);
+    expect(gameState.players.player2.field.length).toBe(1);
     expect(gameState.players.player2.graveyard.length).toBe(initialGraveyard + 2);
   });
 
