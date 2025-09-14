@@ -7,7 +7,7 @@
  * - テスト容易な純粋関数として実装
  */
 
-import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType, EffectTarget } from '@/types/game';
+import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from '@/types/game';
 import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS } from '@/types/game';
 import { SeededRandom } from './seeded-random';
 
@@ -66,10 +66,40 @@ const getBerserkerBonus = (card: Card, player: GameState['players'][PlayerId]) =
   return bonus;
 };
 
-const getMageBonus = (card: Card, _player: GameState['players'][PlayerId], _opponent: GameState['players'][PlayerId]) => {
+const getMageBonus = (card: Card, player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => {
   let bonus = 0;
+  
+  // 基本スペルボーナス
   if (card.type === 'spell') bonus += FACTION_BONUSES.MAGE.SPELL_PLAY;
   if (card.effects.some(e => e.trigger === 'on_spell_play')) bonus += FACTION_BONUSES.MAGE.ON_SPELL_PLAY_TRIGGER;
+  
+  // 「叡智」系ボーナス: 手札アドバンテージを重視
+  const handAdvantage = player.hand.length - opponent.hand.length;
+  if (handAdvantage > 0 && card.type === 'spell') {
+    bonus += handAdvantage * FACTION_BONUSES.MAGE.HAND_ADVANTAGE;
+  }
+  
+  // 「知識」系ボーナス: カードドロー効果の価値向上
+  if (card.effects.some(e => e.action === 'draw_card')) {
+    bonus += FACTION_BONUSES.MAGE.CARD_DRAW_VALUE;
+  }
+  
+  // 「戦場制御」系ボーナス: スペル相互作用の評価
+  const spellSynergyCreatures = player.field.filter(c => 
+    c.effects.some(e => e.trigger === 'on_spell_play')
+  );
+  if (card.type === 'spell' && spellSynergyCreatures.length > 0) {
+    bonus += spellSynergyCreatures.length * FACTION_BONUSES.MAGE.SPELL_SYNERGY;
+  }
+  
+  // 「元素の力」系ボーナス: 範囲攻撃の戦術的価値
+  const hasAoeEffect = card.effects.some(e => 
+    e.target === 'enemy_all' && (e.action === 'damage' || e.action.includes('debuff'))
+  );
+  if (hasAoeEffect && opponent.field.length >= 2) {
+    bonus += opponent.field.length * FACTION_BONUSES.MAGE.AOE_TARGET_RICH;
+  }
+  
   return bonus;
 };
 
@@ -100,11 +130,53 @@ export const calculateFactionBonus = (card: Card, gameState: GameState, playerId
 };
 
 /**
+ * 味方フィールドから有効な対象を抽出
+ */
+function findValidAllies(sourcePlayer: GameState['players'][PlayerId]): FieldCard[] {
+  return sourcePlayer.field.filter(ally => ally.currentHealth > 0);
+}
+
+/**
+ * 敵フィールドから有効な対象を抽出（untargetable除外）
+ */
+function findValidEnemies(opponent: GameState['players'][PlayerId]): FieldCard[] {
+  return opponent.field.filter(
+    enemy => enemy.currentHealth > 0 && !enemy.keywords.includes('untargetable')
+  );
+}
+
+/**
+ * 単一効果が有効な対象を持つかチェック
+ */
+function hasValidTargetsForEffect(
+  effect: Card['effects'][0],
+  sourcePlayer: GameState['players'][PlayerId],
+  opponent: GameState['players'][PlayerId]
+): boolean {
+  switch (effect.target) {
+    case 'self':
+    case 'player':
+      // 自分自身またはプレイヤー対象は常に有効
+      return true;
+
+    case 'ally_all':
+    case 'ally_random':
+      // 味方に有効な対象がいるかチェック
+      return findValidAllies(sourcePlayer).length > 0;
+
+    case 'enemy_all':
+    case 'enemy_random':
+      // 敵に有効な対象がいるかチェック
+      return findValidEnemies(opponent).length > 0;
+
+    default:
+      // 不明な対象タイプは有効とみなす
+      return true;
+  }
+}
+
+/**
  * カード効果が有効な対象を見つけられるかチェック
- * @param card チェック対象のカード
- * @param gameState 現在のゲーム状態
- * @param playerId カードをプレイするプレイヤー
- * @returns 有効な対象が存在する場合true
  */
 export function canEffectFindValidTargets(
   card: Card,
@@ -127,39 +199,8 @@ export function canEffectFindValidTargets(
 
   // 各効果について対象の存在をチェック
   for (const effect of card.effects) {
-    const target = effect.target;
-    
-    switch (target) {
-      case 'self':
-      case 'player':
-        // 自分自身またはプレイヤー対象は常に有効
-        continue;
-
-      case 'ally_all':
-      case 'ally_random':
-        // 味方に有効な対象がいるかチェック
-        const validAllies = sourcePlayer.field.filter(
-          ally => ally.currentHealth > 0
-        );
-        if (validAllies.length === 0) {
-          return false;
-        }
-        break;
-
-      case 'enemy_all':
-      case 'enemy_random':
-        // 敵に有効な対象がいるかチェック（untargetableを除外）
-        const validEnemies = opponent.field.filter(
-          enemy => enemy.currentHealth > 0 && !enemy.keywords.includes('untargetable')
-        );
-        if (validEnemies.length === 0) {
-          return false;
-        }
-        break;
-
-      default:
-        // 不明な対象タイプは有効とみなす
-        continue;
+    if (!hasValidTargetsForEffect(effect, sourcePlayer, opponent)) {
+      return false;
     }
   }
 
@@ -168,10 +209,6 @@ export function canEffectFindValidTargets(
 
 /**
  * カード配置の評価（無駄撃ち防止版）
- * @param card 評価対象のカード
- * @param gameState 現在のゲーム状態
- * @param playerId AIプレイヤーのID
- * @returns カードの評価スコア
  */
 export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: PlayerId): number {
   // 無駄撃ち防止: 対象が存在しない場合は大幅ペナルティ
@@ -186,10 +223,6 @@ export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: 
 
 /**
  * 攻撃対象の選択（高度化版）
- * @param attacker 攻撃するクリーチャー
- * @param gameState 現在のゲーム状態
- * @param random 決定論的乱数生成器
- * @returns 攻撃対象（クリーチャーまたはプレイヤー）
  */
 export function chooseAttackTarget(
   attacker: FieldCard,

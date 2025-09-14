@@ -102,7 +102,14 @@ export const AI_EVALUATION_WEIGHTS = {
     NECROMANCER: { ECHO_PER_GRAVEYARD: 3, ON_DEATH: 5 },
     KNIGHT: { FORMATION_PER_ALLY: 4, GUARD: 6 },
     BERSERKER: { PER_LIFE_DEFICIT: 1.5, HIGH_ATTACK: 2 },
-    MAGE: { SPELL_PLAY: 15, ON_SPELL_PLAY_TRIGGER: 10 },
+    MAGE: { 
+      SPELL_PLAY: 15, 
+      ON_SPELL_PLAY_TRIGGER: 10,
+      HAND_ADVANTAGE: 2,      // 手札アドバンテージボーナス
+      CARD_DRAW_VALUE: 8,     // カードドロー効果価値
+      SPELL_SYNERGY: 5,       // on_spell_playクリーチャー存在時のスペルボーナス
+      AOE_TARGET_RICH: 4      // 敵が多い時の範囲攻撃ボーナス
+    },
     INQUISITOR: { DEBUFF_PER_ENEMY: 3, SILENCE_STUN: 8 },
   },
 } as const;
