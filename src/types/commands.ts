@@ -7,7 +7,7 @@
  * - テスト互換性100%維持
  */
 
-import type { FieldCard, PlayerId, GameState } from './game';
+import type { FieldCard, GameState } from './game';
 
 /** ゲームコマンドの基本タイプ */
 export type GameCommandType = 

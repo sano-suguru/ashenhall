@@ -44,6 +44,3 @@ export type GamePhase =
 
 /** カード種別 */
 export type CardType = 'creature' | 'spell';
-
-/** カード属性 */
-export type CardProperty = 'type' | 'cost' | 'attack' | 'health' | 'faction';

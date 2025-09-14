@@ -13,8 +13,7 @@ export type {
   Faction,
   TacticsType,
   GamePhase,
-  CardType,
-  CardProperty
+  CardType
 } from './core';
 
 // === 効果システム型 ===

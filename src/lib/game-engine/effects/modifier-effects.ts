@@ -9,9 +9,7 @@
 
 import type {
   GameState,
-  Card,
   FieldCard,
-  PlayerId,
   ValueChange,
   CardEffect,
 } from "@/types/game";

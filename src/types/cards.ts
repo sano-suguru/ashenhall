@@ -9,9 +9,7 @@
 
 import type {
   PlayerId,
-  Faction,
-  CardType,
-  CardProperty
+  Faction
 } from './core';
 
 import type {

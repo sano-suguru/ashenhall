@@ -10,11 +10,9 @@
 import type {
   GameState,
   PlayerId,
-  Card,
   FieldCard,
 } from "@/types/game";
 import { GAME_CONSTANTS } from "@/types/game";
-import { SeededRandom } from "./seeded-random";
 import { advancePhase } from "./game-state";
 import {
   addEffectTriggerAction,
@@ -166,7 +164,10 @@ export function processEnergyPhase(state: GameState): void {
 export function processDeployPhase(state: GameState): void {
   applyPassiveEffects(state);
   const player = state.players[state.currentPlayer];
-  const random = new SeededRandom(state.randomSeed + state.turnNumber);
+  
+  // 注意: 現在のAI配置ロジックは決定論的評価スコアを使用
+  // 将来的にランダム性が必要な場合は以下を有効化:
+  // const random = new SeededRandom(state.randomSeed + state.turnNumber);
 
   // 無限ループ防止: 理論的最大配置数（場の上限5 + 安全マージン）
   const MAX_DEPLOYMENT_ATTEMPTS = 10;

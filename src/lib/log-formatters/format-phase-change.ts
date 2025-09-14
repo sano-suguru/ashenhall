@@ -1,5 +1,5 @@
 import type { GameAction, GameState, LogDisplayParts } from "@/types/game";
-import { getPlayerName, getTurnNumberForAction } from "../game-state-utils";
+import { getTurnNumberForAction } from "../game-state-utils";
 
 const PHASE_NAMES: Record<string, string> = {
   draw: "ドロー",

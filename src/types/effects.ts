@@ -7,7 +7,6 @@
  * - 動的値計算システムの型定義
  */
 
-import type { Faction } from './core';
 
 // === キーワード能力 ===
 
