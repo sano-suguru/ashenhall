@@ -11,7 +11,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
-import { ACTION_ANIMATION_DURATIONS } from '@/types/animation';
 
 // 旧ACTION_DELAYSは新しいACTION_ANIMATION_DURATIONSに統合済み
 // （後方互換性のため残存、段階的に廃止予定）
@@ -21,25 +20,6 @@ interface AttackSequenceState {
   isShowingAttackSequence: boolean;
   currentAttackIndex: number;
   attackActions: GameAction[];
-}
-
-/**
- * アクション単位の演出遅延時間を計算（新システム統合版）
- */
-function getActionDelay(action: GameAction, gameSpeed: number): number {
-  const baseDelay = ACTION_ANIMATION_DURATIONS[action.type] || 300;
-  return Math.max(50, baseDelay / gameSpeed);
-}
-
-/**
- * 現在のゲームステップで発生したアクションを取得
- * 防御的プログラミング: null/undefined セーフティ
- */
-function getCurrentStepActions(gameState: GameState | null | undefined, previousActionCount: number): GameAction[] {
-  if (!gameState || !gameState.actionLog) {
-    return [];
-  }
-  return gameState.actionLog.slice(previousActionCount);
 }
 
 export interface GameProgressConfig {

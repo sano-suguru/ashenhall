@@ -690,7 +690,6 @@ describe('守護キーワード処理テスト', () => {
 
 describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-001';
-  const testSeed = 'test-seed-12345';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
   const player1Tactics: TacticsType = 'aggressive';
@@ -822,7 +821,6 @@ describe('Card Keyword and Effect Tests', () => {
 
 describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-001';
-  const testSeed = 'test-seed-12345';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
   const player1Tactics: TacticsType = 'aggressive';
@@ -954,7 +952,6 @@ describe('Card Keyword and Effect Tests', () => {
 
 describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-001';
-  const testSeed = 'test-seed-12345';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
   const player1Tactics: TacticsType = 'aggressive';
@@ -1153,7 +1150,6 @@ describe('Card Keyword and Effect Tests', () => {
       );
 
       // ターン5まで進行させてエネルギーを十分に蓄積
-      let multiDeployOccurred = false;
       let maxDeploysInPhase = 0;
       
       for (let step = 0; step < 200 && !gameState.result; step++) {
@@ -1169,9 +1165,8 @@ describe('Card Keyword and Effect Tests', () => {
           
           maxDeploysInPhase = Math.max(maxDeploysInPhase, deployActionsInThisPhase);
           
-          // 複数枚配置が発生した場合を記録
+          // 複数枚配置が発生した場合をチェック
           if (deployActionsInThisPhase >= 2) {
-            multiDeployOccurred = true;
             // 完全実装では場の上限（5枚）まで配置可能
             expect(deployActionsInThisPhase).toBeLessThanOrEqual(5);
           }
@@ -1209,7 +1204,6 @@ describe('Card Keyword and Effect Tests', () => {
         
         // 配置フェーズでの動作をチェック
         if (prevState.phase === 'deploy' && gameState.phase !== 'deploy') {
-          const player = gameState.players[gameState.currentPlayer === 'player1' ? 'player2' : 'player1'];
           const deployActions = gameState.actionLog.filter(
             action => action.type === 'card_play' && 
             action.sequence > prevState.actionLog.length - 1

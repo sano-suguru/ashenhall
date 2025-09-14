@@ -1609,7 +1609,6 @@ describe('Judgment Angel System', () => {
     singleBrandedEnemy.statusEffects.push({ type: 'branded' });
     gameState.players.player2.field.push(singleBrandedEnemy);
     
-    const initialEnemyCount = gameState.players.player2.field.length;
     const initialGraveyard = gameState.players.player2.graveyard.length;
     
     const conditionalDamage: CardEffect = {
@@ -1655,7 +1654,6 @@ describe('Judgment Angel System', () => {
     
     // 敵クリーチャーを配置しない
     
-    const initialEnemyCount = gameState.players.player2.field.length;
     const initialGraveyard = gameState.players.player2.graveyard.length;
     
     const conditionalDamage: CardEffect = {
