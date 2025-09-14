@@ -12,7 +12,6 @@ import type {
   Card,
   FieldCard,
   PlayerId,
-  ValueChange,
 } from "@/types/game";
 import { SeededRandom } from "../seeded-random";
 import {
@@ -74,8 +73,7 @@ export function executeResurrectEffect(
         state,
         sourcePlayerId,
         [toResurrect.id],
-        sourceCard.id,
-        random
+        sourceCard.id
       );
     }
   } else {
@@ -103,8 +101,7 @@ export function executeResurrectEffect(
         state,
         sourcePlayerId,
         chosenIds,
-        sourceCard.id,
-        random
+        sourceCard.id
       );
     }
   }
@@ -164,8 +161,7 @@ function applyResurrect(
   state: GameState,
   sourcePlayerId: PlayerId,
   targetCardIds: string[],
-  sourceCardId: string,
-  random: SeededRandom
+  sourceCardId: string
 ): void {
   const player = state.players[sourcePlayerId];
 

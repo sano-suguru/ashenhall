@@ -13,15 +13,12 @@ import type {
   FieldCard,
   CardEffect,
   PlayerId,
-  EffectAction,
-  ValueChange,
   EffectTrigger,
 } from "@/types/game";
 import type { ConditionalEffect } from "@/types/cards";
 
 import { SeededRandom } from "./seeded-random";
 import {
-  addEffectTriggerAction as addEffectTriggerActionFromLogger,
   addTriggerEventAction,
   addCreatureDestroyedAction,
 } from "./action-logger";
@@ -30,7 +27,6 @@ import {
   specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
-import { getBrandedEnemies, hasBrandedStatus } from "./brand-utils";
 import { selectTargets } from "./core/target-selector";
 import { checkEffectCondition } from "./core/condition-checker";
 import { TargetFilterEngine } from "./core/target-filter";
@@ -62,24 +58,6 @@ function executeConditionalEffect(
   } catch (error) {
     console.error(`Error executing conditional effect:`, error);
   }
-}
-
-/**
- * 効果ログを追加（既存コードとの互換性を保つ）
- */
-function addEffectTriggerAction(
-  state: GameState,
-  sourceCardId: string,
-  effectType: EffectAction,
-  effectValue: number,
-  targets: Record<string, ValueChange>
-): void {
-  addEffectTriggerActionFromLogger(state, state.currentPlayer, {
-    sourceCardId,
-    effectType,
-    effectValue,
-    targets,
-  });
 }
 
 /**
@@ -121,43 +99,6 @@ export function handleCreatureDeath(
 
   // 場のカードの位置を再インデックス
   player.field.forEach((c, i) => (c.position = i));
-}
-
-/**
- * ダメージ効果の処理
- */
-function applyDamage(
-  state: GameState,
-  targets: FieldCard[],
-  targetPlayerId: PlayerId | null,
-  damage: number,
-  sourceCardId: string
-): void {
-  const valueChanges: Record<string, ValueChange> = {};
-
-  targets.forEach((target) => {
-    const before = target.currentHealth;
-    target.currentHealth = Math.max(0, target.currentHealth - damage);
-    const after = target.currentHealth;
-    valueChanges[target.id] = { health: { before, after } };
-  });
-
-  if (targetPlayerId) {
-    const player = state.players[targetPlayerId];
-    const before = player.life;
-    player.life = Math.max(0, player.life - damage);
-    const after = player.life;
-    valueChanges[targetPlayerId] = { life: { before, after } };
-  }
-
-  addEffectTriggerAction(state, sourceCardId, "damage", damage, valueChanges);
-
-  // ダメージ適用後に死亡判定
-  targets.forEach((target) => {
-    if (target.currentHealth <= 0) {
-      handleCreatureDeath(state, target, 'effect', sourceCardId);
-    }
-  });
 }
 
 /**
