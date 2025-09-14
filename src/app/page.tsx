@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { Faction, TacticsType, GameState, Card } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
@@ -31,7 +31,9 @@ export default function Home() {
   // フック責務分離
   const gameControls = useGameControls();
   const localStats = useLocalStats();
-  const gameProgress = useGameProgress({
+  
+  // useGameProgress用の安定化されたconfig（Phase B: オブジェクト参照問題解決）
+  const gameProgressConfig = useMemo(() => ({
     gameState,
     isPlaying: gameControls.isPlaying,
     currentTurn: gameControls.currentTurn,
@@ -42,7 +44,15 @@ export default function Home() {
       setAppState('finished');
     },
     onStatsUpdate: localStats.updateWithGameResult,
-  });
+  }), [
+    gameState,
+    gameControls.isPlaying,
+    gameControls.currentTurn,
+    gameControls.gameSpeed,
+    localStats.updateWithGameResult
+  ]);
+  
+  const gameProgress = useGameProgress(gameProgressConfig);
 
   // AIデッキを生成する関数（勢力のカードから定数で定義された枚数を選択）
   const generateAIDeck = (faction: Faction): Card[] => {

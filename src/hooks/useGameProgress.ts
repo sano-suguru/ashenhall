@@ -220,7 +220,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       const timer = setTimeout(processNextStep, actionDelay);
       return () => clearTimeout(timer);
     }
-  }, [config.gameState, config.isPlaying, config.currentTurn, config.gameSpeed]);
+  }, [config]);
 
   // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
   useEffect(() => {
@@ -242,7 +242,9 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
   }, [
     config.gameState, 
     config.isPlaying, 
-    config.currentTurn, 
+    config.currentTurn,
+    config.mode,
+    config.replayData,
     attackSequenceState.isShowingAttackSequence,
     getAttackActionsForTurn
   ]);
