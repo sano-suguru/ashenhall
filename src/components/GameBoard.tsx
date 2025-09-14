@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
 import { GAME_CONSTANTS } from '@/types/game';
 import BattleLogModal from './BattleLogModal';
-import { reconstructStateAtSequence } from '@/lib/game-state-utils';
 import GameHeader from './game-board/GameHeader';
 import PlayerArea from './game-board/PlayerArea';
 import RecentLog from './game-board/RecentLog';
@@ -44,31 +43,8 @@ export default function GameBoard({
   const [showLog, setShowLog] = useState(false);
   const [showDetailedLog, setShowDetailedLog] = useState(false);
 
-  const calculateSequenceForTurn = (gs: GameState, targetTurn: number): number => {
-    if (targetTurn <= 1) return 0;
-    if (targetTurn > gs.turnNumber) return gs.actionLog[gs.actionLog.length - 1]?.sequence ?? 0;
-
-    const drawPhaseStarts = gs.actionLog.filter(
-      a => a.type === 'phase_change' && a.data.toPhase === 'draw'
-    );
-
-    // targetTurn is 1-based. The (targetTurn-1)-th element is the start of targetTurn.
-    const startOfTurnAction = drawPhaseStarts[targetTurn - 1];
-
-    if (startOfTurnAction) {
-      return startOfTurnAction.sequence > 0 ? startOfTurnAction.sequence - 1 : 0;
-    }
-
-    return gs.actionLog[gs.actionLog.length - 1]?.sequence ?? 0;
-  };
-  
-  const displayState = useMemo(() => {
-    if (currentTurn === -1 || currentTurn >= gameState.turnNumber) {
-      return gameState;
-    }
-    const targetSequence = calculateSequenceForTurn(gameState, currentTurn);
-    return reconstructStateAtSequence(gameState, targetSequence);
-  }, [gameState, currentTurn]);
+  // Phase C: 状態管理統一 - displayState計算はuseGameProgressに移譲
+  const displayState = gameState; // page.tsxから既に処理済みのdisplayStateを受け取る
 
   const currentEnergyLimit = Math.min(displayState.turnNumber, GAME_CONSTANTS.ENERGY_LIMIT);
   const recentActions = displayState.actionLog.slice(-10).reverse();

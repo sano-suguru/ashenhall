@@ -32,7 +32,7 @@ export default function Home() {
   const gameControls = useGameControls();
   const localStats = useLocalStats();
   
-  // useGameProgress用の安定化されたconfig（Phase B: オブジェクト参照問題解決）
+  // useGameProgress用の安定化されたconfig（Phase C: 状態管理統一準備）
   const gameProgressConfig = useMemo(() => ({
     gameState,
     isPlaying: gameControls.isPlaying,
@@ -46,9 +46,7 @@ export default function Home() {
     onStatsUpdate: localStats.updateWithGameResult,
   }), [
     gameState,
-    gameControls.isPlaying,
-    gameControls.currentTurn,
-    gameControls.gameSpeed,
+    gameControls, // Phase C: オブジェクト全体で安定性確保
     localStats.updateWithGameResult
   ]);
   

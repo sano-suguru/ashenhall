@@ -7,7 +7,7 @@
  * - Phase 1拡張への準備（基本制御の抽象化）
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export interface GameControlsReturn {
   // 基本状態
@@ -35,6 +35,7 @@ export interface GameControlsConfig {
 /**
  * ゲーム制御フック
  * page.tsx内の制御状態を独立したフックとして抽出
+ * Phase B: 参照安定性の確保
  */
 export const useGameControls = (config: GameControlsConfig = {}): GameControlsReturn => {
   const [isPlaying, setIsPlaying] = useState(config.initialIsPlaying ?? true);
@@ -73,7 +74,8 @@ export const useGameControls = (config: GameControlsConfig = {}): GameControlsRe
     // 最新に戻った場合は再生状態を維持
   }, []);
 
-  return {
+  // Phase B: 安定化されたAPIオブジェクト（参照不変性保証）
+  return useMemo(() => ({
     // 基本状態
     isPlaying,
     setIsPlaying,
@@ -88,5 +90,14 @@ export const useGameControls = (config: GameControlsConfig = {}): GameControlsRe
     onSpeedChange,
     onJumpToStart,
     onJumpToEnd,
-  };
+  }), [
+    isPlaying,
+    currentTurn,
+    gameSpeed,
+    onPlayPause,
+    onTurnChange,
+    onSpeedChange,
+    onJumpToStart,
+    onJumpToEnd,
+  ]);
 };
