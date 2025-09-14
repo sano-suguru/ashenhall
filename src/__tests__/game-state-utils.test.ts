@@ -241,7 +241,220 @@ describe("formatActionAsText", () => {
   });
 });
 
-describe("findDecisiveAction", () => {
+// 型ガード関数とヘルパー関数のテストを追加
+describe("Type Guard Functions", () => {
+  describe("isCardAttackToPlayer", () => {
+    it("should identify player-targeted card attacks", () => {
+      const playerAttack: GameAction = {
+        type: "card_attack",
+        playerId: "player1",
+        sequence: 1,
+        data: { 
+          attackerCardId: "C001", 
+          targetId: "player2", 
+          damage: 2,
+          animation: {
+            attackingCardId: "C001",
+            beingAttackedCardId: undefined,
+            displayDamage: 2,
+            isTargetDestroyed: false,
+            startTime: 1,
+          },
+        },
+        timestamp: 0,
+      };
+      
+      // 型ガード関数は内部関数なので、findDecisiveActionを通じてテスト
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [playerAttack],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toEqual(playerAttack);
+    });
+
+    it("should reject creature-targeted attacks", () => {
+      const creatureAttack: GameAction = {
+        type: "card_attack",
+        playerId: "player1",
+        sequence: 1,
+        data: { 
+          attackerCardId: "C001", 
+          targetId: "C002", // クリーチャー対象
+          damage: 2,
+          animation: {
+            attackingCardId: "C001",
+            beingAttackedCardId: "C002",
+            displayDamage: 2,
+            isTargetDestroyed: false,
+            startTime: 1,
+          },
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [creatureAttack],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toBeNull(); // プレイヤー対象でないため除外される
+    });
+
+    it("should reject non-attack actions", () => {
+      const nonAttackAction: GameAction = {
+        type: "card_play",
+        playerId: "player1",
+        sequence: 1,
+        data: { cardId: "C001", position: 0 },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [nonAttackAction],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toBeNull(); // 攻撃アクションでないため除外される
+    });
+  });
+
+  describe("isLifeDamageEffect", () => {
+    it("should identify life-damaging effects", () => {
+      const lifeDamageEffect: GameAction = {
+        type: "effect_trigger",
+        playerId: "player1",
+        sequence: 1,
+        data: {
+          sourceCardId: "C001",
+          effectType: "damage",
+          effectValue: 5,
+          targets: { player2: { life: { before: 10, after: 5 } } },
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [lifeDamageEffect],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toEqual(lifeDamageEffect);
+    });
+
+    it("should reject non-damage effects", () => {
+      const nonDamageEffect: GameAction = {
+        type: "effect_trigger",
+        playerId: "player1",
+        sequence: 1,
+        data: {
+          sourceCardId: "C001",
+          effectType: "draw_card",
+          effectValue: 1,
+          targets: { player1: {} },
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [nonDamageEffect],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toBeNull(); // ダメージ効果でないため除外される
+    });
+
+    it("should reject non-life-targeting damage", () => {
+      const creatureDamageEffect: GameAction = {
+        type: "effect_trigger",
+        playerId: "player1",
+        sequence: 1,
+        data: {
+          sourceCardId: "C001",
+          effectType: "damage",
+          effectValue: 3,
+          targets: { C002: { health: { before: 5, after: 2 } } }, // ライフでなくヘルス
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [creatureDamageEffect],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toBeNull(); // ライフダメージでないため除外される
+    });
+  });
+
+  describe("hasDamage helper function", () => {
+    it("should identify attacks with damage > 0", () => {
+      const damageAttack: GameAction = {
+        type: "card_attack",
+        playerId: "player1",
+        sequence: 1,
+        data: { 
+          attackerCardId: "C001", 
+          targetId: "player2", 
+          damage: 3, // ダメージあり
+          animation: {
+            attackingCardId: "C001",
+            beingAttackedCardId: undefined,
+            displayDamage: 3,
+            isTargetDestroyed: false,
+            startTime: 1,
+          },
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [damageAttack],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toEqual(damageAttack);
+    });
+
+    it("should reject attacks with damage = 0", () => {
+      const noDamageAttack: GameAction = {
+        type: "card_attack",
+        playerId: "player1",
+        sequence: 1,
+        data: { 
+          attackerCardId: "C001", 
+          targetId: "player2", 
+          damage: 0, // ダメージなし
+          animation: {
+            attackingCardId: "C001",
+            beingAttackedCardId: undefined,
+            displayDamage: 0,
+            isTargetDestroyed: false,
+            startTime: 1,
+          },
+        },
+        timestamp: 0,
+      };
+      
+      const gameState = {
+        result: { winner: "player1", reason: "life_zero" },
+        actionLog: [noDamageAttack],
+      } as unknown as GameState;
+      
+      const result = findDecisiveAction(gameState);
+      expect(result).toBeNull(); // ダメージ0のため除外される
+    });
+  });
+});
+
+describe("findDecisiveAction (Legacy Compatibility)", () => {
   it("should return null if game result is not life_zero", () => {
     const gameState = {
       result: { winner: "player1", reason: "deck_empty" },

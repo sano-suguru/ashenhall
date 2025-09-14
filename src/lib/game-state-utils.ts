@@ -11,14 +11,10 @@ import type {
   GameState,
   GameAction,
   PlayerId,
-  EffectAction,
-  EffectTrigger,
   LogDisplayParts,
-  Keyword,
 } from "@/types/game";
 import { createInitialGameState, processGameStep } from "./game-engine/core";
 import { getCardById } from "@/data/cards/base-cards";
-import { GAME_CONSTANTS } from "@/types/game";
 import { logFormatters } from "./log-formatters";
 
 // UIコンポーネントから移植された定数とヘルパー関数
@@ -406,7 +402,35 @@ function getReasonText(reason: string): string {
 }
 
 /**
- * 決定打アクションを特定する関数
+ * カード攻撃がプレイヤーを対象としているかを判定する型ガード関数
+ */
+function isCardAttackToPlayer(action: GameAction): action is GameAction & { type: 'card_attack' } {
+  return action.type === 'card_attack' && 
+         (action.data.targetId === 'player1' || action.data.targetId === 'player2');
+}
+
+/**
+ * エフェクトがライフダメージを与えているかを判定する型ガード関数
+ */
+function isLifeDamageEffect(action: GameAction): action is GameAction & { type: 'effect_trigger' } {
+  if (action.type !== 'effect_trigger' || action.data.effectType !== 'damage') {
+    return false;
+  }
+  
+  return Object.values(action.data.targets).some(t => 
+    t.life && t.life.before > t.life.after
+  );
+}
+
+/**
+ * カード攻撃アクションがダメージを与えているかを判定するヘルパー関数
+ */
+function hasDamage(action: GameAction & { type: 'card_attack' }): boolean {
+  return action.data.damage > 0;
+}
+
+/**
+ * 決定打アクションを特定する関数（複雑度最適化済み）
  */
 export function findDecisiveAction(gameState: GameState): GameAction | null {
   if (!gameState.result || gameState.result.reason !== "life_zero") return null;
@@ -414,22 +438,16 @@ export function findDecisiveAction(gameState: GameState): GameAction | null {
   // 最後のライフダメージを与えたアクションを逆順検索
   for (let i = gameState.actionLog.length - 1; i >= 0; i--) {
     const action = gameState.actionLog[i];
-    if (action.type === "card_attack") {
-      const isPlayerTarget =
-        action.data.targetId === "player1" || action.data.targetId === "player2";
-      if (isPlayerTarget && action.data.damage > 0) {
-        return action;
-      }
+    
+    if (isCardAttackToPlayer(action) && hasDamage(action)) {
+      return action;
     }
-    if (action.type === "effect_trigger" && action.data.effectType === "damage") {
-      const hasLifeDamage = Object.values(action.data.targets).some(
-        (t) => t.life && t.life.before > t.life.after
-      );
-      if (hasLifeDamage) {
-        return action;
-      }
+    
+    if (isLifeDamageEffect(action)) {
+      return action;
     }
   }
+  
   return null;
 }
 
