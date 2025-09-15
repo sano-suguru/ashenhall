@@ -14,7 +14,20 @@ import fs from 'fs';
 import path from 'path';
 
 // --- シミュレーション設定 ---
-const SIMULATION_COUNT = 30;
+/**
+ * 環境別シミュレーション回数の動的調整
+ * 
+ * 個人開発制約に配慮し、通常の開発・テスト実行では高速化を優先。
+ * 詳細なバランス分析が必要な場合のみ、明示的に高回数実行を指定可能。
+ */
+const getSimulationCount = (): number => {
+  if (process.env.CI) return 1;                    // CI環境：最小限（高速フィードバック重視）
+  if (process.env.NODE_ENV === 'test' && process.env.QUICK_TEST) return 2; // 開発中：高速
+  if (process.env.FULL_SIMULATION) return 30;      // 詳細分析：完全実行（手動指定時）
+  return 3;                                        // デフォルト：バランス重視（開発継続性重視）
+};
+
+const SIMULATION_COUNT = getSimulationCount();
 const ALL_FACTIONS: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
 const ALL_TACTICS: TacticsType[] = ['aggressive', 'defensive', 'tempo', 'balanced'];
 
