@@ -55,26 +55,62 @@ export default function BattlePlaybackControls({
     onTurnChange(newTurn);
   };
 
-  // ステップ操作
-  const handleStepBackward = () => {
-    if (currentTurn > 0) {
-      onTurnChange(Math.max(0, currentTurn - 1));
-    }
-  };
-
-  const handleStepForward = () => {
-    if (currentTurn < maxTurn) {
-      onTurnChange(Math.min(maxTurn, currentTurn + 1));
-    }
-  };
-
   // 速度選択のハンドラ
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onSpeedChange(parseFloat(e.target.value));
   };
 
-  // 現在のターン表示値（-1は最新として表示）
-  const displayTurn = currentTurn === -1 ? maxTurn : currentTurn;
+  // ===== ヘルパー関数群（複雑度削減） =====
+  
+  // 状態判定関数
+  const getPlaybackStates = () => {
+    const displayTurn = currentTurn === -1 ? maxTurn : currentTurn;
+    const isInPastMode = currentTurn !== -1 && currentTurn < maxTurn;
+    const canStepBackward = currentTurn > 0;
+    const canStepForward = currentTurn < maxTurn;
+    
+    return {
+      displayTurn,
+      isInPastMode,
+      canStepBackward,
+      canStepForward
+    };
+  };
+
+  // ステップ操作ハンドラ
+  const handleStepBackward = () => {
+    const { canStepBackward } = getPlaybackStates();
+    if (canStepBackward) {
+      onTurnChange(Math.max(0, currentTurn - 1));
+    }
+  };
+
+  const handleStepForward = () => {
+    const { canStepForward } = getPlaybackStates();
+    if (canStepForward) {
+      onTurnChange(Math.min(maxTurn, currentTurn + 1));
+    }
+  };
+
+  // 再生ボタンのスタイル取得
+  const getPlayButtonStyles = () => {
+    return isPlaying 
+      ? 'bg-yellow-600 hover:bg-yellow-500 text-white' 
+      : 'bg-green-600 hover:bg-green-500 text-white';
+  };
+
+  // ヘルプテキストの内容取得
+  const getHelpText = () => {
+    if (isPlaying) {
+      return currentTurn === -1 
+        ? '⏹️ スライダーを動かすと自動的に一時停止します'
+        : '🔄 最新まで自動再生中...';
+    }
+    return '▶️ 再生ボタンで最新状態まで自動再生 | スライダーで任意のターンを確認';
+  };
+
+  // 状態を取得
+  const { displayTurn, isInPastMode, canStepBackward, canStepForward } = getPlaybackStates();
 
   return (
     <div className="bg-gray-800/90 rounded-lg p-4 border border-gray-700">
@@ -86,17 +122,11 @@ export default function BattlePlaybackControls({
         
         {/* 状態表示 */}
         <div className="flex items-center space-x-3 text-sm">
-          {isPlaying ? (
-            <span className="bg-green-600 text-white px-2 py-1 rounded-full font-bold">
-              再生中
-            </span>
-          ) : (
-            <span className="bg-gray-600 text-white px-2 py-1 rounded-full font-bold">
-              一時停止
-            </span>
-          )}
+          <span className={`px-2 py-1 rounded-full font-bold ${isPlaying ? 'bg-green-600' : 'bg-gray-600'} text-white`}>
+            {isPlaying ? '再生中' : '一時停止'}
+          </span>
           
-          {currentTurn !== -1 && currentTurn < maxTurn && (
+          {isInPastMode && (
             <span className="bg-blue-600 text-white px-2 py-1 rounded-full font-bold text-xs">
               過去表示中
             </span>
@@ -152,7 +182,7 @@ export default function BattlePlaybackControls({
           {/* 1ターン戻る */}
           <button
             onClick={handleStepBackward}
-            disabled={currentTurn <= 0}
+            disabled={!canStepBackward}
             className="p-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
             title="1ターン戻る"
           >
@@ -162,11 +192,7 @@ export default function BattlePlaybackControls({
           {/* 再生/一時停止（メインボタン） */}
           <button
             onClick={onPlayPause}
-            className={`p-3 rounded-lg transition-colors font-bold ${
-              isPlaying 
-                ? 'bg-yellow-600 hover:bg-yellow-500 text-white' 
-                : 'bg-green-600 hover:bg-green-500 text-white'
-            }`}
+            className={`p-3 rounded-lg transition-colors font-bold ${getPlayButtonStyles()}`}
             title={isPlaying ? '一時停止' : '再生'}
           >
             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -175,7 +201,7 @@ export default function BattlePlaybackControls({
           {/* 1ターン進む */}
           <button
             onClick={handleStepForward}
-            disabled={currentTurn >= maxTurn}
+            disabled={!canStepForward}
             className="p-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
             title="1ターン進む"
           >
@@ -212,15 +238,7 @@ export default function BattlePlaybackControls({
 
       {/* ヘルプテキスト */}
       <div className="mt-3 text-xs text-gray-500 text-center">
-        {isPlaying ? (
-          currentTurn === -1 ? (
-            <span>⏹️ スライダーを動かすと自動的に一時停止します</span>
-          ) : (
-            <span>🔄 最新まで自動再生中...</span>
-          )
-        ) : (
-          <span>▶️ 再生ボタンで最新状態まで自動再生 | スライダーで任意のターンを確認</span>
-        )}
+        <span>{getHelpText()}</span>
       </div>
     </div>
   );
