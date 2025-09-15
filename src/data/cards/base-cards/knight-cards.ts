@@ -154,7 +154,8 @@ export const knightCards: Card[] = [
         trigger: 'on_play',
         target: 'ally_all',
         action: 'heal',
-        value: 0, // プレースホルダー
+        value: 1,
+        dynamicValue: { source: 'field', filter: 'alive' },
       },
     ],
     flavor: '一人一人の祈りは小さくとも、共に捧げれば天に届く奇跡となる。',
@@ -193,7 +194,8 @@ export const knightCards: Card[] = [
         trigger: 'passive',
         target: 'self',
         action: 'buff_attack',
-        value: 1, // Placeholder, value from other allies
+        value: 1,
+        dynamicValue: { source: 'field', filter: 'exclude_self' },
       },
     ],
     flavor: '我が身は騎士団の礎。我が魂は仲間たちの盾。この誓いが破られることはない。',

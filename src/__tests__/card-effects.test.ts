@@ -466,26 +466,14 @@ describe('Brand Condition System', () => {
     // プレイヤー1のライフを減らしておく
     gameState.players.player1.life = 10;
     
-    // 《集団懺悔》の効果をテスト
-    const healEffect: CardEffect = {
-      trigger: 'on_play',
-      target: 'player',
-      action: 'heal',
-      value: 2, // 動的に解決される
-    };
+    // 実際の《集団懺悔》カードを取得
+    const collectiveConfession = inquisitorCards.find(c => c.id === 'inq_collective_confession')!;
     
-    const sourceCard = {
-      id: 'inq_collective_confession',
-      name: '集団懺悔',
-      type: 'spell' as const,
-      faction: 'inquisitor' as const,
-      cost: 2,
-      keywords: [],
-      effects: [healEffect],
-    };
+    // 実際のカードの回復効果を使用（dynamicValueが含まれる）
+    const healEffect = collectiveConfession.effects[0];
     
     // 効果を実行
-    executeCardEffect(gameState, healEffect, sourceCard, 'player1');
+    executeCardEffect(gameState, healEffect, collectiveConfession, 'player1');
     
     // 基本回復2 + 烙印敵2体 = 4回復されていることを確認
     expect(gameState.players.player1.life).toBe(14); // 10 + 4 = 14

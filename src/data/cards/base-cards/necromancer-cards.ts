@@ -187,7 +187,8 @@ export const necromancerCards: Card[] = [
         trigger: 'on_play',
         target: 'self',
         action: 'buff_attack',
-        value: 0, // プレースホルダー
+        value: 1,
+        dynamicValue: { source: 'graveyard', filter: 'creatures' },
       },
     ],
     flavor: '古の王たちの眠りを守るため、彼は死者の力をその身に宿す。',
@@ -231,7 +232,8 @@ export const necromancerCards: Card[] = [
         trigger: 'on_play',
         target: 'self',
         action: 'summon',
-        value: 0, // value will be determined by graveyard size
+        value: 1,
+        dynamicValue: { source: 'graveyard', filter: 'exclude_self' },
       },
     ],
     flavor: '無数の終焉を束ね、唯一つの絶対的な始まりを告げる。',

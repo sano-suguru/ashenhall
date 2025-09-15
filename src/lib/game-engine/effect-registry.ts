@@ -126,46 +126,6 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
  */
 export const specialEffectHandlers: Record<string, EffectHandler> = {};
 
-/**
- * 動的値計算のタイプ
- */
-type DynamicValueType = 
-  | 'graveyard_creatures'  // 墓地のクリーチャー数
-  | 'field_allies_count'   // 場の味方数
-  | 'field_allies_alive'   // 生存している味方数
-  | 'field_other_allies'   // 自分以外の味方数  
-  | 'branded_enemy_count'  // 烙印を持つ敵の数
-  | 'graveyard_excluding_self'; // 墓地数（自身を除く）
-
-/**
- * カード固有の動的値計算設定
- */
-interface DynamicValueConfig {
-  type: DynamicValueType;
-  baseValue?: number; // 基準値を加算
-}
-
-/**
- * カード固有の動的値計算設定マップ
- * ハードコーディングを段階的に汎用化するための移行システム
- */
-const DYNAMIC_VALUE_CONFIGS: Record<string, Record<string, DynamicValueConfig>> = {
-  'necro_grave_giant': {
-    'buff_attack': { type: 'graveyard_creatures' }
-  },
-  'kni_sanctuary_prayer': {
-    'heal': { type: 'field_allies_alive' }
-  },
-  'necro_soul_vortex': {
-    'summon': { type: 'graveyard_excluding_self' }
-  },
-  'kni_galleon': {
-    'buff_attack': { type: 'field_other_allies' }
-  },
-  'inq_collective_confession': {
-    'heal': { type: 'branded_enemy_count', baseValue: 2 }
-  }
-};
 
 /**
  * 新しい動的値計算システム（推奨方式）
@@ -218,43 +178,6 @@ function calculateNewDynamicValue(
   return calculatedValue + (descriptor.baseValue || 0);
 }
 
-/**
- * 旧システム動的値計算（段階的廃止予定）
- */
-function calculateDynamicValue(
-  config: DynamicValueConfig,
-  state: GameState,
-  sourceCard: Card,
-  sourcePlayerId: PlayerId
-): number {
-  const sourcePlayer = state.players[sourcePlayerId];
-  const opponentId = getOpponentId(sourcePlayerId);
-  const opponent = state.players[opponentId];
-  
-  let calculatedValue = 0;
-  
-  switch (config.type) {
-    case 'graveyard_creatures':
-      calculatedValue = sourcePlayer.graveyard.filter(c => c.type === 'creature').length;
-      break;
-    case 'field_allies_alive':
-      calculatedValue = sourcePlayer.field.filter(c => c.currentHealth > 0).length;
-      break;
-    case 'field_other_allies':
-      calculatedValue = sourcePlayer.field.filter(c => c.id !== sourceCard.id).length;
-      break;
-    case 'branded_enemy_count':
-      calculatedValue = getBrandedCreatureCount(opponent.field);
-      break;
-    case 'graveyard_excluding_self':
-      calculatedValue = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
-      break;
-    default:
-      calculatedValue = 0;
-  }
-  
-  return calculatedValue + (config.baseValue || 0);
-}
 
 /**
  * カード固有の動的な効果パラメータを解決する
@@ -270,18 +193,9 @@ export function resolveDynamicEffectParameters(
   let value = effect.value;
   const targets = initialTargets;
 
-  // 新システム: 効果に dynamicValue がある場合はそちらを優先
+  // 動的値計算システム: 効果に dynamicValue がある場合は計算
   if (effect.dynamicValue) {
     value = calculateNewDynamicValue(effect.dynamicValue, state, sourceCard, sourcePlayerId);
-  } else {
-    // 旧システム: DYNAMIC_VALUE_CONFIGS を使用（段階的廃止予定）
-    const cardConfig = DYNAMIC_VALUE_CONFIGS[sourceCard.id];
-    if (cardConfig) {
-      const effectConfig = cardConfig[effect.action];
-      if (effectConfig) {
-        value = calculateDynamicValue(effectConfig, state, sourceCard, sourcePlayerId);
-      }
-    }
   }
 
   return { value, targets };

@@ -103,10 +103,52 @@ export function createInitialGameState(
 }
 
 /**
- * ゲーム状態の完全コピーを作成
+ * ゲーム状態の効率的コピーを作成
+ * 個人開発原則：保守性>パフォーマンス、だが戦闘計算5秒制約のため最適化
  */
 export function cloneGameState(state: GameState): GameState {
-  return JSON.parse(JSON.stringify(state));
+  // 高頻度変更される部分のみ詳細コピー、その他は浅いコピー
+  return {
+    gameId: state.gameId,
+    turnNumber: state.turnNumber,
+    currentPlayer: state.currentPlayer,
+    phase: state.phase,
+    randomSeed: state.randomSeed,
+    startTime: state.startTime,
+    result: state.result, // GameResultも浅いコピー（不変オブジェクト）
+    
+    // プレイヤー状態の部分コピー
+    players: {
+      player1: clonePlayerState(state.players.player1),
+      player2: clonePlayerState(state.players.player2),
+    },
+    
+    // アクションログは浅いコピー（追加のみでたまる）
+    actionLog: [...state.actionLog],
+  };
+}
+
+/**
+ * プレイヤー状態の効率的コピー
+ */
+function clonePlayerState(player: PlayerState): PlayerState {
+  return {
+    id: player.id,
+    life: player.life,
+    energy: player.energy,
+    maxEnergy: player.maxEnergy,
+    faction: player.faction,
+    tacticsType: player.tacticsType,
+    
+    // カード配列の新しいインスタンス作成（内容は浅いコピー）
+    deck: [...player.deck],
+    hand: [...player.hand],
+    graveyard: [...player.graveyard],
+    banishedCards: [...player.banishedCards],
+    
+    // フィールドカードは詳細コピー（戦闘中に頻繁変更）
+    field: player.field.map(card => ({ ...card, statusEffects: [...card.statusEffects] })),
+  };
 }
 
 /**

@@ -155,6 +155,7 @@ export const inquisitorCards: Card[] = [
         target: 'player',
         action: 'heal',
         value: 2,
+        dynamicValue: { source: 'enemy_field', filter: 'has_brand', baseValue: 2 },
       },
     ],
     flavor: '罪人の悔恨が多ければ多いほど、神の慈悲は深く降り注ぐ',
