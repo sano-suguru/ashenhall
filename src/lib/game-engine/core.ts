@@ -19,6 +19,7 @@ import {
   cloneGameState,
   checkGameEnd,
 } from "./game-state";
+import { updateOptimizedLookups } from "./field-search-cache";
 import {
   processDrawPhase,
   processEnergyPhase,
@@ -37,6 +38,9 @@ export const createInitialGameState = createInitialGameStateImpl;
  */
 export function processGameStep(state: GameState): GameState {
   const newState = cloneGameState(state);
+
+  // 高性能検索キャッシュ更新（Phase B最適化）
+  updateOptimizedLookups(newState);
 
   // ゲーム終了チェック
   const gameResult = checkGameEnd(newState);

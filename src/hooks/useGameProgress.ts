@@ -1,26 +1,17 @@
 /**
- * ゲーム進行管理フック - アクション単位演出システム
+ * ゲーム進行管理フック（Phase B簡素化版）
  * 
  * 設計方針:
- * - アクションタイプ別の統一演出制御
- * - フェーズ依存の冗長性を排除
- * - 将来の演出拡張への準備完了
+ * - 攻撃シーケンス管理をuseAttackSequenceに委譲
+ * - 単一責任：ゲーム進行とリプレイ表示のみ
+ * - 個人開発の保守性重視
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
-import { reconstructStateAtSequence, getTurnNumberForAction } from '@/lib/game-state-utils';
-
-// 旧ACTION_DELAYSは新しいACTION_ANIMATION_DURATIONSに統合済み
-// （後方互換性のため残存、段階的に廃止予定）
-
-// AttackSequenceState インターフェース（統合演出システム用）
-interface AttackSequenceState {
-  isShowingAttackSequence: boolean;
-  currentAttackIndex: number;
-  attackActions: GameAction[];
-}
+import { reconstructStateAtSequence } from '@/lib/game-state-utils';
+import { useAttackSequence } from './useAttackSequence';
 
 export interface GameProgressConfig {
   gameState: GameState | null;
@@ -40,11 +31,13 @@ export interface GameProgressReturn {
   // 表示用ゲーム状態
   displayState: GameState | null;
   
-  // 攻撃演出状態
-  attackSequenceState: AttackSequenceState;
+  // 攻撃演出状態（useAttackSequenceに委譲）
+  attackSequenceState: {
+    isShowingAttackSequence: boolean;
+    currentAttackIndex: number;
+    attackActions: GameAction[];
+  };
   currentAttackAction: GameAction | null;
-  
-  // アニメーション状態管理
   getCardAnimationState: (cardId: string) => {
     isAttacking: boolean;
     isBeingAttacked: boolean;
@@ -57,21 +50,23 @@ export interface GameProgressReturn {
 }
 
 /**
- * ゲーム進行管理フック
- * page.tsx内の複雑なゲーム進行useEffectとGameBoard.tsx内のAttackSequence管理を統合
+ * ゲーム進行管理フック（Phase B簡素化版）
+ * 攻撃シーケンス管理の責任をuseAttackSequenceに分離
  */
 export const useGameProgress = (config: GameProgressConfig): GameProgressReturn => {
-  const [attackSequenceState, setAttackSequenceState] = useState<AttackSequenceState>({
-    isShowingAttackSequence: false,
-    currentAttackIndex: 0,
-    attackActions: []
-  });
-  
   const [progressError, setProgressError] = useState<Error | null>(null);
+  
+  // 攻撃シーケンス管理を分離されたフックに委譲
+  const attackSequence = useAttackSequence({
+    gameState: config.gameState,
+    isPlaying: config.isPlaying,
+    currentTurn: config.currentTurn,
+    gameSpeed: config.gameSpeed,
+  });
 
-  // GameBoard.tsx の calculateSequenceForTurn を移植（null対応追加）
+  // ターンに対応するシーケンス計算
   const calculateSequenceForTurn = useCallback((gs: GameState | null, targetTurn: number): number => {
-    if (!gs) return 0; // null チェック追加
+    if (!gs) return 0;
     if (targetTurn <= 1) return 0;
     if (targetTurn > gs.turnNumber) return gs.actionLog[gs.actionLog.length - 1]?.sequence ?? 0;
 
@@ -79,7 +74,6 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
       a => a.type === 'phase_change' && a.data.toPhase === 'draw'
     );
 
-    // targetTurn is 1-based. The (targetTurn-1)-th element is the start of targetTurn.
     const startOfTurnAction = drawPhaseStarts[targetTurn - 1];
 
     if (startOfTurnAction) {
@@ -89,9 +83,8 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     return gs.actionLog[gs.actionLog.length - 1]?.sequence ?? 0;
   }, []);
 
-  // 表示状態の計算（GameBoard.tsx から移植）
+  // 表示状態の計算
   const displayState = useMemo(() => {
-    // Phase 1 リプレイモード対応（優先判定）
     const sourceState = (config.mode === 'replay' && config.replayData) 
       ? config.replayData 
       : config.gameState;
@@ -119,57 +112,12 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     }
   }, [config.gameState, config.currentTurn, config.mode, config.replayData, calculateSequenceForTurn]);
 
-  // 指定ターンの攻撃アクションを抽出（GameBoard.tsx から移植）
-  const getAttackActionsForTurn = useCallback((gs: GameState, targetTurn: number): GameAction[] => {
-    return gs.actionLog.filter(action => {
-      if (action.type !== 'card_attack') return false;
-      const actionTurn = getTurnNumberForAction(action, gs);
-      return actionTurn === targetTurn;
-    });
-  }, []);
-
-  // 攻撃シーケンスが完了したかチェック
-  const isAttackSequenceComplete = useCallback((): boolean => {
-    return attackSequenceState.currentAttackIndex >= attackSequenceState.attackActions.length;
-  }, [attackSequenceState.currentAttackIndex, attackSequenceState.attackActions.length]);
-
-  // 現在表示中の攻撃アクションを取得
-  const getCurrentAttackAction = useCallback((): GameAction | null => {
-    if (!attackSequenceState.isShowingAttackSequence) return null;
-    if (attackSequenceState.currentAttackIndex >= attackSequenceState.attackActions.length) return null;
-    return attackSequenceState.attackActions[attackSequenceState.currentAttackIndex] || null;
-  }, [attackSequenceState]);
-
-  // カードのアニメーション状態を取得する関数（GameActionベース）
-  const getCardAnimationState = useCallback((cardId: string) => {
-    // 現在のアクションログから最新のcard_attackアクションを取得
-    const currentAction = getCurrentAttackAction();
-    
-    if (!currentAction || currentAction.type !== 'card_attack') {
-      return {
-        isAttacking: false,
-        isBeingAttacked: false,
-        isDying: false,
-        damageAmount: 0,
-      };
-    }
-    
-    const animationData = currentAction.data.animation;
-    
-    return {
-      isAttacking: animationData.attackingCardId === cardId,
-      isBeingAttacked: animationData.beingAttackedCardId === cardId,
-      isDying: animationData.isTargetDestroyed && animationData.beingAttackedCardId === cardId,
-      damageAmount: animationData.beingAttackedCardId === cardId ? animationData.displayDamage : 0,
-    };
-  }, [getCurrentAttackAction]);
-
-  // エラーリセット用useEffect
+  // エラーリセット
   useEffect(() => {
     setProgressError(null);
   }, [config.gameState, config.currentTurn, config.mode, config.replayData]);
 
-  // メインのゲーム進行useEffect（シンプル版）
+  // メインのゲーム進行制御（簡素化）
   useEffect(() => {
     if (!config.gameState || !config.isPlaying || config.gameState.result) {
       return;
@@ -177,18 +125,7 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
 
     // 過去ターン表示中の場合
     if (config.currentTurn !== -1 && config.currentTurn < config.gameState.turnNumber) {
-      // 過去ターンから最新まで段階的に進行
-      const timer = setTimeout(() => {
-        const nextTurn = config.currentTurn + 1;
-        if (nextTurn >= config.gameState!.turnNumber) {
-          // 最新に到達したらライブモードに戻る
-          config.onGameStateChange({ 
-            ...config.gameState!, 
-          });
-        }
-      }, Math.max(200, 1000 / config.gameSpeed));
-      
-      return () => clearTimeout(timer);
+      return; // 表示のみ、進行はしない
     }
     
     // 最新ターンの場合のみ実際のゲーム進行
@@ -222,62 +159,11 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
     }
   }, [config]);
 
-  // 攻撃シーケンス開始の検出（GameBoard.tsx から移植）
-  useEffect(() => {
-    if (!config.gameState) return;
-    
-    // 最新ターン表示かつ再生中の場合のみ攻撃演出を実行
-    if (config.isPlaying && (config.currentTurn === -1 || config.currentTurn >= config.gameState.turnNumber)) {
-      const attackActions = getAttackActionsForTurn(config.gameState, config.gameState.turnNumber);
-      
-      if (attackActions.length > 0 && !attackSequenceState.isShowingAttackSequence) {
-        // 攻撃アクションがある場合は攻撃シーケンス開始（表示のみ）
-        setAttackSequenceState({
-          isShowingAttackSequence: true,
-          currentAttackIndex: 0,
-          attackActions: attackActions
-        });
-      }
-    }
-  }, [
-    config.gameState, 
-    config.isPlaying, 
-    config.currentTurn,
-    config.mode,
-    config.replayData,
-    attackSequenceState.isShowingAttackSequence,
-    getAttackActionsForTurn
-  ]);
-
-  // 攻撃シーケンス進行の制御（GameBoard.tsx から移植）
-  useEffect(() => {
-    if (attackSequenceState.isShowingAttackSequence) {
-      if (isAttackSequenceComplete()) {
-        // 攻撃シーケンス完了（表示終了のみ）
-        setAttackSequenceState({
-          isShowingAttackSequence: false,
-          currentAttackIndex: 0,
-          attackActions: []
-        });
-      } else {
-        // 次の攻撃アクションを表示
-        const timer = setTimeout(() => {
-          setAttackSequenceState(prev => ({
-            ...prev,
-            currentAttackIndex: prev.currentAttackIndex + 1
-          }));
-        }, 800 / config.gameSpeed);
-
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [attackSequenceState.currentAttackIndex, attackSequenceState.isShowingAttackSequence, config.gameSpeed, isAttackSequenceComplete]);
-
   return {
     displayState,
-    attackSequenceState,
-    currentAttackAction: getCurrentAttackAction(),
-    getCardAnimationState,
+    attackSequenceState: attackSequence.attackSequenceState,
+    currentAttackAction: attackSequence.currentAttackAction,
+    getCardAnimationState: attackSequence.getCardAnimationState,
     progressError,
   };
 };

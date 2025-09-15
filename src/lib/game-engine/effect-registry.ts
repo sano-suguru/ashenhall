@@ -50,6 +50,7 @@ import {
 import {
   getBrandedCreatureCount,
 } from "./brand-utils";
+import { GraveyardLookup, fieldLookup } from "./field-search-cache";
 import type { DynamicValueDescriptor } from "@/types/cards";
 
 /**
@@ -145,9 +146,9 @@ function calculateNewDynamicValue(
   switch (descriptor.source) {
     case 'graveyard':
       if (descriptor.filter === 'creatures') {
-        calculatedValue = sourcePlayer.graveyard.filter(c => c.type === 'creature').length;
+        calculatedValue = GraveyardLookup.countCreatures(state, sourcePlayerId);
       } else if (descriptor.filter === 'exclude_self') {
-        calculatedValue = sourcePlayer.graveyard.filter(c => c.id !== sourceCard.id).length;
+        calculatedValue = GraveyardLookup.countExcludingSelf(state, sourcePlayerId, sourceCard.id);
       } else {
         calculatedValue = sourcePlayer.graveyard.length;
       }
@@ -155,7 +156,7 @@ function calculateNewDynamicValue(
       
     case 'field':
       if (descriptor.filter === 'alive') {
-        calculatedValue = sourcePlayer.field.filter(c => c.currentHealth > 0).length;
+        calculatedValue = fieldLookup.findAliveCreatures(state, sourcePlayerId).length;
       } else if (descriptor.filter === 'exclude_self') {
         calculatedValue = sourcePlayer.field.filter(c => c.id !== sourceCard.id).length;
       } else {
