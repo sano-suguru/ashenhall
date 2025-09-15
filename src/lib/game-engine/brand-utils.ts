@@ -46,15 +46,3 @@ export function getBrandedAllies(state: GameState, playerId: PlayerId): FieldCar
 export function hasAnyBrandedEnemy(state: GameState, playerId: PlayerId): boolean {
   return getBrandedCreatureCount(getBrandedEnemies(state, playerId)) > 0;
 }
-
-/**
- * 烙印を持つ敵からランダム1体選択（消滅効果用）
- */
-export function selectRandomBrandedEnemy(
-  state: GameState, 
-  playerId: PlayerId, 
-  random: { choice: <T>(array: T[]) => T | undefined }
-): FieldCard | null {
-  const brandedEnemies = getBrandedEnemies(state, playerId);
-  return random.choice(brandedEnemies) || null;
-}

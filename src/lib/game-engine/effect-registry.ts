@@ -49,8 +49,6 @@ import {
 } from "./effects/special-effects";
 import {
   getBrandedCreatureCount,
-  getBrandedEnemies,
-  selectRandomBrandedEnemy,
 } from "./brand-utils";
 import type { DynamicValueDescriptor } from "@/types/cards";
 
@@ -126,31 +124,7 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
 /**
  * 特殊効果ハンドラー - カード固有の複雑なロジック
  */
-export const specialEffectHandlers: Record<string, EffectHandler> = {
-  'judgment_angel_execution': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
-    // 《審判の天使》の特殊ロジック
-    const opponentId = getOpponentId(sourcePlayerId);
-    const opponent = state.players[opponentId];
-    
-    // 1. 烙印持ちの敵をすべて破壊
-    const brandedEnemies = getBrandedEnemies(state, sourcePlayerId);
-    if (brandedEnemies.length > 0) {
-      executeDamageEffect(state, brandedEnemies, null, 99, sourceCard.id, sourceCard, random);
-    }
-    
-    // 2. 烙印を持たない敵からランダムに1体を破壊
-    const nonBrandedEnemies = opponent.field.filter(
-      enemy => !enemy.statusEffects.some(se => se.type === 'branded') && enemy.currentHealth > 0
-    );
-    
-    if (nonBrandedEnemies.length > 0) {
-      const randomEnemy = random.choice(nonBrandedEnemies);
-      if (randomEnemy) {
-        executeDamageEffect(state, [randomEnemy], null, 99, sourceCard.id, sourceCard, random);
-      }
-    }
-  },
-};
+export const specialEffectHandlers: Record<string, EffectHandler> = {};
 
 /**
  * 動的値計算のタイプ
