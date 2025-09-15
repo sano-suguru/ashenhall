@@ -40,41 +40,73 @@ function getGuardCreatures(field: FieldCard[]): FieldCard[] {
 }
 
 /**
- * キーワード効果の処理
+ * Lifesteal (吸血) 効果の処理
  */
-function processKeywordEffects(
+function processLifestealEffect(
   state: GameState,
   attacker: FieldCard,
   target: FieldCard | null,
   targetPlayer: boolean,
   damage: number
 ): void {
-  const currentPlayerId = attacker.owner;
-  const opponentId: PlayerId = currentPlayerId === "player1" ? "player2" : "player1";
-  const currentPlayer = state.players[currentPlayerId];
-  const opponent = state.players[opponentId];
-
-  // Lifesteal (吸血) 処理
   if (
     damage > 0 &&
     !attacker.isSilenced &&
     attacker.keywords.includes("lifesteal")
   ) {
+    const currentPlayerId = attacker.owner;
+    const currentPlayer = state.players[currentPlayerId];
     currentPlayer.life += damage;
-  }
 
-  // Poison (毒) 処理
+    // プレイヤー直接攻撃・クリーチャー攻撃両方でログ記録
+    const targetId = target ? target.id : (targetPlayer ? state.players[currentPlayerId === "player1" ? "player2" : "player1"].id : "unknown");
+    addKeywordTriggerAction(state, currentPlayerId, {
+      keyword: 'lifesteal',
+      sourceCardId: attacker.id,
+      targetId: targetId,
+      value: damage,
+    });
+  }
+}
+
+/**
+ * Poison (毒) 効果の処理
+ */
+function processPoisonEffect(
+  state: GameState,
+  attacker: FieldCard,
+  target: FieldCard | null
+): void {
   if (target && !attacker.isSilenced && attacker.keywords.includes("poison")) {
     target.statusEffects.push({ type: "poison", duration: 2, damage: 1 });
+    
+    addKeywordTriggerAction(state, attacker.owner, {
+      keyword: 'poison',
+      sourceCardId: attacker.id,
+      targetId: target.id,
+      value: 1,
+    });
   }
+}
 
-  // Trample (貫通) 処理
+/**
+ * Trample (貫通) 効果の処理
+ */
+function processTrampleEffect(
+  state: GameState,
+  attacker: FieldCard,
+  target: FieldCard | null,
+  damage: number
+): void {
   if (target && !attacker.isSilenced && attacker.keywords.includes("trample")) {
     const excessDamage = damage - target.currentHealth;
     if (excessDamage > 0) {
-      const playerLifeBefore = opponent.life;
+      const currentPlayerId = attacker.owner;
+      const opponentId: PlayerId = currentPlayerId === "player1" ? "player2" : "player1";
+      const opponent = state.players[opponentId];
+      
       opponent.life -= excessDamage;
-      const playerLifeAfter = opponent.life;
+      
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'trample',
         sourceCardId: attacker.id,
@@ -83,6 +115,21 @@ function processKeywordEffects(
       });
     }
   }
+}
+
+/**
+ * キーワード効果の処理（統合版）
+ */
+function processKeywordEffects(
+  state: GameState,
+  attacker: FieldCard,
+  target: FieldCard | null,
+  targetPlayer: boolean,
+  damage: number
+): void {
+  processLifestealEffect(state, attacker, target, targetPlayer, damage);
+  processPoisonEffect(state, attacker, target);
+  processTrampleEffect(state, attacker, target, damage);
 }
 
 
