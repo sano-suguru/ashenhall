@@ -67,7 +67,8 @@ export type EffectTarget =
   | 'enemy_all'    // 敵全体
   | 'ally_random'  // 味方ランダム1体
   | 'enemy_random' // 敵ランダム1体
-  | 'player';      // プレイヤー直接
+  | 'player'       // 相手プレイヤー直接
+  | 'self_player'; // 自分のプレイヤー直接
 
 
 // === 効果発動条件システム ===

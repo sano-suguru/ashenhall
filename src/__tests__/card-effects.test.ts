@@ -1195,204 +1195,57 @@ describe('Sanctuary Guard System', () => {
 });
 
 describe('Repentant Succubus System', () => {
-  test('《懺悔するサキュバス》 ally destruction and enemy branding', () => {
+  test('《懺悔するサキュバス》 self-damage effect', () => {
     const gameState = createTestGameState();
     
-    // プレイヤー1の場に味方クリーチャーを配置（破壊対象）
-    const allyTarget = createTestFieldCard({
-      id: 'ally_to_destroy',
-      name: '破壊される味方',
-      type: 'creature',
-      faction: 'inquisitor',
-      cost: 2,
-      attack: 2,
-      health: 2,
-      keywords: [],
-      effects: [],
-    }, 'player1');
-    gameState.players.player1.field.push(allyTarget);
+    // プレイヤー1のライフを確認用に設定
+    gameState.players.player1.life = 15;
     
-    // プレイヤー2の場に複数敵クリーチャーを配置（烙印対象）
-    const enemy1 = createTestFieldCard({
-      id: 'enemy1',
-      name: 'エネミー1',
-      type: 'creature',
-      faction: 'berserker',
-      cost: 1,
-      attack: 1,
-      health: 1,
-      keywords: [],
-      effects: [],
-    }, 'player2');
-    const enemy2 = createTestFieldCard({
-      id: 'enemy2',
-      name: 'エネミー2',
-      type: 'creature',
-      faction: 'berserker',
-      cost: 1,
-      attack: 1,
-      health: 1,
-      keywords: [],
-      effects: [],
-    }, 'player2');
-    gameState.players.player2.field.push(enemy1, enemy2);
-    
-    const initialAllyFieldSize = gameState.players.player1.field.length;
-    const initialGraveyardSize = gameState.players.player1.graveyard.length;
-    
-    // 《懺悔するサキュバス》の味方破壊効果をテスト
-    const allyDamageEffect: CardEffect = {
+    // 《懺悔するサキュバス》の自傷効果をテスト
+    const selfDamageEffect: CardEffect = {
       trigger: 'on_play',
-      target: 'ally_random',
+      target: 'self_player',
       action: 'damage',
-      value: 99,
-    };
-    
-    const sourceCard = {
-      id: 'inq_repentant_succubus',
-      name: '懺悔するサキュバス',
-      type: 'creature' as const,
-      faction: 'inquisitor' as const,
-      cost: 1,
-      attack: 2,
-      health: 1,
-      keywords: [],
-      effects: [allyDamageEffect],
-    };
-    
-    // 味方破壊効果を実行
-    executeCardEffect(gameState, allyDamageEffect, sourceCard, 'player1');
-    
-    // 味方が場から取り除かれ、墓地に送られたことを確認
-    expect(gameState.players.player1.field.length).toBe(initialAllyFieldSize - 1);
-    expect(gameState.players.player1.graveyard.length).toBe(initialGraveyardSize + 1);
-    expect(gameState.players.player1.graveyard[0].id).toBe('ally_to_destroy');
-  });
-
-  test('《懺悔するサキュバス》 enemy branding effects', () => {
-    const gameState = createTestGameState();
-    
-    // プレイヤー2の場に複数敵クリーチャーを配置
-    const enemy1 = createTestFieldCard({
-      id: 'brand_target1',
-      name: 'ブランド対象1',
-      type: 'creature',
-      faction: 'berserker',
-      cost: 1,
-      attack: 1,
-      health: 1,
-      keywords: [],
-      effects: [],
-    }, 'player2');
-    const enemy2 = createTestFieldCard({
-      id: 'brand_target2',
-      name: 'ブランド対象2',
-      type: 'creature',
-      faction: 'berserker',
-      cost: 1,
-      attack: 1,
-      health: 1,
-      keywords: [],
-      effects: [],
-    }, 'player2');
-    gameState.players.player2.field.push(enemy1, enemy2);
-    
-    const sourceCard = {
-      id: 'inq_repentant_succubus',
-      name: '懺悔するサキュバス',
-      type: 'creature' as const,
-      faction: 'inquisitor' as const,
-      cost: 1,
-      attack: 2,
-      health: 1,
-      keywords: [],
-      effects: [],
-    };
-    
-    // 烙印効果を2回実行（敵2体への烙印）
-    const brandEffect1: CardEffect = {
-      trigger: 'on_play',
-      target: 'enemy_random',
-      action: 'apply_brand',
       value: 1,
     };
     
-    executeCardEffect(gameState, brandEffect1, sourceCard, 'player1');
-    executeCardEffect(gameState, brandEffect1, sourceCard, 'player1');
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [selfDamageEffect],
+    };
     
-    // 敵クリーチャーのうち少なくとも1体に烙印が付与されていることを確認
-    const brandedCount = getBrandedCreatureCount(gameState.players.player2.field);
-    expect(brandedCount).toBeGreaterThanOrEqual(1);
+    // 自傷効果を実行
+    executeCardEffect(gameState, selfDamageEffect, sourceCard, 'player1');
     
-    // 最大で2体に烙印が付与されていることを確認
-    expect(brandedCount).toBeLessThanOrEqual(2);
+    // プレイヤーのライフが1減少していることを確認
+    expect(gameState.players.player1.life).toBe(14);
   });
 
-  test('《懺悔するサキュバス》 no ally destruction when no allies exist', () => {
+  test('《懺悔するサキュバス》 enemy branding effect', () => {
     const gameState = createTestGameState();
     
-    // 味方クリーチャーを配置しない（自身のみ）
     // プレイヤー2の場に敵クリーチャーを配置
     const enemy = createTestFieldCard({
-      id: 'target_enemy',
-      name: 'ターゲット敵',
+      id: 'brand_target',
+      name: 'ブランド対象',
       type: 'creature',
       faction: 'berserker',
       cost: 1,
-      attack: 1,
+      attack: 2,
       health: 1,
       keywords: [],
       effects: [],
     }, 'player2');
     gameState.players.player2.field.push(enemy);
     
-    const initialGraveyardSize = gameState.players.player1.graveyard.length;
-    
-    const allyDamageEffect: CardEffect = {
-      trigger: 'on_play',
-      target: 'ally_random',
-      action: 'damage',
-      value: 99,
-    };
-    
-    const sourceCard = {
-      id: 'inq_repentant_succubus',
-      name: '懺悔するサキュバス',
-      type: 'creature' as const,
-      faction: 'inquisitor' as const,
-      cost: 1,
-      attack: 2,
-      health: 1,
-      keywords: [],
-      effects: [allyDamageEffect],
-    };
-    
-    // 味方破壊効果を実行（対象なし）
-    executeCardEffect(gameState, allyDamageEffect, sourceCard, 'player1');
-    
-    // 墓地に変化がないことを確認
-    expect(gameState.players.player1.graveyard.length).toBe(initialGraveyardSize);
-  });
-
-  test('《懺悔するサキュバス》 no branding when no enemies exist', () => {
-    const gameState = createTestGameState();
-    
-    // 味方クリーチャーを配置
-    const ally = createTestFieldCard({
-      id: 'existing_ally',
-      name: '既存味方',
-      type: 'creature',
-      faction: 'inquisitor',
-      cost: 1,
-      attack: 1,
-      health: 1,
-      keywords: [],
-      effects: [],
-    }, 'player1');
-    gameState.players.player1.field.push(ally);
-    
-    // 敵クリーチャーは配置しない
-    
+    // 《懺悔するサキュバス》の烙印効果をテスト
     const brandEffect: CardEffect = {
       trigger: 'on_play',
       target: 'enemy_random',
@@ -1412,11 +1265,171 @@ describe('Repentant Succubus System', () => {
       effects: [brandEffect],
     };
     
-    // 烙印効果を実行（対象なし）
+    // 烙印効果を実行
     executeCardEffect(gameState, brandEffect, sourceCard, 'player1');
     
-    // 敵がいないので烙印は付与されない（エラーも発生しない）
+    // 敵クリーチャーに烙印が付与されていることを確認
+    expect(enemy.statusEffects).toEqual([{ type: 'branded' }]);
+  });
+
+  test('《懺悔するサキュバス》 enemy attack debuff effect', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に敵クリーチャーを配置
+    const enemy = createTestFieldCard({
+      id: 'debuff_target',
+      name: 'デバフ対象',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 2,
+      attack: 3,
+      health: 2,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy);
+    
+    // 《懺悔するサキュバス》の攻撃力デバフ効果をテスト
+    const debuffEffect: CardEffect = {
+      trigger: 'on_play',
+      target: 'enemy_random',
+      action: 'debuff_attack',
+      value: 1,
+    };
+    
+    const sourceCard = {
+      id: 'inq_repentant_succubus',
+      name: '懺悔するサキュバス',
+      type: 'creature' as const,
+      faction: 'inquisitor' as const,
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [debuffEffect],
+    };
+    
+    // 攻撃力デバフ効果を実行
+    executeCardEffect(gameState, debuffEffect, sourceCard, 'player1');
+    
+    // 敵クリーチャーの攻撃力が1下がっていることを確認
+    expect(enemy.attackModifier).toBe(-1);
+    expect(enemy.attack + enemy.attackModifier).toBe(2); // 3 - 1 = 2
+  });
+
+  test('《懺悔するサキュバス》 all effects combined', () => {
+    const gameState = createTestGameState();
+    
+    // 初期状態設定
+    gameState.players.player1.life = 15;
+    
+    // プレイヤー2の場に敵クリーチャーを配置
+    const enemy = createTestFieldCard({
+      id: 'combined_target',
+      name: '総合対象',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 2,
+      attack: 3,
+      health: 2,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy);
+    
+    // 実際の《懺悔するサキュバス》カードを取得
+    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    
+    // 全効果を順次実行
+    repentantSuccubus.effects.forEach((effect) => {
+      executeCardEffect(gameState, effect, repentantSuccubus, 'player1');
+    });
+    
+    // 自傷ダメージが適用されていることを確認
+    expect(gameState.players.player1.life).toBe(14); // 15 - 1 = 14
+    
+    // 敵に烙印が付与されていることを確認
+    expect(enemy.statusEffects.some(e => e.type === 'branded')).toBe(true);
+    
+    // 敵の攻撃力がデバフされていることを確認（烙印とデバフが同じ対象である保証はないが、1体のみなので確実）
+    expect(enemy.attackModifier).toBe(-1);
+  });
+
+  test('《懺悔するサキュバス》 effects with no valid targets', () => {
+    const gameState = createTestGameState();
+    
+    // 敵クリーチャーを配置しない状態でテスト
+    gameState.players.player1.life = 15;
+    
+    // 実際の《懺悔するサキュバス》カードを取得
+    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    
+    // 全効果を順次実行
+    repentantSuccubus.effects.forEach((effect) => {
+      executeCardEffect(gameState, effect, repentantSuccubus, 'player1');
+    });
+    
+    // 自傷ダメージのみ適用されていることを確認
+    expect(gameState.players.player1.life).toBe(14); // 15 - 1 = 14
+    
+    // 敵がいないので烙印・デバフ効果は何も起こらない（エラーも発生しない）
     expect(gameState.players.player2.field.length).toBe(0);
+  });
+
+  test('《懺悔するサキュバス》 multiple enemies scenario', () => {
+    const gameState = createTestGameState();
+    
+    // プレイヤー2の場に複数敵クリーチャーを配置
+    const enemy1 = createTestFieldCard({
+      id: 'multi_enemy1',
+      name: 'マルチ敵1',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy2 = createTestFieldCard({
+      id: 'multi_enemy2',
+      name: 'マルチ敵2',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    const enemy3 = createTestFieldCard({
+      id: 'multi_enemy3',
+      name: 'マルチ敵3',
+      type: 'creature',
+      faction: 'berserker',
+      cost: 1,
+      attack: 2,
+      health: 1,
+      keywords: [],
+      effects: [],
+    }, 'player2');
+    gameState.players.player2.field.push(enemy1, enemy2, enemy3);
+    
+    // 実際の《懺悔するサキュバス》カードを取得
+    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    
+    // 全効果を順次実行
+    repentantSuccubus.effects.forEach((effect) => {
+      executeCardEffect(gameState, effect, repentantSuccubus, 'player1');
+    });
+    
+    // 敵のうち少なくとも1体に烙印が付与されていることを確認
+    const brandedCount = getBrandedCreatureCount(gameState.players.player2.field);
+    expect(brandedCount).toBeGreaterThanOrEqual(1);
+    
+    // 敵のうち少なくとも1体の攻撃力がデバフされていることを確認
+    const debuffedCount = gameState.players.player2.field.filter(e => e.attackModifier < 0).length;
+    expect(debuffedCount).toBeGreaterThanOrEqual(1);
   });
 });
 

@@ -72,6 +72,8 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     const opponentId = getOpponentId(sourcePlayerId);
     if (effect.target === "player") {
       executeDamageEffect(state, [], opponentId, value, sourceCard.id, sourceCard, random);
+    } else if (effect.target === "self_player") {
+      executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.id, sourceCard, random);
     } else {
       executeDamageEffect(state, targets, null, value, sourceCard.id, sourceCard, random);
     }

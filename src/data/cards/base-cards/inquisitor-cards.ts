@@ -256,9 +256,9 @@ export const inquisitorCards: Card[] = [
     effects: [
       {
         trigger: 'on_play',
-        target: 'ally_random',
+        target: 'self_player',
         action: 'damage',
-        value: 99,
+        value: 1,
       },
       {
         trigger: 'on_play',
@@ -269,11 +269,11 @@ export const inquisitorCards: Card[] = [
       {
         trigger: 'on_play',
         target: 'enemy_random',
-        action: 'apply_brand',
+        action: 'debuff_attack',
         value: 1,
       },
     ],
-    flavor: '我が罪深き過去を贖うため、仲間の血で敵の魂を縛る',
+    flavor: '過去の罪を贖う痛みが、敵の戦意を削ぐ甘い囁きに変わる',
   },
   {
     id: 'inq_judgment_angel',
