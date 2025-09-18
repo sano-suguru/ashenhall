@@ -74,7 +74,7 @@ export type EffectTarget =
 // === 効果発動条件システム ===
 
 /** カード効果の条件 */
-export type ConditionSubject = 'graveyard' | 'allyCount' | 'playerLife' | 'opponentLife' | 'brandedEnemyCount' | 'hasBrandedEnemy';
+export type ConditionSubject = 'graveyard' | 'allyCount' | 'playerLife' | 'opponentLife' | 'brandedEnemyCount' | 'hasBrandedEnemy' | 'enemyCreatureCount';
 
 /** 条件演算子 */
 export type ConditionOperator = 'gte' | 'lte' | 'lt' | 'gt' | 'eq';

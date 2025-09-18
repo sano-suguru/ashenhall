@@ -90,6 +90,8 @@ export interface BaseCard {
   keywords: Keyword[];
   effects: CardEffect[];
   flavor?: string;
+  /** カードをプレイするための条件（空打ち防止用） */
+  playConditions?: EffectCondition[];
 }
 
 /** クリーチャーカード情報 */

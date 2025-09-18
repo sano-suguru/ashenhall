@@ -30,6 +30,13 @@ export const inquisitorCards: Card[] = [
     faction: 'inquisitor',
     cost: 2,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',
@@ -47,6 +54,13 @@ export const inquisitorCards: Card[] = [
     faction: 'inquisitor',
     cost: 2,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',
@@ -126,6 +140,13 @@ export const inquisitorCards: Card[] = [
     faction: 'inquisitor',
     cost: 1,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',
@@ -309,6 +330,13 @@ export const inquisitorCards: Card[] = [
     faction: 'inquisitor',
     cost: 3,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',

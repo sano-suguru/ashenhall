@@ -25,6 +25,26 @@ import {
   handleCreatureDeath,
 } from "./card-effects";
 import { evaluateCardForPlay } from "./ai-tactics";
+import { checkAllConditions } from "./core/condition-checker";
+import type { Card } from "@/types/game";
+
+/**
+ * カードがプレイ可能かどうかをチェックする（プレイ条件含む）
+ */
+function canPlayCard(card: Card, state: GameState, playerId: PlayerId): boolean {
+  const player = state.players[playerId];
+  
+  // 基本条件: エネルギーとフィールド制限
+  if (player.energy < card.cost) return false;
+  if (card.type === "creature" && player.field.length >= GAME_CONSTANTS.FIELD_LIMIT) return false;
+  
+  // プレイ条件チェック（空打ち防止）
+  if (card.playConditions && card.playConditions.length > 0) {
+    return checkAllConditions(state, playerId, card.playConditions);
+  }
+  
+  return true;
+}
 
 /**
  * カードを場に出す
@@ -41,7 +61,8 @@ function playCardToField(
   if (cardIndex === -1) return false;
   const card = player.hand[cardIndex];
 
-  if (player.energy < card.cost) return false;
+  // 統一されたプレイ可能性チェック
+  if (!canPlayCard(card, state, playerId)) return false;
 
   if (card.type === "creature") {
     if (player.field.length >= GAME_CONSTANTS.FIELD_LIMIT) return false;
@@ -177,11 +198,9 @@ export function processDeployPhase(state: GameState): void {
   while (deploymentAttempts < MAX_DEPLOYMENT_ATTEMPTS) {
     deploymentAttempts++;
 
-    // 配置可能なカードを再評価（エネルギー・場の状況が変化するため）
+    // 配置可能なカードを再評価（エネルギー・場・プレイ条件を含む）
     const playableCards = player.hand.filter(
-      (card) =>
-        card.cost <= player.energy &&
-        player.field.length < GAME_CONSTANTS.FIELD_LIMIT
+      (card) => canPlayCard(card, state, state.currentPlayer)
     );
 
     // 配置可能なカードがない場合は終了
@@ -201,28 +220,19 @@ export function processDeployPhase(state: GameState): void {
     const bestCard = evaluatedCards[0].card;
     const position = player.field.length; // 最後尾に配置
 
-    // 安全性チェック: 配置前の最終確認
-    if (
-      player.energy >= bestCard.cost &&
-      player.field.length < GAME_CONSTANTS.FIELD_LIMIT &&
-      player.hand.includes(bestCard)
-    ) {
-      const success = playCardToField(
-        state,
-        state.currentPlayer,
-        bestCard.id,
-        position
-      );
+    // カードを配置
+    const success = playCardToField(
+      state,
+      state.currentPlayer,
+      bestCard.id,
+      position
+    );
 
-      if (!success) {
-        // 配置に失敗した場合は終了（予期しない状況）
-        break;
-      }
-      // 成功した場合は次のカードの配置を試行
-    } else {
-      // 条件を満たさない場合は終了
+    if (!success) {
+      // 配置に失敗した場合は終了（予期しない状況）
       break;
     }
+    // 成功した場合は次のカードの配置を試行
   }
 
   advancePhase(state);

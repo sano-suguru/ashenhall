@@ -132,6 +132,13 @@ export const mageCards: Card[] = [
     faction: 'mage',
     cost: 3,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',
@@ -168,6 +175,13 @@ export const mageCards: Card[] = [
     faction: 'mage',
     cost: 4,
     keywords: [],
+    playConditions: [
+      {
+        subject: 'enemyCreatureCount',
+        operator: 'gte',
+        value: 1,
+      },
+    ],
     effects: [
       {
         trigger: 'on_play',

@@ -69,6 +69,9 @@ function getSubjectValue(
     case "hasBrandedEnemy":
       return hasAnyBrandedEnemy(state, sourcePlayerId) ? 1 : 0;
     
+    case "enemyCreatureCount":
+      return opponent.field.length;
+    
     default:
       console.warn(`Unknown condition subject: ${subject}`);
       return 0;

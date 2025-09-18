@@ -148,12 +148,16 @@ describe('Card Mechanics Tests', () => {
 
   test('魔力循環の学者 should gain attack when a spell is played', () => {
     const scholar = mageCards.find(c => c.id === 'mag_scholar')! as CreatureCard;
-    const spell = mageCards.find(c => c.id === 'mag_torrent')!;
+    // プレイ条件のないスペル「理の崩壊」を使用
+    const spell = mageCards.find(c => c.id === 'mag_reality_collapse')!;
+    const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [{ ...scholar, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.players[p1].hand = [spell];
     state.players[p1].energy = 3;
+    // 理の崩壊のenemy_random効果のため敵クリーチャーを配置
+    state.players[p2].field = [{ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.phase = 'deploy';
     state.currentPlayer = p1;
 
