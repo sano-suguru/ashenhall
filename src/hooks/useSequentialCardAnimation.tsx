@@ -10,6 +10,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import AnimationDurations from '@/lib/game-engine/animation-durations';
 
 /**
  * アニメーションフェーズ（段階制御）
@@ -148,11 +149,11 @@ export class SequentialAnimationHelper {
   static getPhaseDuration(phase: SequentialAnimationPhase): number {
     switch (phase) {
       case SequentialAnimationPhase.ATTACK:
-        return 300; // 攻撃演出時間
+        return AnimationDurations.ATTACK; // 攻撃演出時間
       case SequentialAnimationPhase.DAMAGE:
-        return 1000; // ダメージ表示時間
+        return AnimationDurations.DAMAGE; // ダメージ表示時間
       case SequentialAnimationPhase.DESTROY:
-        return 1000; // 破壊演出時間
+        return AnimationDurations.DESTROY; // 破壊演出時間
       default:
         return 0;
     }

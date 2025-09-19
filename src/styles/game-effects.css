@@ -1,5 +1,12 @@
 /* Ashenhallゲーム演出CSS */
 
+:root {
+  /* ミリ秒指定を秒に変換して使用する（例: 1000ms -> 1s） */
+  --ah-attack-duration: 0.3s; /* 300ms */
+  --ah-damage-duration: 1.0s; /* 1000ms */
+  --ah-destroy-duration: 1.0s; /* 1000ms */
+}
+
 /* 攻撃演出用アニメーション */
 .card-attacking {
   border: 2px solid #ef4444 !important;
@@ -11,7 +18,7 @@
 .card-being-attacked {
   border: 2px solid #eab308 !important;
   box-shadow: 0 0 12px rgba(234, 179, 8, 0.6) !important;
-  animation: damage-shake 0.4s ease;
+  animation: damage-shake var(--ah-attack-duration) ease;
 }
 
 @keyframes damage-shake {
@@ -27,7 +34,7 @@
 }
 
 .animate-damage-popup {
-  animation: damagePopup 1.0s ease-out forwards;
+  animation: damagePopup var(--ah-damage-duration) ease-out forwards;
 }
 
 @keyframes damagePopup {
@@ -51,7 +58,7 @@
   filter: grayscale(1);
   border: 2px solid #6b7280 !important;
   box-shadow: 0 0 8px rgba(107, 114, 128, 0.4) !important;
-  animation: deathFade 1.0s ease-out forwards;
+  animation: deathFade var(--ah-destroy-duration) ease-out forwards;
 }
 
 @keyframes deathFade {

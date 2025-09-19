@@ -28,6 +28,7 @@ import {
   addEffectTriggerAction,
   addCreatureDestroyedAction,
 } from './action-logger';
+import AnimationDurations, { getDurationForPhaseMs } from './animation-durations';
 import { processEffectTrigger } from './card-effects';
 // UUID代替手段：シンプルなランダムID生成
 function generateId(): string {
@@ -361,8 +362,8 @@ export class UnifiedActionProcessor {
       return null; // テスト環境ではアニメーション無し
     }
 
-    const baseDelay = 0;
-    const baseDuration = 300 / this.config.gameSpeed;
+  const baseDelay = 0;
+  const baseDuration = AnimationDurations.ATTACK / this.config.gameSpeed; // keep attack short
 
     switch (command.type) {
       case 'damage':
@@ -370,7 +371,7 @@ export class UnifiedActionProcessor {
           targetCardId: command.targetIds[0], // 最初のターゲット
           type: 'taking_damage',
           delay: baseDelay,
-          duration: baseDuration,
+          duration: getDurationForPhaseMs('DAMAGE') / this.config.gameSpeed,
           sourceCommandId: command.id,
         };
       case 'destroy':
@@ -378,7 +379,7 @@ export class UnifiedActionProcessor {
           targetCardId: command.targetIds[0],
           type: 'dying',
           delay: baseDelay,
-          duration: 800 / this.config.gameSpeed,
+          duration: getDurationForPhaseMs('DESTROY') / this.config.gameSpeed,
           sourceCommandId: command.id,
         };
       case 'heal':
