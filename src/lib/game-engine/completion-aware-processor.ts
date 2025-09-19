@@ -10,6 +10,7 @@
 
 import type { GameState } from '@/types/game';
 import { processGameStep } from './core';
+import AnimationDurations from './animation-durations';
 
 
 /**
@@ -109,7 +110,7 @@ export class CompletionAwareProcessor {
       if (action.type === 'card_attack') {
         animations.push({
           type: 'attack',
-          duration: 1000, // CSS最大演出時間に統一
+          duration: AnimationDurations.ATTACK, // 攻撃演出時間（中央定義を参照）
           sourceCardId: action.data.attackerCardId,
           targetCardId: action.data.animation.beingAttackedCardId, // 正確なソース使用
         });
@@ -122,7 +123,7 @@ export class CompletionAwareProcessor {
       if (action.type === 'creature_destroyed') {
         animations.push({
           type: 'destroy',
-          duration: 1000, // 破壊演出時間
+          duration: AnimationDurations.DESTROY, // 破壊演出時間（中央定義を参照）
           targetCardId: action.data.destroyedCardId,
         });
       }
@@ -134,7 +135,7 @@ export class CompletionAwareProcessor {
       if (action.type === 'effect_trigger') {
         animations.push({
           type: 'damage',
-          duration: 400, // ダメージ演出時間
+          duration: AnimationDurations.DAMAGE, // ダメージ演出時間（中央定義を参照）
           sourceCardId: action.data.sourceCardId,
         });
       }

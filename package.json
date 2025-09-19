@@ -6,7 +6,9 @@
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+  "build": "next build",
+  "gen:animations": "node ./scripts/generate-animation-css.js",
+  "prebuild": "pnpm run gen:animations",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

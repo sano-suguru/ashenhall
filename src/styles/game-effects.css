@@ -1,11 +1,6 @@
 /* Ashenhallゲーム演出CSS */
 
-:root {
-  /* ミリ秒指定を秒に変換して使用する（例: 1000ms -> 1s） */
-  --ah-attack-duration: 0.3s; /* 300ms */
-  --ah-damage-duration: 1.0s; /* 1000ms */
-  --ah-destroy-duration: 1.0s; /* 1000ms */
-}
+@import './generated/animation-durations.css';
 
 /* 攻撃演出用アニメーション */
 .card-attacking {
