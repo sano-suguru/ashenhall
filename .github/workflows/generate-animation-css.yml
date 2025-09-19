@@ -1,0 +1,41 @@
+name: Generate and validate animation CSS
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gen-and-check:
+    name: Generate animation CSS and check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable corepack & pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate animation CSS
+        run: pnpm run gen:animations
+
+      - name: Ensure generated file is up-to-date
+        run: |
+          git --no-pager status --porcelain
+          git --no-pager diff --exit-code src/styles/generated/animation-durations.css
+
+      - name: Run quick tests
+        run: pnpm test:quick
+        env:
+          CI: true

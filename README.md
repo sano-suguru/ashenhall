@@ -150,3 +150,19 @@ pnpm lint
 ---
 
 *「時の流れに縛られず、戦略で勝負せよ」*
+
+## アニメーション CSS の自動生成
+
+アニメーションの持続時間（ミリ秒）は `src/lib/game-engine/animation-durations.ts` で定義されています。
+この値から CSS の変数ファイルを自動生成し、TS と CSS の同期を保つ仕組みがあります。
+
+手動で生成するには:
+
+```bash
+pnpm run gen:animations
+```
+
+CI とビルドでは自動的に生成が行われます（`prebuild` フックおよび GitHub Actions）。
+
+もし `animation-durations.ts` を変更した場合は、`pnpm run gen:animations` を実行して生成ファイルを更新し、必要に応じて変更をコミットしてください。
+
