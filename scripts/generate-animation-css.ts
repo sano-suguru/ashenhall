@@ -1,12 +1,11 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const scriptPath = process.argv[1] || '';
+const scriptDir = scriptPath ? path.dirname(scriptPath) : process.cwd();
 
-const INPUT = path.resolve(__dirname, '../src/lib/game-engine/animation-durations.ts');
-const OUTPUT_DIR = path.resolve(__dirname, '../src/styles/generated');
+const INPUT = path.resolve(scriptDir, '../src/lib/game-engine/animation-durations.ts');
+const OUTPUT_DIR = path.resolve(scriptDir, '../src/styles/generated');
 const OUTPUT = path.join(OUTPUT_DIR, 'animation-durations.css');
 
 async function readInput(): Promise<string> {
@@ -40,7 +39,7 @@ function generateCssMap(values: Record<string, number>): string {
 async function ensureDir(dir: string): Promise<void> {
   try {
     await fs.mkdir(dir, { recursive: true });
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
