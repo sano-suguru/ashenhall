@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "gen:animations": "node -r ts-node/register ./scripts/generate-animation-css.ts",
+    "gen:animations": "pnpm exec ts-node ./scripts/generate-animation-css.ts",
     "prebuild": "pnpm run gen:animations",
     "predev": "pnpm run gen:animations",
     "start": "next start",
