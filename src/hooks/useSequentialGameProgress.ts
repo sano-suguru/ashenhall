@@ -191,9 +191,7 @@ export const useSequentialGameProgress = (config: SequentialGameProgressConfig):
   // カードアニメーション状態取得関数
   const getCardAnimationState = useCallback((cardId: string) => {
     const { isAnimating, animationType, sourceCardId, targetCardId } = currentAnimationState;
-    
-    console.log('[DEBUG] getCardAnimationState called for:', cardId, 'currentState:', currentAnimationState);
-    
+    const processor = processorRef.current;
     if (!isAnimating) {
       return {
         isAttacking: false,
@@ -203,23 +201,20 @@ export const useSequentialGameProgress = (config: SequentialGameProgressConfig):
       };
     }
 
-    // アニメーションタイプに基づいて状態を決定
     switch (animationType) {
       case 'attack':
-        const result = {
+        return {
           isAttacking: sourceCardId === cardId,
           isBeingAttacked: targetCardId === cardId,
           isDying: false,
-          damageAmount: targetCardId === cardId ? 1 : 0,
+          damageAmount: 0,
         };
-        console.log('[DEBUG] attack animation result for', cardId, ':', result);
-        return result;
       case 'damage':
         return {
           isAttacking: false,
-          isBeingAttacked: targetCardId === cardId,
-          isDying: false,
-          damageAmount: targetCardId === cardId ? 1 : 0,
+            isBeingAttacked: targetCardId === cardId,
+            isDying: false,
+            damageAmount: processor.getCurrentDamageAmount(cardId),
         };
       case 'destroy':
         return {

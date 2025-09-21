@@ -279,7 +279,7 @@ describe('useSequentialGameProgress', () => {
 
       const animationState = result.current.getCardAnimationState('test-card');
       
-      // 従来のuseAttackSequenceと同じ形式であることを確認
+  // 逐次モデル移行後も旧 useAttackSequence が返していた形式互換を維持することを確認
       expect(animationState).toHaveProperty('isAttacking');
       expect(animationState).toHaveProperty('isBeingAttacked');
       expect(animationState).toHaveProperty('isDying');

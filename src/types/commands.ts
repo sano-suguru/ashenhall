@@ -123,26 +123,10 @@ export type GameCommand =
 export interface CommandExecutionResult {
   /** 更新されたゲーム状態 */
   newGameState: GameState;
-  /** スケジュールされたアニメーション */
-  scheduledAnimations: AnimationCommand[];
   /** 実行されたコマンド数 */
   executedCommandCount: number;
   /** エラーが発生したコマンド */
   failedCommands: Array<{ command: GameCommand; error: string }>;
-}
-
-/** アニメーションコマンド */
-export interface AnimationCommand {
-  /** 対象カードID */
-  targetCardId: string;
-  /** アニメーションタイプ */
-  type: 'attacking' | 'being_attacked' | 'dying' | 'taking_damage' | 'healing' | 'buffing';
-  /** 開始遅延時間（ms） */
-  delay: number;
-  /** アニメーション時間（ms） */
-  duration: number;
-  /** 関連するゲームコマンドID */
-  sourceCommandId: string;
 }
 
 /** コマンドバッチ（同時実行コマンド群） */
@@ -151,8 +135,6 @@ export interface CommandBatch {
   commands: GameCommand[];
   /** バッチ実行順序 */
   sequence: number;
-  /** アニメーション情報 */
-  animations: AnimationCommand[];
 }
 
 /** 統一アクションプロセッサー設定 */

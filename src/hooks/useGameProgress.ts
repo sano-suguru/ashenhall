@@ -2,7 +2,7 @@
  * ゲーム進行管理フック（Phase B簡素化版）
  * 
  * 設計方針:
- * - 攻撃シーケンス管理をuseAttackSequenceに委譲
+ * - 逐次アクションキュー方式への移行に伴い攻撃専用シーケンスは廃止
  * - 単一責任：ゲーム進行とリプレイ表示のみ
  * - 個人開発の保守性重視
  */
@@ -11,7 +11,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from '@/lib/game-engine/core';
 import { reconstructStateAtSequence } from '@/lib/game-state-utils';
-import { useAttackSequence } from './useAttackSequence';
 
 export interface GameProgressConfig {
   gameState: GameState | null;
@@ -51,17 +50,23 @@ export interface GameProgressReturn {
 
 /**
  * ゲーム進行管理フック（Phase B簡素化版）
- * 攻撃シーケンス管理の責任をuseAttackSequenceに分離
+ * 逐次アクションモデル移行により攻撃専用シーケンスは非推奨
  */
 export const useGameProgress = (config: GameProgressConfig): GameProgressReturn => {
   const [progressError, setProgressError] = useState<Error | null>(null);
   
-  // 攻撃シーケンス管理を分離されたフックに委譲
-  const attackSequence = useAttackSequence({
-    gameState: config.gameState,
-    isPlaying: config.isPlaying,
-    currentTurn: config.currentTurn,
-    gameSpeed: config.gameSpeed,
+  // 逐次アクションキュー方式へ移行済みのため攻撃専用シーケンスは廃止
+  const attackSequenceState = {
+    isShowingAttackSequence: false,
+    currentAttackIndex: 0,
+    attackActions: [] as GameAction[],
+  };
+  const currentAttackAction: GameAction | null = null;
+  const getCardAnimationState = () => ({
+    isAttacking: false,
+    isBeingAttacked: false,
+    isDying: false,
+    damageAmount: 0,
   });
 
   // ターンに対応するシーケンス計算
@@ -161,9 +166,9 @@ export const useGameProgress = (config: GameProgressConfig): GameProgressReturn 
 
   return {
     displayState,
-    attackSequenceState: attackSequence.attackSequenceState,
-    currentAttackAction: attackSequence.currentAttackAction,
-    getCardAnimationState: attackSequence.getCardAnimationState,
+  attackSequenceState,
+  currentAttackAction,
+  getCardAnimationState,
     progressError,
   };
 };

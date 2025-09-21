@@ -8,23 +8,13 @@
  * - 個人開発の保守性重視
  */
 
-import type { GameState } from '@/types/game';
+import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from './core';
 import AnimationDurations from './animation-durations';
 
 
 /**
  * アニメーション設定
- */
-export interface AnimationConfig {
-  type: 'attack' | 'damage' | 'destroy' | 'none';
-  duration: number;
-  targetCardId?: string;
-  sourceCardId?: string;
-}
-
-/**
- * アニメーション状態
  */
 export interface AnimationState {
   isAnimating: boolean;
@@ -40,6 +30,14 @@ export interface AnimationState {
 export class CompletionAwareProcessor {
   private isProcessing: boolean = false;
   private gameSpeed: number = 1.0;
+  // アクション逐次処理用キュー
+  private pendingActionQueue: GameAction[] = [];
+  private currentAction: GameAction | null = null;
+  private currentDamageValue: number | null = null;
+  private aoeTargetQueue: string[] = [];
+  private aoeCurrentTarget: string | null = null;
+  private destroyTargetId: string | null = null;
+  private attackCooldownMs = 80; // ユーザー指定
   
   // 自律的スケジューリング管理（循環参照解消の核心）
   private schedulerRef: NodeJS.Timeout | null = null;
@@ -86,62 +84,15 @@ export class CompletionAwareProcessor {
   }
 
   /**
-   * 論理処理完了後に複数アニメーション設定を決定（public メソッド）
+   * 現在のターゲットに対するダメージ値取得（フックから利用）
    */
-  determineAnimationsFromResult(previousState: GameState, nextState: GameState): AnimationConfig[] {
-    // 防御的プログラミング：不正な状態での安全な処理
-    if (!nextState?.actionLog || !previousState?.actionLog) {
-      console.warn('Invalid game state provided to determineAnimationsFromResult:', {
-        nextState: !!nextState,
-        nextStateActionLog: !!nextState?.actionLog,
-        previousState: !!previousState,
-        previousStateActionLog: !!previousState?.actionLog
-      });
-      return [];
+  getCurrentDamageAmount(cardId: string): number {
+    if (this.currentAction?.type === 'effect_trigger' && this.currentAction.data.effectType === 'damage') {
+      if (this.aoeCurrentTarget === cardId) {
+        return this.currentAction.data.effectValue ?? this.currentDamageValue ?? 0;
+      }
     }
-
-    // 新しく追加されたアクションを確認
-    const newActions = nextState.actionLog.slice(previousState.actionLog.length);
-    const animations: AnimationConfig[] = [];
-    
-    // 攻撃アクション（複数対応）
-    const attackActions = newActions.filter(a => a.type === 'card_attack');
-    attackActions.forEach(action => {
-      if (action.type === 'card_attack') {
-        animations.push({
-          type: 'attack',
-          duration: AnimationDurations.ATTACK, // 攻撃演出時間（中央定義を参照）
-          sourceCardId: action.data.attackerCardId,
-          targetCardId: action.data.animation.beingAttackedCardId, // 正確なソース使用
-        });
-      }
-    });
-    
-    // 破壊アクション
-    const destroyActions = newActions.filter(a => a.type === 'creature_destroyed');
-    destroyActions.forEach(action => {
-      if (action.type === 'creature_destroyed') {
-        animations.push({
-          type: 'destroy',
-          duration: AnimationDurations.DESTROY, // 破壊演出時間（中央定義を参照）
-          targetCardId: action.data.destroyedCardId,
-        });
-      }
-    });
-    
-    // ダメージアクション
-    const damageActions = newActions.filter(a => a.type === 'effect_trigger' && a.data.effectType === 'damage');
-    damageActions.forEach(action => {
-      if (action.type === 'effect_trigger') {
-        animations.push({
-          type: 'damage',
-          duration: AnimationDurations.DAMAGE, // ダメージ演出時間（中央定義を参照）
-          sourceCardId: action.data.sourceCardId,
-        });
-      }
-    });
-
-    return animations;
+    return 0;
   }
 
 
@@ -237,21 +188,24 @@ export class CompletionAwareProcessor {
   private async executeGameStepWithAnimation(config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
     const previousState = config.gameState!;
     const step = this.createGameProgressStep(config.gameState!, config.onStateChange);
-    
     let nextState: GameState;
     try {
       nextState = step.logicHandler();
     } catch (error) {
-      // 論理処理エラーは即座に上位catchに伝播（アニメーション処理をスキップ）
       throw error;
     }
-    
-    const animationConfigs = this.determineAnimationsFromResult(previousState, nextState);
-    
-    if (animationConfigs.length > 0) {
-      await this.processMultipleAnimationsAutonomous(animationConfigs, nextState);
-    } else {
+
+    // 新規アクションをキューに追加
+    if (nextState.actionLog.length > previousState.actionLog.length) {
+      const newActions = nextState.actionLog.slice(previousState.actionLog.length);
+      this.pendingActionQueue.push(...newActions);
+    }
+
+    if (this.pendingActionQueue.length === 0) {
       this.handleNoAnimationCase(nextState, config);
+    } else {
+      // アニメーションシーケンス開始
+      await this.runProgressiveSequence(nextState, config);
     }
   }
 
@@ -367,47 +321,161 @@ export class CompletionAwareProcessor {
    * テスト環境でのアニメーション処理
    */
   private handleTestEnvironmentAnimation(
-    animationConfigs: AnimationConfig[], 
-    nextState: GameState, 
+    nextState: GameState,
     config: NonNullable<typeof this.autonomousConfig>
   ): void {
-    this.isProcessing = false;
-    
-    if (nextState.result) {
-      config.onGameFinished?.();
-      config.onStatsUpdate?.(nextState);
-    } else {
-      const totalDelay = animationConfigs.reduce((sum, config) => sum + config.duration, 0) / this.gameSpeed;
-      this.scheduleNextProcessing(Math.max(50, totalDelay));
+    // テスト環境ではアニメーション duration=0 で順次即処理
+    while (this.pendingActionQueue.length > 0) {
+      this.processSingleActionInstant(config);
     }
+    this.finalizeAnimationProcessing(nextState, config);
   }
 
   /**
    * 本番環境での順次アニメーション実行
    */
-  private async processProductionAnimations(
-    animationConfigs: AnimationConfig[], 
+  private async runProgressiveSequence(
+    nextState: GameState,
     config: NonNullable<typeof this.autonomousConfig>
   ): Promise<void> {
-    for (let i = 0; i < animationConfigs.length; i++) {
-      const animationConfig = animationConfigs[i];
-      
-      console.log(`[DEBUG] Processing animation ${i + 1}/${animationConfigs.length}:`, animationConfig);
-      
-      // アニメーション状態を設定
+    const isTestEnvironment = process.env.NODE_ENV === 'test';
+    if (isTestEnvironment) {
+      this.handleTestEnvironmentAnimation(nextState, config);
+      return;
+    }
+
+    // キューを順次処理
+    while (this.pendingActionQueue.length > 0) {
+      const action = this.pendingActionQueue.shift()!;
+      this.currentAction = action;
+      await this.processSingleActionWithAnimation(action, config);
+    }
+    this.finalizeAnimationProcessing(nextState, config);
+  }
+
+  private processSingleActionInstant(config: NonNullable<typeof this.autonomousConfig>): void {
+    const action = this.pendingActionQueue.shift();
+    if (!action) return;
+    this.currentAction = action;
+    // テスト環境では onAnimationStateChange を action 種類に応じ一度だけ発火し即リセット
+    const { type } = action;
+    let animationType: AnimationState['animationType'] = 'none';
+    let source: string | undefined;
+    let target: string | undefined;
+    if (type === 'card_attack') {
+      animationType = 'attack';
+      source = action.data.attackerCardId;
+      target = action.data.animation.beingAttackedCardId;
+    } else if (type === 'effect_trigger' && action.data.effectType === 'damage') {
+      animationType = 'damage';
+      const first = Object.keys(action.data.targets)[0];
+      target = first;
+      source = action.data.sourceCardId;
+    } else if (type === 'creature_destroyed') {
+      animationType = 'destroy';
+      target = action.data.destroyedCardId;
+    }
+    if (animationType !== 'none') {
       config.onAnimationStateChange?.({
         isAnimating: true,
-        animationType: animationConfig.type,
-        sourceCardId: animationConfig.sourceCardId,
-        targetCardId: animationConfig.targetCardId,
+        animationType,
+        sourceCardId: source,
+        targetCardId: target,
       });
-
-      // 演出完了まで待機
-      const duration = animationConfig.duration / this.gameSpeed;
-      await new Promise(resolve => setTimeout(resolve, duration));
-      
-      console.log(`[DEBUG] Animation ${i + 1} completed`);
+      // 即リセット
+      config.onAnimationStateChange?.({
+        isAnimating: false,
+        animationType: 'none',
+        sourceCardId: undefined,
+        targetCardId: undefined,
+      });
     }
+  }
+
+  private async processSingleActionWithAnimation(
+    action: GameAction,
+    config: NonNullable<typeof this.autonomousConfig>
+  ): Promise<void> {
+    switch (action.type) {
+      case 'card_attack':
+        await this.runAttackAnimation(action, config);
+        break;
+      case 'effect_trigger':
+        if (action.data.effectType === 'damage') {
+          await this.runDamageAnimation(action, config);
+        }
+        break;
+      case 'creature_destroyed':
+        await this.runDestroyAnimation(action, config);
+        break;
+      default:
+        // その他アクションはアニメーション無しで即続行
+        break;
+    }
+  }
+
+  private async runAttackAnimation(action: Extract<GameAction, { type: 'card_attack' }>, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
+    config.onAnimationStateChange?.({
+      isAnimating: true,
+      animationType: 'attack',
+      sourceCardId: action.data.attackerCardId,
+      targetCardId: action.data.animation.beingAttackedCardId,
+    });
+    const duration = AnimationDurations.ATTACK / this.gameSpeed;
+    await new Promise(r => setTimeout(r, duration));
+    // クールダウン
+    await new Promise(r => setTimeout(r, this.attackCooldownMs / this.gameSpeed));
+    config.onAnimationStateChange?.({
+      isAnimating: false,
+      animationType: 'none',
+      sourceCardId: undefined,
+      targetCardId: undefined,
+    });
+  }
+
+  private async runDamageAnimation(action: Extract<GameAction, { type: 'effect_trigger' }>, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
+    const targets = Object.keys(action.data.targets);
+    const source = action.data.sourceCardId;
+    this.currentDamageValue = action.data.effectValue ?? null;
+    for (const target of targets) {
+      this.aoeCurrentTarget = target;
+      config.onAnimationStateChange?.({
+        isAnimating: true,
+        animationType: 'damage',
+        sourceCardId: source,
+        targetCardId: target,
+      });
+      const perTarget = 300 / this.gameSpeed; // 固定 300ms
+      await new Promise(r => setTimeout(r, perTarget));
+      // ターゲット完了で一旦リセット（連続ダメージを視覚的に分離）
+      config.onAnimationStateChange?.({
+        isAnimating: false,
+        animationType: 'none',
+        sourceCardId: undefined,
+        targetCardId: undefined,
+      });
+    }
+    this.currentDamageValue = null;
+    this.aoeCurrentTarget = null;
+  }
+
+  private async runDestroyAnimation(action: Extract<GameAction, { type: 'creature_destroyed' }>, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
+    this.destroyTargetId = action.data.destroyedCardId;
+    config.onAnimationStateChange?.({
+      isAnimating: true,
+      animationType: 'destroy',
+      sourceCardId: action.data.sourceCardId,
+      targetCardId: action.data.destroyedCardId,
+    });
+    const duration = AnimationDurations.DESTROY / this.gameSpeed;
+    await new Promise(r => setTimeout(r, duration));
+    config.onAnimationStateChange?.({
+      isAnimating: false,
+      animationType: 'none',
+      sourceCardId: undefined,
+      targetCardId: undefined,
+    });
+    this.destroyTargetId = null;
   }
 
   /**
@@ -429,7 +497,9 @@ export class CompletionAwareProcessor {
       config.onGameFinished?.();
       config.onStatsUpdate?.(nextState);
     } else {
-      this.scheduleNextProcessing(0);
+      // 最低1フレームぶんの猶予を与え、直前アニメの描画反映を保証
+      const frameDelay = Math.max(16, 32 / this.gameSpeed);
+      this.scheduleNextProcessing(frameDelay);
     }
     
     this.isProcessing = false;
@@ -438,22 +508,7 @@ export class CompletionAwareProcessor {
   /**
    * 複数アニメーション自律処理（フックから分離）
    */
-  private async processMultipleAnimationsAutonomous(
-    animationConfigs: AnimationConfig[], 
-    nextState: GameState
-  ): Promise<void> {
-    const config = this.autonomousConfig!;
-    const isTestEnvironment = process.env.NODE_ENV === 'test';
-    
-    if (isTestEnvironment) {
-      this.handleTestEnvironmentAnimation(animationConfigs, nextState, config);
-      return;
-    }
-
-    // 本番環境: 順次アニメーション実行
-    await this.processProductionAnimations(animationConfigs, config);
-    this.finalizeAnimationProcessing(nextState, config);
-  }
+  // 旧複数アニメーション処理は廃止（逐次キュー方式に置換）
 
   /**
    * 強制停止（エラー時の清掃用）

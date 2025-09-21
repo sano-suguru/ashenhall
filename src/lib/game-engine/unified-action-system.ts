@@ -21,14 +21,13 @@ import type {
   BuffCommand,
   DebuffCommand,
   CommandExecutionResult,
-  AnimationCommand,
   UnifiedActionConfig,
 } from '@/types/commands';
 import {
   addEffectTriggerAction,
   addCreatureDestroyedAction,
 } from './action-logger';
-import AnimationDurations, { getDurationForPhaseMs } from './animation-durations';
+// 逐次アニメ移行に伴い AnimationDurations 経路は撤去済み
 import { processEffectTrigger } from './card-effects';
 // UUID代替手段：シンプルなランダムID生成
 function generateId(): string {
@@ -62,7 +61,6 @@ export class UnifiedActionProcessor {
   ): CommandExecutionResult {
     const result: CommandExecutionResult = {
       newGameState: { ...state },
-      scheduledAnimations: [],
       executedCommandCount: 0,
       failedCommands: [],
     };
@@ -78,13 +76,7 @@ export class UnifiedActionProcessor {
           if (success) {
             result.executedCommandCount++;
             
-            // 3. アニメーション情報を記録（将来拡張用）
-            if (!this.config.isTestEnvironment) {
-              const animationCommand = this.createAnimationCommand(command);
-              if (animationCommand) {
-                result.scheduledAnimations.push(animationCommand);
-              }
-            }
+            // 旧 scheduledAnimations 機構は廃止（逐次アクションキューで処理）
           }
         } catch (error) {
           result.failedCommands.push({
@@ -354,46 +346,7 @@ export class UnifiedActionProcessor {
     return undefined;
   }
 
-  /**
-   * アニメーションコマンド作成
-   */
-  private static createAnimationCommand(command: GameCommand): AnimationCommand | null {
-    if (this.config.isTestEnvironment) {
-      return null; // テスト環境ではアニメーション無し
-    }
-
-  const baseDelay = 0;
-  const baseDuration = AnimationDurations.ATTACK / this.config.gameSpeed; // keep attack short
-
-    switch (command.type) {
-      case 'damage':
-        return {
-          targetCardId: command.targetIds[0], // 最初のターゲット
-          type: 'taking_damage',
-          delay: baseDelay,
-          duration: getDurationForPhaseMs('DAMAGE') / this.config.gameSpeed,
-          sourceCommandId: command.id,
-        };
-      case 'destroy':
-        return {
-          targetCardId: command.targetIds[0],
-          type: 'dying',
-          delay: baseDelay,
-          duration: getDurationForPhaseMs('DESTROY') / this.config.gameSpeed,
-          sourceCommandId: command.id,
-        };
-      case 'heal':
-        return {
-          targetCardId: command.targetIds[0],
-          type: 'healing',
-          delay: baseDelay,
-          duration: baseDuration,
-          sourceCommandId: command.id,
-        };
-      default:
-        return null;
-    }
-  }
+  // createAnimationCommand は逐次アニメ方式移行により削除
 
 }
 

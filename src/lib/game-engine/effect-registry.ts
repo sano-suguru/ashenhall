@@ -54,7 +54,16 @@ import { GraveyardLookup, fieldLookup } from "./field-search-cache";
 import type { DynamicValueDescriptor } from "@/types/cards";
 
 /**
- * 全ての効果ハンドラが従うべき関数シグネチャ
+ * 全ての効果ハンドラが従うべき関数シグネチャ。
+ * シグネチャ統一のため一部効果で未使用の引数（value など）も保持する。
+ *
+ * @param state 現在のゲーム状態（直接ミューテート可 / 決定論的ロジック厳守）
+ * @param effect 効果定義（ターゲット指定や dynamicValue 情報を含む）
+ * @param sourceCard 効果を発動したカード（墓地移動後でも参照用に保持）
+ * @param sourcePlayerId 発動プレイヤー ID
+ * @param random 乱数（SeededRandom）決定論的挙動のため必ずこれを使用
+ * @param targets フィールド上の対象カード配列（プレイヤー対象時は空配列）
+ * @param value 確定済み効果値（固定値 or dynamicValue 計算結果）。未使用効果もシグネチャ統一のため受け取る。
  */
 export type EffectHandler = (
   state: GameState,
@@ -97,29 +106,42 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeSummonEffect(state, sourcePlayerId, sourceCard, random, value),
   'draw_card': (state, _e, sourceCard, sourcePlayerId, _r, _t, value) => 
     executeDrawCardEffect(state, sourcePlayerId, value, sourceCard.id),
-  'silence': (state, _e, sourceCard, _sp, _r, targets, _v) => 
-    executeSilenceEffect(state, targets, sourceCard.id),
+  'silence': (state, _e, sourceCard, _sp, _r, targets, _v) => {
+    void _v;
+    return executeSilenceEffect(state, targets, sourceCard.id);
+  },
   'resurrect': (state, _e, sourceCard, sourcePlayerId, random, _t, value) => 
     executeResurrectEffect(state, sourcePlayerId, sourceCard, random, value),
   'stun': (state, _e, sourceCard, _sp, _r, targets, value) => 
     executeStunEffect(state, targets, value, sourceCard.id),
-  'ready': (state, _e, sourceCard, _sp, _r, targets, _v) => 
-    executeReadyEffect(state, targets, sourceCard.id),
+  'ready': (state, _e, sourceCard, _sp, _r, targets, _v) => {
+    void _v; // JSDoc上保持する value パラメータとの整合性確保
+    return executeReadyEffect(state, targets, sourceCard.id);
+  },
   'destroy_deck_top': (state, _e, sourceCard, sourcePlayerId, _r, _t, value) => 
     executeDestroyDeckTopEffect(state, sourcePlayerId, value, sourceCard.id),
-  'swap_attack_health': (state, _e, sourceCard, _sp, _r, targets, _v) => 
-    executeSwapAttackHealthEffect(state, targets, sourceCard.id),
+  'swap_attack_health': (state, _e, sourceCard, _sp, _r, targets, _v) => {
+    void _v;
+    return executeSwapAttackHealthEffect(state, targets, sourceCard.id);
+  },
   'hand_discard': (state, effect, sourceCard, sourcePlayerId, random, _t, value) => {
     const opponentId = getOpponentId(sourcePlayerId);
     executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.selectionRules);
   },
-  'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => 
-    executeDestroyAllCreaturesEffect(state, sourceCard.id),
-  'apply_brand': (state, _e, sourceCard, _sp, _r, targets, _v) => 
-    executeApplyBrandEffect(state, targets, sourceCard.id),
-  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => 
-    executeBanishEffect(state, targets, sourceCard.id),
+  'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => {
+    void _sp; void _r; void _t; void _v;
+    return executeDestroyAllCreaturesEffect(state, sourceCard.id);
+  },
+  'apply_brand': (state, _e, sourceCard, _sp, _r, targets, _v) => {
+    void _v;
+    return executeApplyBrandEffect(state, targets, sourceCard.id);
+  },
+  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => {
+    void _v;
+    return executeBanishEffect(state, targets, sourceCard.id);
+  },
   'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => {
+    void _t; void _v;
     executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.selectionRules, random);
   },
 };
