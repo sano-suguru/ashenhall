@@ -53,6 +53,10 @@ export type {
   EnergyUpdateActionData,
   TriggerEventActionData,
   KeywordTriggerActionData,
+  CombatStageActionData,
+  CardDrawActionData,
+  EnergyRefillActionData,
+  EndStageActionData,
   GameAction,
   GameResult,
   GameState

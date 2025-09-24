@@ -166,3 +166,64 @@ CI とビルドでは自動的に生成が行われます（`prebuild` フック
 
 もし `animation-durations.ts` を変更した場合は、`pnpm run gen:animations` を実行して生成ファイルを更新し、必要に応じて変更をコミットしてください。
 
+## アクションログ メトリクスとドリフト監視
+
+ゲームロジックの意図しない複雑化やアクション膨張を早期検知するため、シミュレーション結果からアクションログ統計のベースラインとドリフトチェックを行う仕組みがあります。
+
+### 目的
+- ロジック変更で総アクション数が過剰に増えた回帰を検知
+- 戦闘ステージ比率の異常増減を検知 (将来的拡張余地)
+- 意図的な仕様追加とバグ的増加を切り分ける判断材料
+
+### 基本指標（現状）
+- `totalActions.avg`: 1 ゲームあたりアクション総数平均
+- `combatStageRatio.avg`: 全アクションに占める `combat_stage` アクション比率（現状 0、拡張予定）
+
+### ベースライン生成
+初回、または意図的な仕様増加が確定した後にベースラインを更新します。
+```bash
+pnpm metrics:baseline
+```
+生成ファイル: `simulation_reports/metrics-baseline-<timestamp>.json`
+
+### ドリフトチェック
+```bash
+pnpm metrics:check
+```
+出力: `simulation_reports/metrics-drift-check-<timestamp>.json`（`status: OK` か `DRIFT`）。
+
+### 高速サンプル（開発中短縮）
+```bash
+DRIFT_GAMES=2 DRIFT_MAX_STEPS=300 pnpm metrics:check
+```
+
+### 環境変数（閾値/制御）
+| 変数 | デフォルト | 説明 |
+|------|------------|------|
+| `DRIFT_GAMES` | 6 | シミュレーションゲーム数 |
+| `DRIFT_MAX_STEPS` | 2000 | 1 ゲーム最大ステップ |
+| `DRIFT_SEED_BASE` | 9000 | 連番シード基点 |
+| `DRIFT_MAX_ACTION_INCREASE_PCT` | 0.20 | totalActions.avg の相対増加許容 (20%) |
+| `DRIFT_MAX_ACTION_ABS_INCREASE` | 50 | totalActions.avg 絶対増加許容 |
+| `DRIFT_MAX_COMBAT_RATIO_INCREASE` | 0.10 | combatStageRatio.avg の許容増加 (10pp) |
+
+判定ロジック:
+- 総アクション: 相対増加 > 指定割合 かつ 絶対増加 > 指定値 の場合 DRIFT
+- combatStageRatio: 絶対増加 > 指定値 の場合 DRIFT
+
+### 運用フロー推奨
+1. 変更前に基準がなければ baseline 生成
+2. 実装 → `pnpm metrics:check`
+3. DRIFT の場合: 仕様上正当かを確認
+	- 正当: baseline 再生成してコミット
+	- 不正当: ロジック修正
+
+### 追加拡張アイデア（未実装）
+- フェーズ別比率（draw/energy/deploy/battle/end）
+- アクションタイプ個別しきい値（`effect_trigger` 等）
+- CI での差分 PR コメント自動投稿
+
+### 注意
+現在 `combat_stage` が 0 のため、将来バトル細分化アクション追加時に自然に比率監視が有効化されます。
+
+

@@ -19,6 +19,10 @@ import type {
   EnergyUpdateActionData,
   PhaseChangeActionData,
   KeywordTriggerActionData,
+  CombatStageActionData,
+  CardDrawActionData,
+  EnergyRefillActionData,
+  EndStageActionData,
 } from "@/types/game";
 
 /**
@@ -67,6 +71,26 @@ export function addCreatureDestroyedAction(
   playerId: PlayerId,
   data: CreatureDestroyedActionData
 ): void {
+  // 既に cardSnapshot が無ければ生成（呼び出し元が付与するケースも許容）
+  if (!data.cardSnapshot) {
+    // 盤面上から対象カードを探索（除去前である想定）
+    const player = state.players[playerId];
+    const found = player.field.find(c => c.id === data.destroyedCardId)
+      || state.players[playerId === 'player1' ? 'player2' : 'player1'].field.find(c => c.id === data.destroyedCardId);
+    if (found) {
+      data.cardSnapshot = {
+        id: found.id,
+        owner: found.owner,
+        name: found.name,
+        attackTotal: found.attack + found.attackModifier + found.passiveAttackModifier,
+        healthTotal: found.health + found.healthModifier + found.passiveHealthModifier,
+        currentHealth: found.currentHealth,
+        baseAttack: found.attack,
+        baseHealth: found.health,
+        keywords: [...(found.keywords || [])],
+      };
+    }
+  }
   addAction(state, playerId, "creature_destroyed", data);
 }
 
@@ -108,4 +132,36 @@ export function addKeywordTriggerAction(
   data: KeywordTriggerActionData
 ): void {
   addAction(state, playerId, "keyword_trigger", data);
+}
+
+export function addCombatStageAction(
+  state: GameState,
+  playerId: PlayerId,
+  data: CombatStageActionData
+): void {
+  addAction(state, playerId, 'combat_stage', data);
+}
+
+export function addCardDrawAction(
+  state: GameState,
+  playerId: PlayerId,
+  data: CardDrawActionData
+): void {
+  addAction(state, playerId, 'card_draw', data);
+}
+
+export function addEnergyRefillAction(
+  state: GameState,
+  playerId: PlayerId,
+  data: EnergyRefillActionData
+): void {
+  addAction(state, playerId, 'energy_refill', data);
+}
+
+export function addEndStageAction(
+  state: GameState,
+  playerId: PlayerId,
+  data: EndStageActionData
+): void {
+  addAction(state, playerId, 'end_stage', data);
 }

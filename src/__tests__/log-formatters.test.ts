@@ -116,13 +116,6 @@ describe("Log Formatters", () => {
           targetId: "target",
           damage: 3,
           targetHealth: { before: 5, after: 2 },
-          animation: { 
-            attackingCardId: 'attacker', 
-            beingAttackedCardId: 'target',
-            displayDamage: 3,
-            isTargetDestroyed: false,
-            startTime: 0
-          },
         },
       };
       const result = formatCardAttackLog(action, mockPlayerName);
@@ -141,13 +134,6 @@ describe("Log Formatters", () => {
           targetId: "player2",
           damage: 2,
           targetPlayerLife: { before: 15, after: 13 },
-          animation: { 
-            attackingCardId: 'attacker', 
-            beingAttackedCardId: 'player2',
-            displayDamage: 2,
-            isTargetDestroyed: false,
-            startTime: 0
-          },
         },
       };
       const result = formatCardAttackLog(action, mockPlayerName);

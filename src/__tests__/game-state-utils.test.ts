@@ -98,13 +98,6 @@ describe("formatActionAsText", () => {
         targetId: "some_target",
         damage: 3,
         targetHealth: { before: 5, after: 2 },
-        animation: {
-          attackingCardId: "some_attacker",
-          beingAttackedCardId: "some_target",
-          displayDamage: 3,
-          isTargetDestroyed: false,
-          startTime: 5,
-        },
       },
       timestamp: 0,
     };
@@ -123,13 +116,6 @@ describe("formatActionAsText", () => {
         targetId: "player2",
         damage: 2,
         targetPlayerLife: { before: 15, after: 13 },
-        animation: {
-          attackingCardId: "some_attacker",
-          beingAttackedCardId: undefined,
-          displayDamage: 2,
-          isTargetDestroyed: false,
-          startTime: 6,
-        },
       },
       timestamp: 0,
     };
@@ -253,13 +239,6 @@ describe("Type Guard Functions", () => {
           attackerCardId: "C001", 
           targetId: "player2", 
           damage: 2,
-          animation: {
-            attackingCardId: "C001",
-            beingAttackedCardId: undefined,
-            displayDamage: 2,
-            isTargetDestroyed: false,
-            startTime: 1,
-          },
         },
         timestamp: 0,
       };
@@ -283,13 +262,6 @@ describe("Type Guard Functions", () => {
           attackerCardId: "C001", 
           targetId: "C002", // クリーチャー対象
           damage: 2,
-          animation: {
-            attackingCardId: "C001",
-            beingAttackedCardId: "C002",
-            displayDamage: 2,
-            isTargetDestroyed: false,
-            startTime: 1,
-          },
         },
         timestamp: 0,
       };
@@ -403,13 +375,6 @@ describe("Type Guard Functions", () => {
           attackerCardId: "C001", 
           targetId: "player2", 
           damage: 3, // ダメージあり
-          animation: {
-            attackingCardId: "C001",
-            beingAttackedCardId: undefined,
-            displayDamage: 3,
-            isTargetDestroyed: false,
-            startTime: 1,
-          },
         },
         timestamp: 0,
       };
@@ -432,13 +397,6 @@ describe("Type Guard Functions", () => {
           attackerCardId: "C001", 
           targetId: "player2", 
           damage: 0, // ダメージなし
-          animation: {
-            attackingCardId: "C001",
-            beingAttackedCardId: undefined,
-            displayDamage: 0,
-            isTargetDestroyed: false,
-            startTime: 1,
-          },
         },
         timestamp: 0,
       };
@@ -472,13 +430,6 @@ describe("findDecisiveAction (Legacy Compatibility)", () => {
         attackerCardId: "C001", 
         targetId: "player2", 
         damage: 2,
-        animation: {
-          attackingCardId: "C001",
-          beingAttackedCardId: undefined,
-          displayDamage: 2,
-          isTargetDestroyed: false,
-          startTime: 2,
-        },
       },
       timestamp: 0,
     };
@@ -495,13 +446,6 @@ describe("findDecisiveAction (Legacy Compatibility)", () => {
             attackerCardId: "C002", 
             targetId: "player2", 
             damage: 0,
-            animation: {
-              attackingCardId: "C002",
-              beingAttackedCardId: undefined,
-              displayDamage: 0,
-              isTargetDestroyed: false,
-              startTime: 3,
-            },
           },
           timestamp: 0,
         },
@@ -536,13 +480,6 @@ describe("findDecisiveAction (Legacy Compatibility)", () => {
             attackerCardId: "C002", 
             targetId: "player2", 
             damage: 0,
-            animation: {
-              attackingCardId: "C002",
-              beingAttackedCardId: undefined,
-              displayDamage: 0,
-              isTargetDestroyed: false,
-              startTime: 2,
-            },
           },
           timestamp: 0,
         },
@@ -564,13 +501,6 @@ describe("findDecisiveAction (Legacy Compatibility)", () => {
             attackerCardId: "C001", 
             targetId: "player2", 
             damage: 0,
-            animation: {
-              attackingCardId: "C001",
-              beingAttackedCardId: undefined,
-              displayDamage: 0,
-              isTargetDestroyed: false,
-              startTime: 1,
-            },
           },
           timestamp: 0,
         },

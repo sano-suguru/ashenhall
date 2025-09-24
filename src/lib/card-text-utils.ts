@@ -244,6 +244,7 @@ const formatNumericCondition = (condition: EffectCondition): string => {
     opponentLife: '相手のライフ',
     brandedEnemyCount: '烙印を刻まれた敵の数',
     hasBrandedEnemy: '烙印を刻まれた敵',
+    enemyCreatureCount: '敵クリーチャー数',
   };
 
   const operatorMap: Record<ConditionOperator, string> = {

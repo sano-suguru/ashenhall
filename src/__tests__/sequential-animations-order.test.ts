@@ -44,13 +44,6 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
       attackerCardId: state.players.player1.field[0].id,
       targetId: state.players.player2.field[0].id,
       damage: 3,
-      animation: {
-        attackingCardId: state.players.player1.field[0].id,
-        beingAttackedCardId: state.players.player2.field[0].id,
-        displayDamage: 3,
-        isTargetDestroyed: false,
-        startTime: Date.now(),
-      }
     });
     // damage (multi-target) action
     addEffectTriggerAction(state, 'player1', {

@@ -30,6 +30,7 @@ import {
 import { selectTargets } from "./core/target-selector";
 import { checkEffectCondition } from "./core/condition-checker";
 import { TargetFilterEngine } from "./core/target-filter";
+import { evaluatePendingDeaths } from './death-sweeper';
 
 /**
  * 条件分岐効果の実行
@@ -316,6 +317,8 @@ export function processEffectTrigger(
 ): void {
   const handler = triggerHandlers[trigger] || handleGlobalTrigger;
   handler(state, trigger, sourceCard, sourcePlayerId, triggeringCard);
+  // トリガー内で複数効果がチェーンし別ユニットが HP0 になったケースを回収
+  evaluatePendingDeaths(state, 'trigger', sourceCard?.id || triggeringCard?.id);
 }
 
 /**
@@ -329,10 +332,8 @@ export function applyPassiveEffects(state: GameState): void {
     cards.forEach((card) => {
       // リセット前に現在の体力を調整
       if (card.passiveHealthModifier > 0) {
-        card.currentHealth -= card.passiveHealthModifier;
+        card.currentHealth = Math.max(0, card.currentHealth - card.passiveHealthModifier);
       }
-      // 負の値も考慮して0未満にならないように
-      card.currentHealth = Math.max(0, card.currentHealth);
 
       card.passiveAttackModifier = 0;
       card.passiveHealthModifier = 0;
@@ -359,4 +360,6 @@ export function applyPassiveEffects(state: GameState): void {
 
   applyPassiveForPlayer("player1");
   applyPassiveForPlayer("player2");
+  // パッシブ再適用後に 0 HP へ落ちたカードを処理
+  evaluatePendingDeaths(state, 'passive');
 }

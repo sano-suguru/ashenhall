@@ -7,130 +7,33 @@
  * - 決定論的な戦闘計算
  */
 
-import type {
-  GameState,
-  PlayerId,
-  FieldCard,
-} from "@/types/game";
-import { SeededRandom } from "./seeded-random";
+import type { GameState } from "@/types/game";
 import { advancePhase } from "./game-state";
-import {
-  addCardAttackAction,
-  addTriggerEventAction,
-  addKeywordTriggerAction,
-} from "./action-logger";
-import {
-  applyPassiveEffects,
-  processEffectTrigger,
-  handleCreatureDeath,
-} from "./card-effects";
-import { chooseAttackTarget } from "./ai-tactics";
+import { applyPassiveEffects } from "./card-effects";
 
 
 /**
  * 守護クリーチャーを検出
  */
-function getGuardCreatures(field: FieldCard[]): FieldCard[] {
-  return field.filter(
-    (card) =>
-      card.currentHealth > 0 &&
-      !card.isSilenced &&
-      card.keywords.includes("guard")
-  );
-}
+// 旧一括解決用の守護再ターゲット処理は BattleIterator 側ステージ化で不要になったため削除
 
 /**
  * Lifesteal (吸血) 効果の処理
  */
-function processLifestealEffect(
-  state: GameState,
-  attacker: FieldCard,
-  target: FieldCard | null,
-  targetPlayer: boolean,
-  damage: number
-): void {
-  if (
-    damage > 0 &&
-    !attacker.isSilenced &&
-    attacker.keywords.includes("lifesteal")
-  ) {
-    const currentPlayerId = attacker.owner;
-    const currentPlayer = state.players[currentPlayerId];
-    currentPlayer.life += damage;
-
-    // プレイヤー直接攻撃・クリーチャー攻撃両方でログ記録
-    const targetId = target ? target.id : (targetPlayer ? state.players[currentPlayerId === "player1" ? "player2" : "player1"].id : "unknown");
-    addKeywordTriggerAction(state, currentPlayerId, {
-      keyword: 'lifesteal',
-      sourceCardId: attacker.id,
-      targetId: targetId,
-      value: damage,
-    });
-  }
-}
+// 各種キーワード処理も戦闘サブステージへ移行済み（旧ロジック削除）
 
 /**
  * Poison (毒) 効果の処理
  */
-function processPoisonEffect(
-  state: GameState,
-  attacker: FieldCard,
-  target: FieldCard | null
-): void {
-  if (target && !attacker.isSilenced && attacker.keywords.includes("poison")) {
-    target.statusEffects.push({ type: "poison", duration: 2, damage: 1 });
-    
-    addKeywordTriggerAction(state, attacker.owner, {
-      keyword: 'poison',
-      sourceCardId: attacker.id,
-      targetId: target.id,
-      value: 1,
-    });
-  }
-}
 
 /**
  * Trample (貫通) 効果の処理
  */
-function processTrampleEffect(
-  state: GameState,
-  attacker: FieldCard,
-  target: FieldCard | null,
-  damage: number
-): void {
-  if (target && !attacker.isSilenced && attacker.keywords.includes("trample")) {
-    const excessDamage = damage - target.currentHealth;
-    if (excessDamage > 0) {
-      const currentPlayerId = attacker.owner;
-      const opponentId: PlayerId = currentPlayerId === "player1" ? "player2" : "player1";
-      const opponent = state.players[opponentId];
-      
-      opponent.life -= excessDamage;
-      
-      addKeywordTriggerAction(state, currentPlayerId, {
-        keyword: 'trample',
-        sourceCardId: attacker.id,
-        targetId: opponent.id,
-        value: excessDamage,
-      });
-    }
-  }
-}
 
 /**
  * キーワード効果の処理（統合版）
  */
-function processKeywordEffects(
-  state: GameState,
-  attacker: FieldCard,
-  target: FieldCard | null,
-  targetPlayer: boolean,
-  damage: number
-): void {
-  processLifestealEffect(state, attacker, target, targetPlayer, damage);
-  processPoisonEffect(state, attacker, target);
-  processTrampleEffect(state, attacker, target, damage);
-}
+// processKeywordEffects も削除（段階的解決へ移行）
 
 
 /**
@@ -147,206 +50,29 @@ export function processBattlePhase(state: GameState): void {
  * 攻撃フェーズの処理（動的攻撃者チェック）
  */
 export function processAttackPhase(state: GameState): void {
-  const currentPlayer = state.players[state.currentPlayer];
-
-  // ゲーム終了チェック
+  // BattleIterator 主体に移行後はここでフェーズ終了条件のみ判定
   if (state.players.player1.life <= 0 || state.players.player2.life <= 0) {
     advancePhase(state);
     return;
   }
-
-  // 毎回リアルタイムで攻撃可能カードを評価
-  const availableAttackers = currentPlayer.field.filter(
-    (card) =>
-      card.currentHealth > 0 &&
-      ((!card.isSilenced && card.keywords.includes("rush")) ||
-        card.summonTurn < state.turnNumber) &&
-      !card.hasAttacked &&
-      !card.statusEffects.some((e) => e.type === "stun")
+  const currentPlayer = state.players[state.currentPlayer];
+  const hasAttacker = currentPlayer.field.some(card =>
+    card.currentHealth > 0 &&
+    ((!card.isSilenced && card.keywords.includes("rush")) || card.summonTurn < state.turnNumber) &&
+    !card.hasAttacked &&
+    !card.statusEffects.some(e => e.type === 'stun')
   );
-
-  if (availableAttackers.length === 0) {
-    // 攻撃可能カードがない → end フェーズへ
+  if (!hasAttacker) {
     advancePhase(state);
-    return;
   }
-
-  // 最初の1体だけ攻撃処理
-  const attacker = availableAttackers[0];
-  const random = new SeededRandom(
-    state.randomSeed + state.turnNumber + state.phase + attacker.id
-  );
-  
-  processAttackerTurn(state, attacker, random);
-  
-  // battle_attack フェーズを継続（次のprocessAttackPhaseで再評価）
 }
 
 /**
  * 個別攻撃者の処理（シンプル版）
  */
-function processAttackerTurn(
-  state: GameState,
-  attacker: FieldCard,
-  random: SeededRandom
-): void {
-  const currentPlayerId = attacker.owner;
-  const opponentId: PlayerId = currentPlayerId === "player1" ? "player2" : "player1";
-  const opponent = state.players[opponentId];
-
-  if (attacker.currentHealth <= 0) {
-    attacker.hasAttacked = true;
-    return;
-  }
-
-  // 攻撃前にhasAttackedをtrueに設定
-  attacker.hasAttacked = true;
-
-  processEffectTrigger(state, "on_attack", attacker, currentPlayerId, attacker);
-  
-  if (attacker.currentHealth <= 0) return;
-
-  let { targetCard: target, targetPlayer } = chooseAttackTarget(attacker, state, random);
-
-  // 守護キーワードの強制処理
-  const opponentGuardCreatures = getGuardCreatures(opponent.field);
-  if (opponentGuardCreatures.length > 0) {
-    let mustRetarget = false;
-    if (targetPlayer) {
-      mustRetarget = true;
-    } else if (target) {
-      const targetIsGuard = opponentGuardCreatures.some(guard => guard.id === target!.id);
-      if (!targetIsGuard) {
-        mustRetarget = true;
-      }
-    } else {
-      mustRetarget = true;
-    }
-    
-    if (mustRetarget) {
-      target = random.choice(opponentGuardCreatures)!;
-      targetPlayer = false;
-    }
-  }
-
-  // 戦闘ダメージ処理
-  handleCombatDamage(state, attacker, target, targetPlayer);
-}
+// 個別攻撃処理は BattleIterator のサブステージ進行へ移行済み
 
 /**
  * 戦闘ダメージの処理（演出統合版）
  */
-function handleCombatDamage(
-  state: GameState,
-  attacker: FieldCard,
-  target: FieldCard | null,
-  targetPlayer: boolean
-): void {
-  const currentPlayerId = attacker.owner;
-  const opponentId: PlayerId = currentPlayerId === "player1" ? "player2" : "player1";
-  const opponent = state.players[opponentId];
-  
-  const totalAttack = attacker.attack + attacker.attackModifier + attacker.passiveAttackModifier;
-  const damage = Math.max(0, totalAttack);
-
-  // キーワード効果を先に処理
-  processKeywordEffects(state, attacker, target, targetPlayer, damage);
-
-  if (target) {
-    const targetHealthBefore = target.currentHealth;
-    target.currentHealth -= damage;
-    const targetHealthAfter = target.currentHealth;
-
-    addTriggerEventAction(state, currentPlayerId, {
-      triggerType: 'on_damage_taken',
-      sourceCardId: attacker.id,
-      targetCardId: target.id,
-    });
-
-    processEffectTrigger(state, "on_damage_taken", target, opponentId, attacker);
-
-    addCardAttackAction(state, currentPlayerId, {
-      attackerCardId: attacker.id,
-      targetId: target.id,
-      damage,
-      targetHealth: { before: targetHealthBefore, after: targetHealthAfter },
-      animation: {
-        attackingCardId: attacker.id,
-        beingAttackedCardId: target.id,
-        displayDamage: damage,
-        isTargetDestroyed: target.currentHealth <= 0,
-        startTime: state.actionLog.length, // 完全決定論的（sequence番号）
-      },
-    });
-
-    // 同時戦闘ダメージ: 反撃ダメージを事前計算（生死に関係なく）
-    const totalTargetAttack = target.attack + target.attackModifier + target.passiveAttackModifier;
-    const retaliateDamage = !target.isSilenced && target.keywords.includes("retaliate")
-      ? Math.ceil(totalTargetAttack / 2) : 0;
-    const defenderDamage = Math.max(0, totalTargetAttack) + retaliateDamage;
-
-    // retaliate効果のログ記録（発動時のみ）
-    if (retaliateDamage > 0) {
-      addKeywordTriggerAction(state, opponentId, {
-        keyword: 'retaliate',
-        sourceCardId: target.id,
-        targetId: attacker.id,
-        value: retaliateDamage,
-      });
-    }
-
-    // 攻撃者への同時ダメージ適用（被攻撃者の生死に関係なく）
-    if (defenderDamage > 0) {
-      const attackerHealthBefore = attacker.currentHealth;
-      attacker.currentHealth -= defenderDamage;
-      const attackerHealthAfter = attacker.currentHealth;
-
-      addTriggerEventAction(state, opponentId, {
-        triggerType: 'on_damage_taken',
-        sourceCardId: target.id,
-        targetCardId: attacker.id,
-      });
-      
-      processEffectTrigger(state, "on_damage_taken", attacker, currentPlayerId, target);
-      
-      addCardAttackAction(state, opponentId, {
-        attackerCardId: target.id,
-        targetId: attacker.id,
-        damage: defenderDamage,
-        attackerHealth: { before: attackerHealthBefore, after: attackerHealthAfter },
-        animation: {
-          attackingCardId: target.id,
-          beingAttackedCardId: attacker.id,
-          displayDamage: defenderDamage,
-          isTargetDestroyed: attacker.currentHealth <= 0,
-          startTime: state.actionLog.length,
-        },
-      });
-    }
-
-    // 事後の死亡判定（同時戦闘後）
-    if (target.currentHealth <= 0) {
-      handleCreatureDeath(state, target, 'combat', attacker.id);
-    }
-    if (attacker.currentHealth <= 0) {
-      handleCreatureDeath(state, attacker, 'combat', target.id);
-    }
-  } else if (targetPlayer) {
-    const playerLifeBefore = opponent.life;
-    opponent.life = Math.max(0, opponent.life - damage);
-    const playerLifeAfter = opponent.life;
-    addCardAttackAction(state, currentPlayerId, {
-      attackerCardId: attacker.id,
-      targetId: opponent.id,
-      damage,
-      targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
-      animation: {
-        attackingCardId: attacker.id,
-        beingAttackedCardId: undefined, // プレイヤー攻撃なのでカードなし
-        displayDamage: damage,
-        isTargetDestroyed: false, // プレイヤーは破壊されない
-        startTime: state.actionLog.length, // 完全決定論的（sequence番号）
-      },
-    });
-  }
-}
+// 旧一括戦闘ダメージ処理削除（CardAttackAction 生成は Iterator 側）

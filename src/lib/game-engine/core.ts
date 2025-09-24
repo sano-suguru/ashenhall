@@ -18,15 +18,17 @@ import {
   createInitialGameState as createInitialGameStateImpl,
   cloneGameState,
   checkGameEnd,
-} from "./game-state";
-import { updateOptimizedLookups } from "./field-search-cache";
+} from "./game-state.ts";
+import { updateOptimizedLookups } from "./field-search-cache.ts";
 import {
   processDrawPhase,
   processEnergyPhase,
   processDeployPhase,
   processEndPhase,
-} from "./phase-processors";
-import { processBattlePhase, processAttackPhase } from "./battle-system";
+} from "./phase-processors.ts";
+import { processBattlePhase, processAttackPhase } from "./battle-system.ts";
+import { createBattleIterator } from "./battle-iterator.ts";
+import { assertNoLingeringDeadCreatures } from './invariants';
 
 /**
  * Re-export createInitialGameState from game-state module
@@ -65,13 +67,40 @@ export function processGameStep(state: GameState): GameState {
       break;
     case "battle_attack":
       processAttackPhase(newState);
+      consumeOneAttackerCombat(newState);
       break;
     case "end":
       processEndPhase(newState);
       break;
   }
 
+  // 不変条件チェック: フェーズ処理完了時点で HP<=0 の未破壊カードが残っていないか
+  assertNoLingeringDeadCreatures(newState);
+
   return newState;
+}
+
+// Headless 実行時に battle_attack フェーズで 1 攻撃者分のサブステージを同期消費
+function consumeOneAttackerCombat(state: GameState): void {
+  if (state.phase !== 'battle_attack') return;
+  const it = createBattleIterator(state);
+  if (!it) return; // 攻撃者なし
+  let firstAttacker: string | undefined;
+  // 1 攻撃者のサブステージ(attack_declare -> damage_defender -> damage_attacker -> deaths) をまとめて処理
+  while (true) {
+    const r = it.next();
+    if (r.done) break;
+    const current = it.context.currentAttackerId;
+    if (!firstAttacker) {
+      firstAttacker = current;
+    } else if (current && firstAttacker !== current) {
+      // 次の攻撃者に移ろうとしたので停止（次ステップへ委譲）
+      break;
+    } else if (!current) {
+      // 攻撃者処理が完了した
+      break;
+    }
+  }
 }
 
 /**

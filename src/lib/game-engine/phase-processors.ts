@@ -18,7 +18,11 @@ import {
   addEffectTriggerAction,
   addEnergyUpdateAction,
   addCardPlayAction,
+  addCardDrawAction,
+  addEnergyRefillAction,
+  addEndStageAction,
 } from "./action-logger";
+import { SYSTEM_EFFECT_SOURCES } from './system-effect-sources';
 import {
   applyPassiveEffects,
   processEffectTrigger,
@@ -131,14 +135,28 @@ export function processDrawPhase(state: GameState): void {
   // デッキからカードをドロー
   if (player.deck.length > 0) {
     const drawnCard = player.deck.pop()!;
+    const handBefore = player.hand.length;
     player.hand.push(drawnCard);
+    addCardDrawAction(state, state.currentPlayer, {
+      cardId: drawnCard.id,
+      handSizeBefore: handBefore,
+      handSizeAfter: player.hand.length,
+      deckSizeAfter: player.deck.length,
+    });
   } else {
     // デッキ切れダメージ
     const lifeBefore = player.life;
     player.life -= 1;
     const lifeAfter = player.life;
+    addCardDrawAction(state, state.currentPlayer, {
+      cardId: SYSTEM_EFFECT_SOURCES.DECK_EMPTY,
+      handSizeBefore: player.hand.length,
+      handSizeAfter: player.hand.length, // 変化なし
+      deckSizeAfter: player.deck.length,
+      fatigue: { lifeBefore, lifeAfter }
+    });
     addEffectTriggerAction(state, state.currentPlayer, {
-      sourceCardId: "deck_empty",
+      sourceCardId: SYSTEM_EFFECT_SOURCES.DECK_EMPTY,
       effectType: "damage",
       effectValue: 1,
       targets: {
@@ -173,7 +191,13 @@ export function processEnergyPhase(state: GameState): void {
   }
 
   // エネルギーを上限まで回復
+  const before = player.energy;
   player.energy = player.maxEnergy;
+  addEnergyRefillAction(state, state.currentPlayer, {
+    energyBefore: before,
+    energyAfter: player.energy,
+    maxEnergy: player.maxEnergy,
+  });
 
   advancePhase(state);
 }
@@ -246,6 +270,9 @@ export function processEndPhase(state: GameState): void {
   const opponent =
     state.players[state.currentPlayer === "player1" ? "player2" : "player1"];
 
+  // ステージ: status_tick
+  addEndStageAction(state, state.currentPlayer, { stage: 'status_tick' });
+
   [currentPlayer, opponent].forEach((player) => {
     const poisonDeaths: FieldCard[] = [];
     player.field.forEach((card) => {
@@ -256,7 +283,7 @@ export function processEndPhase(state: GameState): void {
           card.currentHealth -= effect.damage;
           const healthAfter = card.currentHealth;
           addEffectTriggerAction(state, player.id, {
-            sourceCardId: "poison_effect",
+            sourceCardId: SYSTEM_EFFECT_SOURCES.POISON,
             effectType: "damage",
             effectValue: effect.damage,
             targets: {
@@ -281,14 +308,21 @@ export function processEndPhase(state: GameState): void {
       card.statusEffects = card.statusEffects.filter((e) => !('duration' in e) || e.duration > 0);
     });
 
-    // 毒による死亡処理
+    // 毒ダメージ適用完了後のステージ
+    if (poisonDeaths.length > 0) {
+      addEndStageAction(state, state.currentPlayer, { stage: 'poison_damage' });
+    }
     poisonDeaths.forEach(deadCard => {
-      handleCreatureDeath(state, deadCard, 'effect', 'poison_effect');
+      handleCreatureDeath(state, deadCard, 'effect', SYSTEM_EFFECT_SOURCES.POISON);
     });
   });
 
+  // クリーンアップステージ（stealth解除 / flags reset 後）
+  addEndStageAction(state, state.currentPlayer, { stage: 'cleanup' });
+
   // ターン終了効果
   processEffectTrigger(state, "turn_end");
+  addEndStageAction(state, state.currentPlayer, { stage: 'turn_end_trigger' });
 
   advancePhase(state);
 }

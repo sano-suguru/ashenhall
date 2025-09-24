@@ -42,7 +42,9 @@ describe('Card Mechanics Tests', () => {
       gameState = processGameStep(gameState); // 攻撃継続
     }
 
-    expect(gameState.players[p1].life).toBe(10 + (bloodCraver.attack));
+  // Lifesteal は宣言ダメージではなく『実際に減少させた体力量』分のみ回復する仕様
+  const expectedHeal = 1; // skeleton currentHealth (1) が実際の与ダメージ
+  expect(gameState.players[p1].life).toBe(10 + expectedHeal);
   });
 
   test('Poison keyword should apply a status effect and move card to graveyard on death', () => {
@@ -94,6 +96,27 @@ describe('Card Mechanics Tests', () => {
     const retaliateDamage = Math.ceil(vindicator.attack / 2);
     const defenderBaseDamage = vindicator.attack;
     expect(attacker.currentHealth).toBe(initialHealth - defenderBaseDamage - retaliateDamage);
+  });
+
+  test('Lifesteal should not overheal beyond actual damage dealt (overkill case)', () => {
+    const bloodCraver = getCardById('ber_craver') as CreatureCard; // attack 3
+    const skeleton = getCardById('necro_skeleton') as CreatureCard; // health 1
+    // 攻撃力をさらに強化してオーバーキル幅を拡大
+    const boosted = { ...bloodCraver, attackModifier: 4 }; // 実効攻撃力 7
+    let state = createInitialGameState('lifesteal-overkill', [boosted], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed2');
+    const p1 = 'player1';
+    const p2 = 'player2';
+    state.players[p1].life = 5;
+    state.players[p1].field.push({ ...boosted, owner: p1, currentHealth: 3, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    state.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    state.phase = 'battle';
+    state.currentPlayer = p1;
+    state = processGameStep(state); // to battle_attack
+    while (state.phase === 'battle_attack') {
+      state = processGameStep(state);
+    }
+    // skeleton HP=1 なので実ダメージ=1。攻撃力7でも回復は +1 のみ。
+    expect(state.players[p1].life).toBe(5 + 1);
   });
 
   // === Advanced Mechanics Tests (from advanced-card-mechanics.test.ts) ===
@@ -205,12 +228,11 @@ describe('Card Mechanics Tests', () => {
       silencedZombie.currentHealth = 0;
     }
     
-    state.phase = 'battle';
+    state.phase = 'end';
     state = processGameStep(state);
 
-    state.players[p2].field.forEach((card: FieldCard) => {
-      expect(card.attackModifier).toBe(0);
-    });
+    expect(state.players[p2].field.length).toBe(0);
+    expect(state.players[p2].graveyard.some((c: Card) => c.id === 'necro_zombie')).toBe(true);
   });
 
   // === New Mechanics Tests for Expansion ===

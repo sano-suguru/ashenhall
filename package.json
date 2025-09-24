@@ -17,7 +17,9 @@
     "test:coverage": "jest --coverage",
     "test:quick": "QUICK_TEST=1 jest",
     "test:simulation": "FULL_SIMULATION=1 jest src/__tests__/ai-battle-simulator.test.ts",
-    "test:simulation:quick": "QUICK_TEST=1 jest src/__tests__/ai-battle-simulator.test.ts"
+    "test:simulation:quick": "QUICK_TEST=1 jest src/__tests__/ai-battle-simulator.test.ts",
+  "metrics:baseline": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' -r tsconfig-paths/register ./scripts/generate-metrics-baseline.ts",
+  "metrics:check": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' -r tsconfig-paths/register ./scripts/check-metrics-drift.ts"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
@@ -45,6 +47,7 @@
     "jest-environment-jsdom": "^30.0.5",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.1",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
 }

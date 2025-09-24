@@ -79,19 +79,6 @@ export interface CardAttackActionData {
   attackerHealth?: { before: number; after: number };
   targetHealth?: { before: number; after: number };
   targetPlayerLife?: { before: number; after: number };
-  // 演出情報統合（AnimationManager依存削除のため）
-  animation: {
-    /** 攻撃演出対象カードID */
-    attackingCardId: string;
-    /** 被攻撃演出対象カードID */
-    beingAttackedCardId?: string;
-    /** 表示ダメージ量 */
-    displayDamage: number;
-    /** ターゲット破壊フラグ */
-    isTargetDestroyed: boolean;
-    /** 演出開始時刻（決定論的） */
-    startTime: number;
-  };
 }
 
 /** クリーチャー破壊アクションデータ */
@@ -99,11 +86,34 @@ export interface CreatureDestroyedActionData {
   destroyedCardId: string;
   source: 'combat' | 'effect';
   sourceCardId?: string; // effectの場合
+  cardSnapshot?: {
+    id: string;
+    owner: PlayerId;
+    name: string;
+    attackTotal: number;
+    healthTotal: number;
+    currentHealth: number;
+    baseAttack: number;
+    baseHealth: number;
+    keywords: string[];
+  };
 }
 
 /** 効果発動アクションデータ */
+// system 起因 (例: 'deck_empty','poison_effect','turn_system' 等) を明示するための列挙。
+// 将来: 需要が増えたら別ファイルへ抽出。
+export type SystemEffectSource =
+  | 'deck_empty'
+  | 'poison_effect'
+  | 'turn_system';
+
 export interface EffectTriggerActionData {
-  sourceCardId: string;
+  /**
+   * 効果ソース。
+   * - 召喚/場上カード: 実カードID
+   * - システム効果: SystemEffectSource 文字列
+   */
+  sourceCardId: string | SystemEffectSource;
   effectType: EffectAction;
   effectValue: number;
   targets: Record<string, ValueChange>; // targetIdをキーとする
@@ -136,6 +146,33 @@ export interface KeywordTriggerActionData {
   sourceCardId: string;
   targetId: string;
   value: number;
+}
+
+/** 戦闘サブステージアクションデータ (細粒度逐次化用 最小導入版) */
+export interface CombatStageActionData {
+  stage: 'attack_declare' | 'damage_defender' | 'damage_attacker' | 'deaths';
+  attackerId: string;
+  targetId?: string; // プレイヤー攻撃時は undefined
+  values?: { damage?: number; retaliate?: number; destroyed?: string[] };
+}
+
+// === 新フェーズ可視化用アクションデータ ===
+export interface CardDrawActionData {
+  cardId: string;
+  handSizeBefore: number;
+  handSizeAfter: number;
+  deckSizeAfter: number;
+  fatigue?: { lifeBefore: number; lifeAfter: number };
+}
+
+export interface EnergyRefillActionData {
+  energyBefore: number;
+  energyAfter: number;
+  maxEnergy: number; // 参照用（更新有無にかかわらず）
+}
+
+export interface EndStageActionData {
+  stage: 'status_tick' | 'poison_damage' | 'cleanup' | 'turn_end_trigger';
 }
 
 /** 戦闘アクション（全種類のUnion型） */
@@ -194,6 +231,34 @@ export type GameAction =
       playerId: PlayerId;
       type: 'keyword_trigger';
       data: KeywordTriggerActionData;
+      timestamp: number;
+    }
+  | {
+      sequence: number;
+      playerId: PlayerId;
+      type: 'combat_stage';
+      data: CombatStageActionData;
+      timestamp: number;
+    }
+  | {
+      sequence: number;
+      playerId: PlayerId;
+      type: 'card_draw';
+      data: CardDrawActionData;
+      timestamp: number;
+    }
+  | {
+      sequence: number;
+      playerId: PlayerId;
+      type: 'energy_refill';
+      data: EnergyRefillActionData;
+      timestamp: number;
+    }
+  | {
+      sequence: number;
+      playerId: PlayerId;
+      type: 'end_stage';
+      data: EndStageActionData;
       timestamp: number;
     };
 

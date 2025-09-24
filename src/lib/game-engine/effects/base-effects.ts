@@ -15,7 +15,8 @@ import type {
   ValueChange,
 } from "@/types/game";
 import { SeededRandom } from "../seeded-random";
-import { handleCreatureDeath } from "../card-effects";
+import { applyDamage as applyCardDamage } from '../health-utils';
+import { handleCreatureDeath } from '../card-effects';
 import {
   addEffectTriggerAction,
   getOpponentId,
@@ -87,9 +88,14 @@ function applyDamage(
 
   targets.forEach((target) => {
     const before = target.currentHealth;
-    target.currentHealth = Math.max(0, target.currentHealth - damage);
+    applyCardDamage(target, damage);
     const after = target.currentHealth;
     valueChanges[target.id] = { health: createValueChange(before, after) };
+    // 即時破壊: 直接ダメージで 0 以下になった場合はここで破壊処理。
+    // これにより Lifesteal や on_death 連鎖が元のテスト前提どおり同期的に発火する。
+    if (after <= 0) {
+      handleCreatureDeath(state, target, 'effect', sourceCardId);
+    }
   });
 
   if (targetPlayerId) {
@@ -102,12 +108,7 @@ function applyDamage(
 
   addEffectTriggerAction(state, sourceCardId, "damage", damage, valueChanges);
 
-  // ダメージ適用後に死亡判定
-  targets.forEach((target) => {
-    if (target.currentHealth <= 0) {
-      handleCreatureDeath(state, target, 'effect', sourceCardId);
-    }
-  });
+  // 直接死亡は上で即時処理済み。連鎖的/間接的に 0HP へ落ちたカードは後続の trigger / passive / system sweep で回収される。
 }
 
 /**

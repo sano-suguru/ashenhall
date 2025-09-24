@@ -114,7 +114,7 @@ export class KeywordRegistry {
    */
   static readonly DESCRIPTIONS: Record<Keyword, string> = {
     guard: 'このクリーチャーがいる限り、他の味方は攻撃されない',
-    lifesteal: '与えたダメージ分、自分のライフを回復',
+  lifesteal: '実際に与えた（減少させた）ダメージ分だけライフを回復',
     trample: '余剰ダメージをプレイヤーに与える',
     rush: '召喚したターンから攻撃できる',
     stealth: '攻撃するまで対象にできない',

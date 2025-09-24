@@ -9,6 +9,7 @@ import GameHeader from './game-board/GameHeader';
 import PlayerArea from './game-board/PlayerArea';
 import RecentLog from './game-board/RecentLog';
 import GameSidebar from './game-board/GameSidebar';
+import DestroyedCardGhost from './DestroyedCardGhost';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -26,6 +27,23 @@ interface GameBoardProps {
     isDying: boolean;
     damageAmount: number;
   };
+  currentAnimationState?: {
+    isAnimating: boolean;
+    animationType: 'attack' | 'damage' | 'destroy' | 'none';
+    sourceCardId?: string;
+    targetCardId?: string;
+    destroySnapshot?: {
+      id: string;
+      owner: string;
+      name: string;
+      attackTotal: number;
+      healthTotal: number;
+      currentHealth: number;
+      baseAttack: number;
+      baseHealth: number;
+      keywords: string[];
+    };
+  };
 }
 
 export default function GameBoard({ 
@@ -38,7 +56,8 @@ export default function GameBoard({
   gameSpeed,
   setGameSpeed,
   currentAttackAction,
-  getCardAnimationState
+  getCardAnimationState,
+  currentAnimationState
 }: GameBoardProps) {
   const [showLog, setShowLog] = useState(false);
   const [showDetailedLog, setShowDetailedLog] = useState(false);
@@ -91,7 +110,7 @@ export default function GameBoard({
       <div className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
           
-          <div className="lg:col-span-3 flex flex-col space-y-4">
+          <div className="lg:col-span-3 flex flex-col space-y-4 relative">
             <PlayerArea 
               player={displayState.players.player2} 
               energyLimit={currentEnergyLimit} 
@@ -107,6 +126,12 @@ export default function GameBoard({
               currentAttackAction={currentAttackAction}
               getCardAnimationState={getCardAnimationState}
             />
+            {/* 破壊アニメーション中のゴースト表示 (displayState側では既に除去済み) */}
+            {currentAnimationState?.animationType === 'destroy' && currentAnimationState.destroySnapshot && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <DestroyedCardGhost snapshot={currentAnimationState.destroySnapshot} />
+              </div>
+            )}
           </div>
 
           <GameSidebar
