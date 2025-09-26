@@ -11,7 +11,7 @@
 'use client';
 
 import React from 'react';
-import type { Card } from '@/types/game';
+import type { Card, FieldCard, CreatureCard } from '@/types/game';
 import { FACTION_COLORS, SIZE_CLASSES } from '@/lib/card-constants';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
 import { useCardState } from '@/hooks/useCardState';
@@ -19,11 +19,8 @@ import { useCardAnimation } from '@/hooks/useCardAnimation';
 import { useCardPortal } from '@/hooks/useCardPortal';
 import { getCardContainerClasses } from '@/lib/card-style-utils';
 import { CardTooltip } from './CardTooltip';
-import { CardHeader } from './parts/CardHeader';
-import { CardArt } from './parts/CardArt';
-import { CardBody } from './parts/CardBody';
-import { CardStats } from './parts/CardStats';
-import { CardOverlays } from './parts/CardOverlays';
+import { FACTION_ICONS, CARD_TYPE_JP } from '@/lib/card-constants';
+import { Sword, Heart } from 'lucide-react';
 
 interface CardComponentProps {
   card: Card;
@@ -39,6 +36,151 @@ interface CardComponentProps {
   isDying?: boolean;
 }
 
+
+// === 内部コンポーネント定義（旧parts/ディレクトリから統合） ===
+
+/**
+ * カードアート部分のコンポーネント
+ */
+const CardArt = ({ card, size, factionStyle }: {
+  card: Card;
+  size: 'small' | 'medium' | 'large';
+  factionStyle: { accent: string };
+}) => {
+  const FactionIcon = FACTION_ICONS[card.faction];
+  const iconSize = size === 'small' ? 20 : size === 'medium' ? 28 : 36;
+
+  return (
+    <div className="h-1/2 p-2 flex items-center justify-center">
+      <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 rounded border border-gray-600 flex items-center justify-center">
+        <FactionIcon size={iconSize} className={factionStyle.accent} />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * カード本体（名前・タイプ）のコンポーネント
+ */
+const CardBody = ({ card, sizeStyle, factionStyle }: {
+  card: Card;
+  sizeStyle: { text: string };
+  factionStyle: { accent: string };
+}) => {
+  return (
+    <div className="px-2 py-1">
+      <h3 className={`${sizeStyle.text} font-bold text-center leading-tight`}>
+        {card.name}
+      </h3>
+      <p className={`text-xs text-center ${factionStyle.accent} opacity-80`}>
+        {CARD_TYPE_JP[card.type]}
+      </p>
+    </div>
+  );
+};
+
+/**
+ * カードヘッダー（コスト・勢力アイコン）のコンポーネント
+ */
+const CardHeader = ({ card }: { card: Card }) => {
+  const FactionIcon = FACTION_ICONS[card.faction];
+
+  return (
+    <>
+      <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white z-10">
+        <span className="text-white text-xs font-bold">{card.cost}</span>
+      </div>
+      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center border-2 border-white z-10">
+        <FactionIcon size={14} className="text-white" />
+      </div>
+    </>
+  );
+};
+
+/**
+ * カードオーバーレイ（ターン数など）のコンポーネント
+ */
+const CardOverlays = ({ isFieldCard, fieldCard }: {
+  isFieldCard?: boolean;
+  fieldCard: FieldCard | null;
+}) => {
+  return (
+    <>
+      {isFieldCard && fieldCard && (
+        <div className="absolute top-2 left-2 text-xs text-gray-400">
+          T{fieldCard.summonTurn}
+        </div>
+      )}
+    </>
+  );
+};
+
+/**
+ * 攻撃力・体力の表示値を計算するヘルパー関数
+ */
+const calculateCardStats = (creatureCard: CreatureCard, fieldCard: FieldCard | null) => {
+  const attack = fieldCard ? creatureCard.attack + fieldCard.attackModifier : creatureCard.attack;
+  const health = fieldCard ? `${fieldCard.currentHealth}/${creatureCard.health + fieldCard.healthModifier}` : creatureCard.health;
+  return { attack, health };
+};
+
+/**
+ * CSS クラス名を構築するヘルパー関数
+ */
+const buildStatsClassNames = (sizeStyle: { stats: string }, isEnhanced: boolean, isDamaged: boolean, fieldCard: FieldCard | null) => {
+  const shouldHighlightAttack = isEnhanced && fieldCard?.attackModifier !== 0;
+  const attackClassName = `${sizeStyle.stats} font-bold ${shouldHighlightAttack ? 'text-green-400' : ''}`;
+  
+  let healthClassName;
+  if (isDamaged) {
+    healthClassName = `${sizeStyle.stats} font-bold text-red-400`;
+  } else {
+    const shouldHighlightHealth = isEnhanced && fieldCard?.healthModifier !== 0;
+    healthClassName = `${sizeStyle.stats} font-bold ${shouldHighlightHealth ? 'text-green-400' : ''}`;
+  }
+  
+  return { attackClassName, healthClassName };
+};
+
+/**
+ * カードステータス（攻撃力・体力）のコンポーネント
+ */
+const CardStats = ({ card, isFieldCard, sizeStyle, isEnhanced, isDamaged }: {
+  card: Card;
+  isFieldCard?: boolean;
+  sizeStyle: { stats: string };
+  isEnhanced: boolean;
+  isDamaged: boolean;
+}) => {
+  if (card.type !== 'creature') {
+    return null;
+  }
+
+  const creatureCard = card as CreatureCard;
+  const fieldCard = isFieldCard ? (card as FieldCard) : null;
+  
+  const { attack, health } = calculateCardStats(creatureCard, fieldCard);
+  const { attackClassName, healthClassName } = buildStatsClassNames(sizeStyle, isEnhanced, isDamaged, fieldCard);
+
+  return (
+    <div className="absolute bottom-2 left-2 right-2 flex justify-between">
+      <div className="flex items-center space-x-1">
+        <Sword size={12} className="text-orange-400" />
+        <span className={attackClassName}>
+          {attack}
+        </span>
+      </div>
+      <div className="flex items-center space-x-1">
+        <Heart size={12} className="text-red-400" />
+        <span className={healthClassName}>
+          {health}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// === メインコンポーネント ===
 
 export default function CardComponent({
   card,
