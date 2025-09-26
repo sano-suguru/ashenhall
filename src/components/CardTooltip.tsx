@@ -2,7 +2,8 @@
 
 import React from 'react';
 import type { Card, FieldCard } from '@/types/game';
-import { useCreatureStatsData } from '@/hooks/useCreatureStatsData';
+// 旧useCreatureStatsData.tsから統合
+import { useMemo } from 'react';
 import { FACTION_COLORS } from '@/lib/card-constants';
 import { getEffectText } from '@/lib/card-text-utils';
 import { Sword, Heart } from 'lucide-react';
@@ -12,6 +13,52 @@ interface TooltipProps {
   isFieldCard: boolean;
   fieldCard: FieldCard | null;
   tooltipStyle: React.CSSProperties;
+}
+
+// === 統合されたHook実装（旧useCreatureStatsData.tsから統合） ===
+
+interface CreatureStatsData {
+  attackValue: number;
+  healthValue: string | number;
+  attackModifier: number;
+  healthModifier: number;
+  hasModifiers: boolean;
+}
+
+function useCreatureStatsData(
+  card: Card, 
+  isFieldCard: boolean, 
+  fieldCard: FieldCard | null
+): CreatureStatsData | null {
+  return useMemo(() => {
+    if (card.type !== 'creature') {
+      return null;
+    }
+    
+    const hasFieldModifiers = isFieldCard && fieldCard;
+    
+    const attackValue = hasFieldModifiers 
+      ? card.attack + fieldCard.attackModifier 
+      : card.attack;
+      
+    const healthValue = hasFieldModifiers 
+      ? `${fieldCard.currentHealth}/${card.health + fieldCard.healthModifier}` 
+      : card.health;
+      
+    const attackModifier = hasFieldModifiers ? fieldCard.attackModifier : 0;
+    const healthModifier = hasFieldModifiers ? fieldCard.healthModifier : 0;
+    
+    const hasModifiers = Boolean(hasFieldModifiers && 
+      (fieldCard!.attackModifier !== 0 || fieldCard!.healthModifier !== 0));
+    
+    return {
+      attackValue,
+      healthValue,
+      attackModifier,
+      healthModifier,
+      hasModifiers
+    };
+  }, [card, isFieldCard, fieldCard]);
 }
 
 // === 統合されたTooltip実装（tooltip-parts統合版） ===

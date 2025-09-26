@@ -17,7 +17,7 @@ import { useCardTooltip } from '@/hooks/useCardTooltip';
 import { useCardState } from '@/hooks/useCardState';
 import { useCardAnimation } from '@/hooks/useCardAnimation';
 import { useCardPortal } from '@/hooks/useCardPortal';
-import { getCardContainerClasses } from '@/lib/card-style-utils';
+import { FACTION_HOVER_CLASSES } from '@/lib/card-constants';
 import { CardTooltip } from './CardTooltip';
 import { FACTION_ICONS, CARD_TYPE_JP } from '@/lib/card-constants';
 import { Sword, Heart } from 'lucide-react';
@@ -36,6 +36,59 @@ interface CardComponentProps {
   isDying?: boolean;
 }
 
+
+// === 内部ユーティリティ関数（旧card-style-utils.tsから統合） ===
+
+/**
+ * カードのホバー効果クラスを取得する
+ */
+const getCardHoverClasses = (faction: keyof typeof FACTION_COLORS): string => {
+  return FACTION_HOVER_CLASSES[faction] ?? '';
+};
+
+/**
+ * カードコンテナのCSSクラスを生成する
+ */
+const getCardContainerClasses = ({
+  factionStyle,
+  isOpponent,
+  faction,
+}: {
+  factionStyle: { border: string; bg: string };
+  isOpponent: boolean;
+  faction: keyof typeof FACTION_COLORS;
+}): string => {
+  const baseClasses = [
+    'w-full',
+    'h-full',
+    'rounded-lg',
+    'border-2',
+    factionStyle.border,
+    'bg-gradient-to-b',
+    factionStyle.bg,
+    'text-white',
+    'shadow-lg',
+    'transition-all',
+    'duration-300',
+    'group-hover:scale-105',
+    'group-hover:shadow-xl',
+  ];
+
+  // 状態による追加クラス
+  const conditionalClasses = [];
+  
+  if (isOpponent) {
+    conditionalClasses.push('opacity-90');
+  } else {
+    conditionalClasses.push('opacity-100');
+  }
+
+  // 全カードにホバー効果を追加（手札・場の両方）
+  const hoverClasses = getCardHoverClasses(faction);
+  conditionalClasses.push(hoverClasses);
+
+  return [...baseClasses, ...conditionalClasses].join(' ');
+};
 
 // === 内部コンポーネント定義（旧parts/ディレクトリから統合） ===
 
