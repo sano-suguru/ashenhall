@@ -26,7 +26,9 @@ import {
   processDeployPhase,
   processEndPhase,
 } from "./phase-processors.ts";
-import { processBattlePhase, processAttackPhase } from "./battle-system.ts";
+// 旧battle-system.tsから統合
+import { advancePhase } from "./game-state";
+import { applyPassiveEffects } from "./card-effects";
 import { createBattleIterator } from "./battle-iterator.ts";
 import { assertNoLingeringDeadCreatures } from './invariants';
 
@@ -34,6 +36,41 @@ import { assertNoLingeringDeadCreatures } from './invariants';
  * Re-export createInitialGameState from game-state module
  */
 export const createInitialGameState = createInitialGameStateImpl;
+
+// === 統合された戦闘システム関数（旧battle-system.tsから） ===
+
+/**
+ * 戦闘フェーズの処理（battle_attackフェーズへの移行）
+ */
+function processBattlePhase(state: GameState): void {
+  applyPassiveEffects(state);
+  
+  // battle_attack フェーズに直接移行（リスト作成不要）
+  state.phase = 'battle_attack';
+}
+
+/**
+ * 攻撃フェーズの処理（動的攻撃者チェック）
+ */
+function processAttackPhase(state: GameState): void {
+  // BattleIterator 主体に移行後はここでフェーズ終了条件のみ判定
+  if (state.players.player1.life <= 0 || state.players.player2.life <= 0) {
+    advancePhase(state);
+    return;
+  }
+  const currentPlayer = state.players[state.currentPlayer];
+  const hasAttacker = currentPlayer.field.some(card =>
+    card.currentHealth > 0 &&
+    ((!card.isSilenced && card.keywords.includes("rush")) || card.summonTurn < state.turnNumber) &&
+    !card.hasAttacked &&
+    !card.statusEffects.some(e => e.type === 'stun')
+  );
+  if (!hasAttacker) {
+    advancePhase(state);
+  }
+}
+
+// === メインコア関数 ===
 
 /**
  * ゲーム状態を1ステップ進める

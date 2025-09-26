@@ -4,7 +4,7 @@ import path from 'path';
 const scriptPath = process.argv[1] || '';
 const scriptDir = scriptPath ? path.dirname(scriptPath) : process.cwd();
 
-const INPUT = path.resolve(scriptDir, '../src/lib/game-engine/animation-durations.ts');
+const INPUT = path.resolve(scriptDir, '../src/lib/animation/animation-tasks.ts');
 const OUTPUT_DIR = path.resolve(scriptDir, '../src/styles/generated');
 const OUTPUT = path.join(OUTPUT_DIR, 'animation-durations.css');
 
