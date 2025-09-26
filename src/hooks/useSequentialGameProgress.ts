@@ -214,7 +214,7 @@ export const useSequentialGameProgress = (config: SequentialGameProgressConfig):
           isAttacking: false,
             isBeingAttacked: targetCardId === cardId,
             isDying: false,
-            damageAmount: processor.getCurrentDamageAmount(cardId),
+            damageAmount: processor.getCurrentDamageAmount(),
         };
       case 'destroy':
         return {

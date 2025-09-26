@@ -2,10 +2,8 @@ import type { GameAction } from '@/types/game';
 import type { ValueChange } from '@/types/game-state';
 
 export type AnimationTaskKind =
-  | 'attack_windup'
-  | 'attack_strike'
-  | 'attack_retaliate'
-  | 'impact'
+  | 'attack'
+  | 'damage'
   | 'destroy';
 
 export interface AnimationTask {
@@ -52,60 +50,166 @@ export const DefaultAnimationDurations: AnimationDurationsSpec = {
 
 function ensureMin(d: number, spec: AnimationDurationsSpec): number { return Math.max(spec.MIN, d); }
 
-let taskCounter = 0;
-function nextId(base: string, seq: number) { return `${seq}-${base}-${taskCounter++}`; }
-
 /**
  * 新規アクション配列からアニメーションタスク列を生成（純関数）
  */
-import type { EventBatch } from '@/types/event-batch';
 
-export function buildAnimationTasksFromBatches(batches: EventBatch[], spec: AnimationDurationsSpec = DefaultAnimationDurations): AnimationTask[] {
+// === 共通ヘルパー関数 ===
+
+/** AnimationTask生成の共通処理 */
+function createAnimationTask(params: {
+  id: string;
+  sequence: number;
+  kind: AnimationTaskKind;
+  batchId: string;
+  origin: 'attack' | 'effect' | 'other';
+  duration: number;
+  attackerId?: string;
+  targetId?: string;
+  damage?: number;
+  snapshot?: AnimationTask['snapshot'];
+}): AnimationTask {
+  return {
+    id: params.id,
+    sequence: params.sequence,
+    kind: params.kind,
+    batchId: params.batchId,
+    origin: params.origin,
+    attackerId: params.attackerId,
+    targetId: params.targetId,
+    damage: params.damage,
+    snapshot: params.snapshot,
+    duration: params.duration,
+    blocking: true,
+  };
+}
+
+/** ValueChangeからダメージ値を計算 */
+function calculateDamageFromValueChange(change: ValueChange, fallbackValue: number): number {
+  const hp = change.health;
+  if (hp && typeof hp.before === 'number' && typeof hp.after === 'number') {
+    return Math.max(0, hp.before - hp.after);
+  }
+  return fallbackValue;
+}
+
+// === アクションタイプ別処理関数 ===
+
+/** combat_stageアクションの処理 */
+function processCombatStageAction(
+  action: Extract<GameAction, { type: 'combat_stage' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  const stage = action.data.stage;
+  if (stage === 'attack_declare' || stage === 'damage_defender' || stage === 'damage_attacker') {
+    return [createAnimationTask({
+      id: context.nextId('attack', action.sequence),
+      sequence: action.sequence,
+      kind: 'attack',
+      attackerId: action.data.attackerId,
+      targetId: action.data.targetId,
+      duration: ensureMin(context.spec.ATTACK_WINDUP, context.spec),
+      batchId: context.batchId,
+      origin: 'attack'
+    })];
+  }
+  return [];
+}
+
+/** card_attackアクションの処理 */
+function processCardAttackAction(
+  action: Extract<GameAction, { type: 'card_attack' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  return [createAnimationTask({
+    id: context.nextId('damage', action.sequence),
+    sequence: action.sequence,
+    kind: 'damage',
+    attackerId: action.data.attackerCardId,
+    targetId: action.data.targetId,
+    damage: action.data.damage,
+    duration: ensureMin(context.spec.IMPACT, context.spec),
+    batchId: context.batchId,
+    origin: 'attack'
+  })];
+}
+
+/** effect_triggerアクションの処理 */
+function processEffectTriggerAction(
+  action: Extract<GameAction, { type: 'effect_trigger' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  if (action.data.effectType !== 'damage') return [];
+  
+  const tasks: AnimationTask[] = [];
+  const attackerId = typeof action.data.sourceCardId === 'string' ? action.data.sourceCardId : undefined;
+  
+  for (const [targetId, change] of Object.entries(action.data.targets)) {
+    if (targetId.startsWith('player')) continue;
+    
+    const damage = calculateDamageFromValueChange(change as ValueChange, action.data.effectValue);
+    tasks.push(createAnimationTask({
+      id: context.nextId('damage', action.sequence),
+      sequence: action.sequence,
+      kind: 'damage',
+      attackerId,
+      targetId,
+      damage,
+      duration: ensureMin(context.spec.IMPACT, context.spec),
+      batchId: context.batchId,
+      origin: 'effect'
+    }));
+  }
+  
+  return tasks;
+}
+
+/** creature_destroyedアクションの処理 */
+function processCreatureDestroyedAction(
+  action: Extract<GameAction, { type: 'creature_destroyed' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  return [createAnimationTask({
+    id: context.nextId('destroy', action.sequence),
+    sequence: action.sequence,
+    kind: 'destroy',
+    targetId: action.data.destroyedCardId,
+    snapshot: action.data.cardSnapshot,
+    duration: ensureMin(context.spec.DESTROY, context.spec),
+    batchId: context.batchId,
+    origin: 'other'
+  })];
+}
+
+/**
+ * GameActionから直接AnimationTaskを生成（簡素化版）
+ */
+export function buildAnimationTasksFromActions(actions: GameAction[], spec: AnimationDurationsSpec = DefaultAnimationDurations): AnimationTask[] {
   const result: AnimationTask[] = [];
-  let taskCounter = 0;
-  function nextId(base: string, seq: number) { return `${seq}-${base}-${taskCounter++}`; }
-  for (const b of batches) {
-    for (const a of b.actions) {
-      switch (a.type) {
-        case 'combat_stage': {
-          const stage = a.data.stage;
-          if (stage === 'attack_declare') {
-            result.push({ id: nextId('windup', a.sequence), sequence: a.sequence, kind: 'attack_windup', attackerId: a.data.attackerId, targetId: a.data.targetId, duration: ensureMin(spec.ATTACK_WINDUP, spec), blocking: true, batchId: b.id, origin: 'attack' });
-          } else if (stage === 'damage_defender') {
-            result.push({ id: nextId('strike', a.sequence), sequence: a.sequence, kind: 'attack_strike', attackerId: a.data.attackerId, targetId: a.data.targetId, duration: ensureMin(spec.ATTACK_STRIKE, spec), blocking: true, batchId: b.id, origin: 'attack' });
-          } else if (stage === 'damage_attacker') {
-            result.push({ id: nextId('retaliate', a.sequence), sequence: a.sequence, kind: 'attack_retaliate', attackerId: a.data.attackerId, targetId: a.data.targetId, duration: ensureMin(spec.ATTACK_RETALIATE, spec), blocking: true, batchId: b.id, origin: 'attack' });
-          }
-          break;
-        }
-        case 'card_attack': {
-            result.push({ id: nextId('impact', a.sequence), sequence: a.sequence, kind: 'impact', attackerId: a.data.attackerCardId, targetId: a.data.targetId, damage: a.data.damage, duration: ensureMin(spec.IMPACT, spec), blocking: true, batchId: b.id, origin: 'attack' });
-          break;
-        }
-        case 'effect_trigger': {
-          if (a.data.effectType === 'damage') {
-            const attackerId = typeof a.data.sourceCardId === 'string' ? a.data.sourceCardId : undefined;
-            for (const [targetId, change] of Object.entries(a.data.targets)) {
-              if (targetId.startsWith('player')) continue;
-              const vc = change as ValueChange;
-              const hp = vc.health;
-              let dmg = a.data.effectValue;
-              if (hp && typeof hp.before === 'number' && typeof hp.after === 'number') {
-                dmg = Math.max(0, hp.before - hp.after);
-              }
-              result.push({ id: nextId('impact', a.sequence), sequence: a.sequence, kind: 'impact', attackerId, targetId, damage: dmg, duration: ensureMin(spec.IMPACT, spec), blocking: true, batchId: b.id, origin: b.kind === 'effect_damage' ? 'effect' : 'other' });
-            }
-          }
-          break;
-        }
-        case 'creature_destroyed': {
-          result.push({ id: nextId('destroy', a.sequence), sequence: a.sequence, kind: 'destroy', targetId: a.data.destroyedCardId, snapshot: a.data.cardSnapshot, duration: ensureMin(spec.DESTROY, spec), blocking: true, batchId: b.id, origin: 'other' });
-          break;
-        }
-        default:
-          break;
-      }
+  let localTaskCounter = 0;
+  const nextIdLocal = (base: string, seq: number) => `${seq}-${base}-${localTaskCounter++}`;
+  
+  for (const action of actions) {
+    const batchId = `direct-${action.sequence}`;
+    const context = { nextId: nextIdLocal, batchId, spec };
+    
+    switch (action.type) {
+      case 'combat_stage':
+        result.push(...processCombatStageAction(action, context));
+        break;
+      case 'card_attack':
+        result.push(...processCardAttackAction(action, context));
+        break;
+      case 'effect_trigger':
+        result.push(...processEffectTriggerAction(action, context));
+        break;
+      case 'creature_destroyed':
+        result.push(...processCreatureDestroyedAction(action, context));
+        break;
+      default:
+        break;
     }
   }
-  return result.sort((a,b)=> a.sequence - b.sequence || a.id.localeCompare(b.id));
+  
+  return result.sort((a, b) => a.sequence - b.sequence || a.id.localeCompare(b.id));
 }

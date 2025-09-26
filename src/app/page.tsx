@@ -19,7 +19,6 @@ import GameSetup from '@/components/GameSetup';
 import GameBoard from '@/components/GameBoard';
 import { useGameControls } from '@/hooks/useGameControls';
 import { useLocalStats } from '@/hooks/useLocalStats';
-import { useGameProgress } from '@/hooks/useGameProgress';
 import { useSequentialGameProgress } from '@/hooks/useSequentialGameProgress';
 import { Zap, AlertCircle } from 'lucide-react';
 
@@ -51,13 +50,8 @@ export default function Home() {
     localStats.updateWithGameResult
   ]);
   
-  // 両方のフックを常に呼び出し（React Hooks規則準拠）
-  const sequentialGameProgress = useSequentialGameProgress(gameProgressConfig);
-  const normalGameProgress = useGameProgress(gameProgressConfig);
-  
-  // テスト用: シーケンシャル版を選択（従来版との比較用）
-  const USE_SEQUENTIAL = true;
-  const gameProgress = USE_SEQUENTIAL ? sequentialGameProgress : normalGameProgress;
+  // useSequentialGameProgressに統一（Phase C: 状態管理統一完了）
+  const gameProgress = useSequentialGameProgress(gameProgressConfig);
 
   // AIデッキを生成する関数（勢力のカードから定数で定義された枚数を選択）
   const generateAIDeck = (faction: Faction): Card[] => {

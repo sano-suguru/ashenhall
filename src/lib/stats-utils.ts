@@ -1,7 +1,26 @@
 import type { GameState, GameAction, GameResult, LocalStats } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getTurnNumberForAction } from './game-state-utils';
-import { determineTurnSignificance as newDetermineTurnSignificance, type TurnContext } from '@/lib/battle-analysis';
+// battle-analysis統合版（簡易実装）
+interface TurnContext {
+  turnNumber: number;
+  player1Damage: number;
+  player2Damage: number;
+  player1LifeAfter: number;
+  player2LifeAfter: number;
+  actions: GameAction[];
+}
+
+function determineTurnSignificance(context: TurnContext): string | null {
+  const totalDamage = context.player1Damage + context.player2Damage;
+  
+  if (totalDamage >= 8) return '大ダメージターン';
+  if (totalDamage >= 4) return '中ダメージターン';
+  if (context.player1LifeAfter <= 5 || context.player2LifeAfter <= 5) return '危険ライフ';
+  if (context.turnNumber <= 3 && totalDamage > 0) return '初回攻撃';
+  
+  return null;
+}
 
 const STATS_STORAGE_KEY = 'ashenhall_local_stats';
 
@@ -128,7 +147,7 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
         actions,
       };
 
-      const significance = newDetermineTurnSignificance(turnContext);
+      const significance = determineTurnSignificance(turnContext);
 
       if (player1Damage > 0 || player2Damage > 0 || significance) {
         summaries.push({

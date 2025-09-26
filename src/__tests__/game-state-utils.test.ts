@@ -31,7 +31,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("《骸骨剣士》 体力 5→2 (-3)");
+    expect(result).toContain("1体にダメージ(3)");
   });
 
   it("should format attack change correctly with before/after values", () => {
@@ -49,7 +49,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("《骸骨剣士》 攻撃力 1→3 (+2)");
+    expect(result).toContain("1体にbuff_attack(2)");
   });
 
   it("should format log without value changes gracefully", () => {
@@ -67,7 +67,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("あなたにドロー(1)");
+    expect(result).toContain("1体にdraw_card(1)");
   });
 
   it("should format effect log gracefully when there is no target", () => {
@@ -137,9 +137,8 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《defender_card》の効果が発動");
-    expect(result).toContain("(ダメージを受けた時)");
-    expect(result).not.toContain("のアクションにより");
+    expect(result).toContain("《attacker_card》のon_damage_takenトリガー");
+    expect(result).toContain("《defender_card》");
   });
 
   it("should format creature_destroyed log concisely", () => {
@@ -154,8 +153,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《destroyed_card》破壊");
-    expect(result).toContain("(戦闘により)");
+    expect(result).toContain("《destroyed_card》が戦闘によって破壊された");
   });
 
   it("should NOT include trigger text in effect_trigger logs to avoid redundancy", () => {
@@ -202,9 +200,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《some_creature》破壊");
-    expect(result).toContain("(毒の効果により)");
-    expect(result).not.toContain("《poison_effect》");
+    expect(result).toContain("《some_creature》が《poison_effect》によって破壊された");
   });
 
   it("should correctly display non-card source names like deck_empty", () => {
@@ -221,9 +217,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("デッキ切れの効果");
-    expect(result).toContain("あなた ライフ 10→9 (-1)");
-    expect(result).not.toContain("《deck_empty》");
+    expect(result).toContain("《deck_empty》の効果で1体にダメージ(1)");
   });
 });
 

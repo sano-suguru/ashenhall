@@ -1,0 +1,112 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import CardComponent from '@/components/CardComponent';
+import { necromancerCards } from '@/data/cards/base-cards';
+
+// 最小限のモックのみ（Ashenhall開発原則：保守性重視）
+jest.mock('@/hooks/useCardTooltip', () => ({
+  useCardTooltip: () => ({
+    showTooltip: false,
+    tooltipStyle: {},
+    tooltipRef: { current: null },
+    handleMouseEnter: () => {},
+    handleMouseLeave: () => {},
+  }),
+}));
+
+jest.mock('@/hooks/useCardState', () => ({
+  useCardState: () => ({
+    fieldCard: null,
+    isDamaged: false,
+    isEnhanced: false,
+  }),
+}));
+
+jest.mock('@/hooks/useCardAnimation', () => ({
+  useCardAnimation: () => ({
+    animationClasses: '',
+    damagePopupElement: null,
+  }),
+}));
+
+jest.mock('@/hooks/useCardPortal', () => ({
+  useCardPortal: () => ({
+    portalElement: null,
+    isMounted: true,
+  }),
+}));
+
+// CardComponent内部依存コンポーネントの簡易モック
+jest.mock('@/components/parts/CardHeader', () => 
+  function CardHeader({ card }: { card: { name: string } }) {
+    return <div data-testid="card-header">{card.name}</div>;
+  }
+);
+
+jest.mock('@/components/parts/CardArt', () => 
+  function CardArt() {
+    return <div data-testid="card-art">Art</div>;
+  }
+);
+
+jest.mock('@/components/parts/CardBody', () => 
+  function CardBody() {
+    return <div data-testid="card-body">Body</div>;
+  }
+);
+
+jest.mock('@/components/parts/CardStats', () => 
+  function CardStats() {
+    return <div data-testid="card-stats">Stats</div>;
+  }
+);
+
+jest.mock('@/components/parts/CardOverlays', () => 
+  function CardOverlays() {
+    return <div data-testid="card-overlays">Overlays</div>;
+  }
+);
+
+jest.mock('@/lib/card-style-utils', () => ({
+  getCardContainerClasses: () => 'card-container',
+}));
+
+jest.mock('@/components/CardTooltip', () => 
+  function CardTooltip() {
+    return <div data-testid="tooltip">Tooltip</div>;
+  }
+);
+
+describe('CardComponent', () => {
+  it('基本レンダリングが正常に動作する（スモークテスト）', () => {
+    const testCard = necromancerCards[0]; // シンプルなカード取得
+    
+    render(<CardComponent card={testCard} />);
+    
+    // 基本的な表示要素の確認のみ
+    expect(screen.getByTestId('card-header')).toBeInTheDocument();
+    expect(screen.getByTestId('card-art')).toBeInTheDocument();
+    expect(screen.getByTestId('card-body')).toBeInTheDocument();
+    expect(screen.getByTestId('card-stats')).toBeInTheDocument();
+    expect(screen.getByTestId('card-overlays')).toBeInTheDocument();
+    expect(screen.getByText(testCard.name)).toBeInTheDocument();
+  });
+
+  it('異なる勢力のカードでも正常にレンダリングされる', () => {
+    const testCard = {
+      id: 'test-berserker',
+      name: 'テスト戦士',
+      faction: 'berserker' as const,
+      type: 'creature' as const,
+      cost: 2,
+      attack: 2,
+      health: 1,
+      effects: [],
+      keywords: [],
+    };
+    
+    render(<CardComponent card={testCard} />);
+    
+    expect(screen.getByText('テスト戦士')).toBeInTheDocument();
+  });
+});

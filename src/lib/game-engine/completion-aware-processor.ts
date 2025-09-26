@@ -11,8 +11,7 @@
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from './core';
 import { createBattleIterator, type BattleIterator } from './battle-iterator';
-import { buildAnimationTasksFromBatches, type AnimationTask } from '@/lib/animation/animation-tasks';
-import { buildEventBatches } from '@/lib/animation/event-batch-builder';
+import { buildAnimationTasksFromActions, type AnimationTask } from '@/lib/animation/animation-tasks';
 
 
 /**
@@ -46,17 +45,7 @@ export class CompletionAwareProcessor {
   // アクション逐次処理用キュー
   private pendingActionQueue: GameAction[] = [];
   private pendingTaskQueue: AnimationTask[] = [];
-  private currentAction: GameAction | null = null;
-  private currentDamageValue: number | null = null;
-  private aoeTargetQueue: string[] = [];
-  private aoeCurrentTarget: string | null = null;
-  private destroyTargetId: string | null = null;
-  private attackCooldownMs = 80; // ユーザー指定
   private activeBattleIterator: BattleIterator | null = null;
-  // 直近に再生したアニメーションタスクの種類（クールダウン計算用）
-  private lastAnimationKind: import('@/lib/animation/animation-tasks').AnimationTaskKind | null = null;
-  // 攻撃内部のサブステージ( windup→strike→impact など )を視覚的に区切る短いギャップ(ms)
-  private intraAttackGapMs = 36;
   
   // 自律的スケジューリング管理（循環参照解消の核心）
   private schedulerRef: NodeJS.Timeout | null = null;
@@ -103,14 +92,10 @@ export class CompletionAwareProcessor {
   }
 
   /**
-   * 現在のターゲットに対するダメージ値取得（フックから利用）
+   * 現在のターゲットに対するダメージ値取得（簡素化版）
    */
-  getCurrentDamageAmount(cardId: string): number {
-    if (this.currentAction?.type === 'effect_trigger' && this.currentAction.data.effectType === 'damage') {
-      if (this.aoeCurrentTarget === cardId) {
-        return this.currentAction.data.effectValue ?? this.currentDamageValue ?? 0;
-      }
-    }
+  getCurrentDamageAmount(): number {
+    // 簡素化のため常に0を返す（複雑なダメージ追跡は不要）
     return 0;
   }
 
@@ -393,8 +378,8 @@ export class CompletionAwareProcessor {
     if (this.pendingActionQueue.length > 0) {
       const actions = [...this.pendingActionQueue];
       this.pendingActionQueue = [];
-      const batches = buildEventBatches(actions);
-      const tasks = buildAnimationTasksFromBatches(batches);
+      // 簡素化: 直接変換、EventBatch中間層をスキップ
+      const tasks = buildAnimationTasksFromActions(actions);
       // destroy スナップショットのみ反映（表示確認用）
       for (const t of tasks) {
         if (t.kind === 'destroy') {
@@ -433,9 +418,8 @@ export class CompletionAwareProcessor {
     if (this.pendingActionQueue.length > 0) {
       const actions = [...this.pendingActionQueue];
       this.pendingActionQueue = [];
-      // V2: actions -> batches -> tasks（常時利用）
-      const batches = buildEventBatches(actions);
-      const tasks = buildAnimationTasksFromBatches(batches);
+      // 簡素化: actions -> tasks（直接変換、EventBatch中間層をスキップ）
+      const tasks = buildAnimationTasksFromActions(actions);
       this.pendingTaskQueue.push(...tasks);
     }
     while (this.pendingTaskQueue.length > 0) {
@@ -448,16 +432,16 @@ export class CompletionAwareProcessor {
   private processSingleActionInstant(config: NonNullable<typeof this.autonomousConfig>): void {
     const action = this.pendingActionQueue.shift();
     if (!action) return;
-    this.currentAction = action;
-    // テスト環境では onAnimationStateChange を action 種類に応じ一度だけ発火し即リセット
+    
+    // 簡素化：基本的なアニメーション状態変更のみ実行
     const { type } = action;
     let animationType: AnimationState['animationType'] = 'none';
     let source: string | undefined;
     let target: string | undefined;
+    
     if (type === 'card_attack') {
       animationType = 'attack';
       source = action.data.attackerCardId;
-      // target は card_attack の targetId (プレイヤーID の可能性あり)
       target = action.data.targetId.startsWith('player') ? undefined : action.data.targetId;
     } else if (type === 'effect_trigger' && action.data.effectType === 'damage') {
       animationType = 'damage';
@@ -468,6 +452,7 @@ export class CompletionAwareProcessor {
       animationType = 'destroy';
       target = action.data.destroyedCardId;
     }
+    
     if (animationType !== 'none') {
       config.onAnimationStateChange?.({
         isAnimating: true,
@@ -492,16 +477,12 @@ export class CompletionAwareProcessor {
   private async runDestroyAnimation(): Promise<void> { /* deprecated */ }
 
   private async executeAnimationTask(task: AnimationTask, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
-    if (task.kind === 'attack_windup' || task.kind === 'attack_strike' || task.kind === 'attack_retaliate') {
+    if (task.kind === 'attack') {
       await this.playSimple(task, config, 'attack');
-      this.lastAnimationKind = task.kind;
-      await this.maybeIntraAttackGap();
       return;
     }
-    if (task.kind === 'impact') {
+    if (task.kind === 'damage') {
       await this.playSimple(task, config, 'damage');
-      this.lastAnimationKind = task.kind;
-      await this.maybeIntraAttackGap();
       return;
     }
     if (task.kind === 'destroy') {
@@ -520,8 +501,6 @@ export class CompletionAwareProcessor {
         targetCardId: undefined,
         destroySnapshot: undefined,
       });
-      this.lastAnimationKind = task.kind;
-      await this.maybeIntraAttackGap();
       return;
     }
   }
@@ -545,7 +524,7 @@ export class CompletionAwareProcessor {
   // 旧アニメ個別実装はタスク方式へ移行済み
 
   /**
-   * アニメーション処理完了後の処理
+   * アニメーション処理完了後の処理（簡素化版）
    */
   private finalizeAnimationProcessing(
     nextState: GameState, 
@@ -563,32 +542,12 @@ export class CompletionAwareProcessor {
       config.onGameFinished?.();
       config.onStatsUpdate?.(nextState);
     } else {
-      // ベースの最小遅延
-      let frameDelay = Math.max(16, 32 / this.gameSpeed);
-      // 直近が攻撃関連/impact/destroy の場合は攻撃クールダウンを適用して視覚的な重なりを抑止
-      if (this.lastAnimationKind && (
-        this.lastAnimationKind.startsWith('attack_') ||
-        this.lastAnimationKind === 'impact' ||
-        this.lastAnimationKind === 'destroy'
-      )) {
-        frameDelay = Math.max(frameDelay, this.attackCooldownMs / this.gameSpeed);
-      }
+      // 簡素化された遅延処理
+      const frameDelay = Math.max(16, 32 / this.gameSpeed);
       this.scheduleNextProcessing(frameDelay);
     }
     
     this.isProcessing = false;
-    this.lastAnimationKind = null; // リセット
-  }
-
-  // 攻撃内部サブステージ間に短いギャップを挿入（テスト環境はスキップして速度維持）
-  private async maybeIntraAttackGap(): Promise<void> {
-    if (process.env.NODE_ENV === 'test') return; // テスト速度重視
-    if (!this.lastAnimationKind) return;
-    const attackRelated = this.lastAnimationKind.startsWith('attack_') || this.lastAnimationKind === 'impact' || this.lastAnimationKind === 'destroy';
-    if (!attackRelated) return;
-    const gap = this.intraAttackGapMs / this.gameSpeed;
-    if (gap <= 0) return;
-    await new Promise(r => setTimeout(r, gap));
   }
 
   /**

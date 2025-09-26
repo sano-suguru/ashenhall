@@ -147,7 +147,6 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
       throw new Error(fullMessage);
     } else {
       // 本番環境: 取り急ぎログのみ（将来フラグ化可）
-      // eslint-disable-next-line no-console
       console.error(fullMessage);
     }
   }
