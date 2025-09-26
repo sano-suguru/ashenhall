@@ -20,7 +20,7 @@ import {
 import { decodeDeck } from '@/lib/deck-sharing';
 import { getCardById } from '@/data/cards/base-cards';
 import { sampleDecks } from '@/data/decks/sample-decks';
-import { FACTION_DATA } from './GameSetupConstants';
+import { FACTION_DATA } from '../GameSetup';
 
 interface GameSetupContextType {
   // State

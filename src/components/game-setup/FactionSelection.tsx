@@ -5,7 +5,7 @@
 
 'use client';
 
-import { FACTION_DATA, getSelectionCardStyle } from './GameSetupConstants';
+import { FACTION_DATA, getSelectionCardStyle } from '../GameSetup';
 import type { Faction } from '@/types/game';
 
 interface FactionSelectionProps {

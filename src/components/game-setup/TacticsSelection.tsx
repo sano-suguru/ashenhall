@@ -5,7 +5,7 @@
 
 'use client';
 
-import { TACTICS_DATA, getSelectionCardStyle } from './GameSetupConstants';
+import { TACTICS_DATA, getSelectionCardStyle } from '../GameSetup';
 import type { TacticsType } from '@/types/game';
 
 interface TacticsSelectionProps {

@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import type { Faction, DeckCollection, CustomDeck } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { validateDeck } from '@/lib/deck-utils';
-import { FACTION_DATA } from './GameSetupConstants';
+import { FACTION_DATA } from '../GameSetup';
 import { PlusCircle, Edit } from 'lucide-react';
 
 interface DeckManagementProps {
