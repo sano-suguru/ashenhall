@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { executeDeckSearchEffect } from "@/lib/game-engine/effects/status-effects";
+import { executeDeckSearchEffect } from "@/lib/game-engine/effects/specialized-effects";
 import { createInitialGameState } from "@/lib/game-engine/core";
 import { necromancerCards, mageCards, knightCards } from "@/data/cards/base-cards";
 import type { GameState, FilterRule, Keyword } from "@/types/game";

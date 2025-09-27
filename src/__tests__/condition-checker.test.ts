@@ -2,7 +2,7 @@
  * 条件チェッカーのテスト
  */
 
-import { checkEffectCondition, checkAllConditions } from '../lib/game-engine/core/condition-checker';
+import { checkEffectCondition, checkAllConditions } from '../lib/game-engine/core/game-logic-utils';
 import { createInitialGameState } from '../lib/game-engine/core';
 import { getCardById } from '../data/cards/base-cards';
 import type { GameState, CreatureCard } from '../types/game';

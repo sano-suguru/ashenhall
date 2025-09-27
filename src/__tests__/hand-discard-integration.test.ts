@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { executeHandDiscardEffect } from "@/lib/game-engine/effects/special-effects";
+import { executeHandDiscardEffect } from "@/lib/game-engine/effects/core-effects";
 import { createInitialGameState } from "@/lib/game-engine/core";
 import { necromancerCards, mageCards, knightCards } from "@/data/cards/base-cards";
 import type { GameState, FilterRule, Keyword } from "@/types/game";

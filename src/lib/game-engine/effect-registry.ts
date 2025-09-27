@@ -15,38 +15,31 @@ import type {
   EffectAction,
 } from "@/types/game";
 import { SeededRandom } from "./seeded-random";
-import { getOpponentId } from "./effects/effect-types";
-
-// 効果実行関数のインポート
+// 効果実行関数のインポート - 統合版
 import {
+  getOpponentId,
   executeDamageEffect,
   executeHealEffect,
-} from "./effects/base-effects";
-import {
   executeBuffAttackEffect,
   executeBuffHealthEffect,
   executeDebuffAttackEffect,
   executeDebuffHealthEffect,
-} from "./effects/modifier-effects";
+  executeDestroyDeckTopEffect,
+  executeSwapAttackHealthEffect,
+  executeHandDiscardEffect,
+  executeDestroyAllCreaturesEffect,
+  executeBanishEffect,
+} from "./effects/core-effects";
 import {
   executeSummonEffect,
   executeResurrectEffect,
-} from "./effects/summon-effects";
-import {
   executeSilenceEffect,
   executeReadyEffect,
   executeStunEffect,
   executeDrawCardEffect,
   executeApplyBrandEffect,
   executeDeckSearchEffect,
-} from "./effects/status-effects";
-import {
-  executeDestroyDeckTopEffect,
-  executeSwapAttackHealthEffect,
-  executeHandDiscardEffect,
-  executeDestroyAllCreaturesEffect,
-  executeBanishEffect,
-} from "./effects/special-effects";
+} from "./effects/specialized-effects";
 import {
   getBrandedCreatureCount,
 } from "./brand-utils";

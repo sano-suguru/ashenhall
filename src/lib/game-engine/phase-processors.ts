@@ -29,7 +29,7 @@ import {
   handleCreatureDeath,
 } from "./card-effects";
 import { evaluateCardForPlay } from "./ai-tactics";
-import { checkAllConditions } from "./core/condition-checker";
+import { checkAllConditions } from "./core/game-logic-utils";
 import type { Card } from "@/types/game";
 
 /**

@@ -27,8 +27,7 @@ import {
   specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
-import { selectTargets } from "./core/target-selector";
-import { checkEffectCondition } from "./core/condition-checker";
+import { selectTargets, checkEffectCondition } from "./core/game-logic-utils";
 import { TargetFilterEngine } from "./core/target-filter";
 import { evaluatePendingDeaths } from './death-sweeper';
 
