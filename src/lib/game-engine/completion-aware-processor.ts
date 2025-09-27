@@ -528,7 +528,11 @@ export class CompletionAwareProcessor {
       sourceCardId: task.attackerId,
       targetCardId: task.targetId,
     });
-    await new Promise(r => setTimeout(r, task.duration / this.gameSpeed));
+    
+    // CSS演出完了を確実に待機：base duration + 余裕時間
+    const safeDuration = (task.duration + 50) / this.gameSpeed;
+    await new Promise(r => setTimeout(r, safeDuration));
+    
     config.onAnimationStateChange?.({
       isAnimating: false,
       animationType: 'none',

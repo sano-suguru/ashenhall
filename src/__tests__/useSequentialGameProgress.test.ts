@@ -90,15 +90,8 @@ describe('useSequentialGameProgress', () => {
       // カードアニメーション状態もすべてfalse
       const cardState = result.current.getCardAnimationState('test-card-id');
       expect(cardState).toEqual({
-        isAttacking: false,
-        isBeingAttacked: false,
-        isDying: false,
-        damageAmount: 0,
-        isSummoning: false,
-        isDrawing: false,
-        isSpellCasting: false,
-        isHealing: false,
-        healAmount: 0,
+        kind: 'none',
+        value: 0,
       });
     });
 
@@ -207,10 +200,8 @@ describe('useSequentialGameProgress', () => {
 
       // 初期状態ではすべてのカードでアニメーションなし
       const cardState = result.current.getCardAnimationState('test-card');
-      expect(cardState.isAttacking).toBe(false);
-      expect(cardState.isBeingAttacked).toBe(false);
-      expect(cardState.isDying).toBe(false);
-      expect(cardState.damageAmount).toBe(0);
+      expect(cardState.kind).toBe('none');
+      expect(cardState.value).toBe(0);
     });
 
     test('currentAnimationStateの初期値確認', () => {
@@ -284,27 +275,16 @@ describe('useSequentialGameProgress', () => {
 
       const animationState = result.current.getCardAnimationState('test-card');
       
-  // 逐次モデル移行後も旧 useAttackSequence が返していた形式互換を維持することを確認
-      expect(animationState).toHaveProperty('isAttacking');
-      expect(animationState).toHaveProperty('isBeingAttacked');
-      expect(animationState).toHaveProperty('isDying');
-      expect(animationState).toHaveProperty('damageAmount');
-      // 新演出プロパティも確認
-      expect(animationState).toHaveProperty('isSummoning');
-      expect(animationState).toHaveProperty('isDrawing');
-      expect(animationState).toHaveProperty('isSpellCasting');
-      expect(animationState).toHaveProperty('isHealing');
-      expect(animationState).toHaveProperty('healAmount');
+  // 統合型システムの新しい戻り値形式を確認
+      expect(animationState).toHaveProperty('kind');
+      expect(animationState).toHaveProperty('value');
       
-      expect(typeof animationState.isAttacking).toBe('boolean');
-      expect(typeof animationState.isBeingAttacked).toBe('boolean');
-      expect(typeof animationState.isDying).toBe('boolean');
-      expect(typeof animationState.damageAmount).toBe('number');
-      expect(typeof animationState.isSummoning).toBe('boolean');
-      expect(typeof animationState.isDrawing).toBe('boolean');
-      expect(typeof animationState.isSpellCasting).toBe('boolean');
-      expect(typeof animationState.isHealing).toBe('boolean');
-      expect(typeof animationState.healAmount).toBe('number');
+      expect(typeof animationState.kind).toBe('string');
+      expect(typeof animationState.value).toBe('number');
+      
+      // 初期状態では 'none' が返される
+      expect(animationState.kind).toBe('none');
+      expect(animationState.value).toBe(0);
     });
 
     test('displayStateの形式が従来と一致', () => {

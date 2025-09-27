@@ -82,6 +82,19 @@ export type {
   Exact
 } from './ui-utils';
 
+// === アニメーション型 ===
+export type {
+  CardAnimationKind,
+  CardAnimationState
+} from './animation';
+
+export {
+  ANIMATION_NONE,
+  getAnimationCssClass,
+  convertLegacyAnimationState,
+  convertToLegacyAnimationState
+} from './animation';
+
 // === 定数の再エクスポート ===
 export {
   GAME_CONSTANTS,

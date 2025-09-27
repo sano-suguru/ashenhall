@@ -21,6 +21,7 @@ import { FACTION_HOVER_CLASSES } from '@/lib/card-constants';
 import { CardTooltip } from './CardTooltip';
 import { FACTION_ICONS, CARD_TYPE_JP } from '@/lib/card-constants';
 import { Sword, Heart } from 'lucide-react';
+import type { CardAnimationState } from '@/types/game';
 
 interface CardComponentProps {
   card: Card;
@@ -28,18 +29,8 @@ interface CardComponentProps {
   isOpponent?: boolean;
   size?: 'small' | 'medium' | 'large';
   className?: string;
-  // 攻撃演出用のprops
-  isAttacking?: boolean;
-  isBeingAttacked?: boolean;
-  damageAmount?: number;
-  // 破壊演出用のprops
-  isDying?: boolean;
-  // 新演出用のprops
-  isSummoning?: boolean;
-  isDrawing?: boolean;
-  isSpellCasting?: boolean;
-  isHealing?: boolean;
-  healAmount?: number;
+  // 統合アニメーション状態
+  animationState?: CardAnimationState;
 }
 
 
@@ -247,16 +238,7 @@ export default function CardComponent({
   isOpponent = false,
   size = 'medium',
   className = '',
-  isAttacking = false,
-  isBeingAttacked = false,
-  damageAmount = 0,
-  isDying = false,
-  // 新演出用のprops
-  isSummoning = false,
-  isDrawing = false,
-  isSpellCasting = false,
-  isHealing = false,
-  healAmount = 0,
+  animationState,
 }: CardComponentProps) {
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
@@ -271,16 +253,11 @@ export default function CardComponent({
   
   const { fieldCard, isDamaged, isEnhanced } = useCardState(card, isFieldCard);
   
+  // 統合アニメーション状態（デフォルト値はANIMATION_NONE）
+  const finalAnimationState = animationState || { kind: 'none' as const };
+
   const { animationClasses, damagePopupElement } = useCardAnimation({
-    isAttacking,
-    isBeingAttacked,
-    isDying,
-    damageAmount,
-    isSummoning,
-    isDrawing,
-    isSpellCasting,
-    isHealing,
-    healAmount,
+    animationState: finalAnimationState,
   });
 
   const tooltipContent = (

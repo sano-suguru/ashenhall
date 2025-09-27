@@ -30,8 +30,9 @@ export interface AnimationTask {
     baseHealth: number;
     keywords: string[];
   };
-  duration: number; // ms
+  duration: number; // ms (fallback用、CSS完了を優先監視)
   blocking: boolean; // true のタスクは直列保証
+  cssAnimationClass: string; // CSS演出クラス名
 }
 
 export interface AnimationDurationsSpec {
@@ -95,7 +96,11 @@ function createAnimationTask(params: {
   targetId?: string;
   damage?: number;
   snapshot?: AnimationTask['snapshot'];
+  cssAnimationClass?: string;
 }): AnimationTask {
+  // CSS演出クラス名をkindに基づいて自動生成
+  const cssClass = params.cssAnimationClass || getCssClassForAnimationKind(params.kind);
+  
   return {
     id: params.id,
     sequence: params.sequence,
@@ -108,7 +113,22 @@ function createAnimationTask(params: {
     snapshot: params.snapshot,
     duration: params.duration,
     blocking: true,
+    cssAnimationClass: cssClass,
   };
+}
+
+/** AnimationTaskKindに対応するCSSクラス名を取得 */
+function getCssClassForAnimationKind(kind: AnimationTaskKind): string {
+  switch (kind) {
+    case 'attack': return 'card-attacking';
+    case 'damage': return 'card-being-attacked';
+    case 'destroy': return 'card-dying';
+    case 'summon': return 'card-summoning';
+    case 'draw': return 'card-drawing';
+    case 'spell_cast': return 'card-spell-casting';
+    case 'heal': return 'card-healing';
+    default: return '';
+  }
 }
 
 /** ValueChangeからダメージ値を計算 */
@@ -122,15 +142,6 @@ function calculateDamageFromValueChange(change: ValueChange, fallbackValue: numb
 
 // === アクションタイプ別処理関数 ===
 
-/** combat_stageアクションの処理 */
-function processCombatStageAction(
-  _action: Extract<GameAction, { type: 'combat_stage' }>,
-  _context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
-): AnimationTask[] {
-  // combat_stageは演出を生成しない（ログ記録専用）
-  // card_attackアクションのみが演出を担当することで重複を防ぐ
-  return [];
-}
 
 /** card_attackアクションの処理 */
 function processCardAttackAction(
@@ -266,9 +277,6 @@ export function buildAnimationTasksFromActions(actions: GameAction[], spec: Anim
     const context = { nextId: nextIdLocal, batchId, spec };
     
     switch (action.type) {
-      case 'combat_stage':
-        result.push(...processCombatStageAction(action, context));
-        break;
       case 'card_attack':
         result.push(...processCardAttackAction(action, context));
         break;

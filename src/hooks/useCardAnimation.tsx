@@ -8,75 +8,53 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import type { CardAnimationState } from '@/types/animation';
+import { getAnimationCssClass } from '@/types/animation';
 
-interface AnimationState {
+interface AnimationResult {
   animationClasses: string;
   showDamagePopup: boolean;
   damagePopupElement: React.ReactElement | null;
 }
 
 interface UseCardAnimationProps {
-  isAttacking: boolean;
-  isBeingAttacked: boolean;
-  isDying: boolean;
-  damageAmount: number;
-  // 新演出追加
-  isSummoning?: boolean;
-  isDrawing?: boolean;
-  isSpellCasting?: boolean;
-  isHealing?: boolean;
-  healAmount?: number;
+  /** 統合されたアニメーション状態 */
+  animationState: CardAnimationState;
 }
 
 export function useCardAnimation({
-  isAttacking,
-  isBeingAttacked,
-  isDying,
-  damageAmount,
-  isSummoning = false,
-  isDrawing = false,
-  isSpellCasting = false,
-  isHealing = false,
-  healAmount = 0,
-}: UseCardAnimationProps): AnimationState {
-  // 演出用のクラス名を統合生成
+  animationState,
+}: UseCardAnimationProps): AnimationResult {
+  // CSS演出クラス名を取得
   const animationClasses = useMemo(() => {
-    const classes = [
-      isAttacking && 'card-attacking',
-      isBeingAttacked && 'card-being-attacked',
-      isDying && 'card-dying',
-      isSummoning && 'card-summoning',
-      isDrawing && 'card-drawing',
-      isSpellCasting && 'card-spell-casting',
-      isHealing && 'card-healing'
-    ].filter(Boolean);
-    
-    return classes.join(' ');
-  }, [isAttacking, isBeingAttacked, isDying, isSummoning, isDrawing, isSpellCasting, isHealing]);
+    return getAnimationCssClass(animationState);
+  }, [animationState]);
 
   // ダメージポップアップの表示判定
   const showDamagePopup = useMemo(() => {
-    return isBeingAttacked && damageAmount > 0;
-  }, [isBeingAttacked, damageAmount]);
+    return animationState.kind === 'being_attacked' && (animationState.value || 0) > 0;
+  }, [animationState]);
 
   // 回復ポップアップの表示判定
   const showHealPopup = useMemo(() => {
-    return isHealing && healAmount > 0;
-  }, [isHealing, healAmount]);
+    return animationState.kind === 'healing' && (animationState.value || 0) > 0;
+  }, [animationState]);
 
   // ポップアップ要素の生成（ダメージ・回復両対応）
   const damagePopupElement = useMemo(() => {
     if (showDamagePopup) {
+      const damage = animationState.value || 0;
       return (
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full z-20 pointer-events-none">
           <div className="bg-red-500 text-white text-lg font-bold px-2 py-1 rounded shadow-lg animate-damage-popup">
-            -{damageAmount}
+            -{damage}
           </div>
         </div>
       );
     }
     
     if (showHealPopup) {
+      const healAmount = animationState.value || 0;
       return (
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full z-20 pointer-events-none">
           <div className="bg-green-500 text-white text-lg font-bold px-2 py-1 rounded shadow-lg animate-heal-popup">
@@ -87,7 +65,7 @@ export function useCardAnimation({
     }
     
     return null;
-  }, [showDamagePopup, damageAmount, showHealPopup, healAmount]);
+  }, [showDamagePopup, showHealPopup, animationState.value]);
 
   return {
     animationClasses,

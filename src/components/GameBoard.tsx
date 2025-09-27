@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import type { GameState, GameAction } from '@/types/game';
+import type { GameState, GameAction, CardAnimationState } from '@/types/game';
 import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
-import { GAME_CONSTANTS } from '@/types/game';
+import { GAME_CONSTANTS, ANIMATION_NONE } from '@/types/game';
 import BattleLogModal from './BattleLogModal';
 // 旧game-board/ディレクトリのコンポーネントを内部統合
 import type { PlayerId, GamePhase, PlayerState } from '@/types/game';
@@ -25,17 +25,7 @@ interface GameBoardProps {
   gameSpeed: number;
   setGameSpeed: (speed: number) => void;
   currentAttackAction?: GameAction | null;
-  getCardAnimationState?: (cardId: string) => {
-    isAttacking: boolean;
-    isBeingAttacked: boolean;
-    isDying: boolean;
-    damageAmount: number;
-    isSummoning: boolean;
-    isDrawing: boolean;
-    isSpellCasting: boolean;
-    isHealing: boolean;
-    healAmount: number;
-  };
+  getCardAnimationState?: (cardId: string) => CardAnimationState;
   currentAnimationState?: {
     isAnimating: boolean;
     animationType: 'attack' | 'damage' | 'destroy' | 'none';
@@ -322,48 +312,25 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
   energyLimit: number;
   isOpponent: boolean;
   currentAttackAction?: GameAction | null;
-  getCardAnimationState?: (cardId: string) => {
-    isAttacking: boolean;
-    isBeingAttacked: boolean;
-    isDying: boolean;
-    damageAmount: number;
-    isSummoning: boolean;
-    isDrawing: boolean;
-    isSpellCasting: boolean;
-    isHealing: boolean;
-    healAmount: number;
-  };
+  getCardAnimationState?: (cardId: string) => CardAnimationState;
 }) => {
-  // 攻撃状態を判定するヘルパー関数（新アニメーションシステム統合版）
-  const getCardAttackState = (cardId: string) => {
-    // 新しいアニメーションシステムを優先使用
+  // 攻撃状態を判定するヘルパー関数（統合型対応）
+  const getCardAttackState = (cardId: string): CardAnimationState => {
+    // 統合型システムを使用
     if (getCardAnimationState) {
       return getCardAnimationState(cardId);
     }
     
     // 従来システムとの後方互換性（段階的廃止予定）
-    const baseState = {
-      isAttacking: false,
-      isBeingAttacked: false,
-      isDying: false,
-      damageAmount: 0,
-      isSummoning: false,
-      isDrawing: false,
-      isSpellCasting: false,
-      isHealing: false,
-      healAmount: 0,
-    };
-
     if (!currentAttackAction || currentAttackAction.type !== 'card_attack') {
-      return baseState;
+      return ANIMATION_NONE;
     }
 
     const attackData = currentAttackAction.data;
-    const isAttacking = attackData.attackerCardId === cardId;
-    const isBeingAttacked = attackData.targetId === cardId;
-    const damageAmount = isBeingAttacked ? attackData.damage : 0;
-
-    return { ...baseState, isAttacking, isBeingAttacked, damageAmount };
+    if (attackData.attackerCardId === cardId) return { kind: 'attacking' };
+    if (attackData.targetId === cardId) return { kind: 'being_attacked', value: attackData.damage };
+    
+    return ANIMATION_NONE;
   };
 
   const playerInfo = (
@@ -383,7 +350,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
           </div>
         ) : (
           player.field.map((card, index) => {
-            const attackState = getCardAttackState(card.id);
+            const animationState = getCardAttackState(card.id);
             return (
               <CardComponent
                 key={`${player.id}-field-${card.id}-${index}`}
@@ -391,15 +358,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
                 isFieldCard={true}
                 isOpponent={isOpponent}
                 size="medium"
-                isAttacking={attackState.isAttacking}
-                isBeingAttacked={attackState.isBeingAttacked}
-                damageAmount={attackState.damageAmount}
-                isDying={attackState.isDying}
-                isSummoning={attackState.isSummoning}
-                isDrawing={attackState.isDrawing}
-                isSpellCasting={attackState.isSpellCasting}
-                isHealing={attackState.isHealing}
-                healAmount={attackState.healAmount}
+                animationState={animationState}
               />
             );
           })
