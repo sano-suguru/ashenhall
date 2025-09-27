@@ -58,7 +58,7 @@ export const DefaultAnimationDurations: AnimationDurationsSpec = {
 export const AnimationDurations = {
   ATTACK: 300,
   DAMAGE: 1000,
-  DESTROY: 1000, // テスト: pre-commit hook動作確認
+  DESTROY: 1000,
 } as const;
 
 export type AnimationPhase = keyof typeof AnimationDurations;
