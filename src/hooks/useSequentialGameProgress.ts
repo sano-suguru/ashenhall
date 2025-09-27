@@ -33,7 +33,7 @@ export interface SequentialGameProgressReturn {
   // 現在のアニメーション状態
   currentAnimationState: {
     isAnimating: boolean;
-    animationType: 'attack' | 'damage' | 'destroy' | 'none';
+    animationType: 'attack' | 'damage' | 'destroy' | 'summon' | 'draw' | 'spell_cast' | 'heal' | 'none';
     sourceCardId: string | undefined;
     targetCardId: string | undefined;
   };

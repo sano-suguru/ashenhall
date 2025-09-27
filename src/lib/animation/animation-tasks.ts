@@ -4,7 +4,11 @@ import type { ValueChange } from '@/types/game-state';
 export type AnimationTaskKind =
   | 'attack'
   | 'damage'
-  | 'destroy';
+  | 'destroy'
+  | 'summon'
+  | 'draw'
+  | 'spell_cast'
+  | 'heal';
 
 export interface AnimationTask {
   id: string;
@@ -59,6 +63,10 @@ export const AnimationDurations = {
   ATTACK: 300,
   DAMAGE: 1000,
   DESTROY: 1000,
+  SUMMON: 800,
+  DRAW: 600,
+  SPELL_CAST: 500,
+  HEAL: 400,
 } as const;
 
 export type AnimationPhase = keyof typeof AnimationDurations;
@@ -158,26 +166,45 @@ function processEffectTriggerAction(
   action: Extract<GameAction, { type: 'effect_trigger' }>,
   context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
 ): AnimationTask[] {
-  if (action.data.effectType !== 'damage') return [];
-  
   const tasks: AnimationTask[] = [];
-  const attackerId = typeof action.data.sourceCardId === 'string' ? action.data.sourceCardId : undefined;
+  const sourceCardId = typeof action.data.sourceCardId === 'string' ? action.data.sourceCardId : undefined;
   
-  for (const [targetId, change] of Object.entries(action.data.targets)) {
-    if (targetId.startsWith('player')) continue;
-    
-    const damage = calculateDamageFromValueChange(change as ValueChange, action.data.effectValue);
-    tasks.push(createAnimationTask({
-      id: context.nextId('damage', action.sequence),
-      sequence: action.sequence,
-      kind: 'damage',
-      attackerId,
-      targetId,
-      damage,
-      duration: ensureMin(context.spec.IMPACT, context.spec),
-      batchId: context.batchId,
-      origin: 'effect'
-    }));
+  // ダメージ演出
+  if (action.data.effectType === 'damage') {
+    for (const [targetId, change] of Object.entries(action.data.targets)) {
+      if (targetId.startsWith('player')) continue;
+      
+      const damage = calculateDamageFromValueChange(change as ValueChange, action.data.effectValue);
+      tasks.push(createAnimationTask({
+        id: context.nextId('damage', action.sequence),
+        sequence: action.sequence,
+        kind: 'damage',
+        attackerId: sourceCardId,
+        targetId,
+        damage,
+        duration: ensureMin(context.spec.IMPACT, context.spec),
+        batchId: context.batchId,
+        origin: 'effect'
+      }));
+    }
+  }
+  
+  // 回復演出
+  if (action.data.effectType === 'heal') {
+    for (const [targetId, change] of Object.entries(action.data.targets)) {
+      const healAmount = change.health ? Math.max(0, (change.health.after as number) - (change.health.before as number)) : action.data.effectValue;
+      tasks.push(createAnimationTask({
+        id: context.nextId('heal', action.sequence),
+        sequence: action.sequence,
+        kind: 'heal',
+        attackerId: sourceCardId,
+        targetId,
+        damage: healAmount, // 回復量をdamageフィールドに格納（後で整理）
+        duration: 400, // AnimationDurations.HEAL相当
+        batchId: context.batchId,
+        origin: 'effect'
+      }));
+    }
   }
   
   return tasks;
@@ -195,6 +222,43 @@ function processCreatureDestroyedAction(
     targetId: action.data.destroyedCardId,
     snapshot: action.data.cardSnapshot,
     duration: ensureMin(context.spec.DESTROY, context.spec),
+    batchId: context.batchId,
+    origin: 'other'
+  })];
+}
+
+/** card_playアクションの処理 (召喚・スペル使用演出) */
+function processCardPlayAction(
+  action: Extract<GameAction, { type: 'card_play' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  const tasks: AnimationTask[] = [];
+  
+  // カードプレイ演出（召喚・スペル共通）
+  tasks.push(createAnimationTask({
+    id: context.nextId('summon', action.sequence),
+    sequence: action.sequence,
+    kind: 'summon',
+    targetId: action.data.cardId,
+    duration: 800, // AnimationDurations.SUMMON相当
+    batchId: context.batchId,
+    origin: 'other'
+  }));
+  
+  return tasks;
+}
+
+/** card_drawアクションの処理 (ドロー演出) */
+function processCardDrawAction(
+  action: Extract<GameAction, { type: 'card_draw' }>,
+  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+): AnimationTask[] {
+  return [createAnimationTask({
+    id: context.nextId('draw', action.sequence),
+    sequence: action.sequence,
+    kind: 'draw',
+    targetId: action.data.cardId,
+    duration: 600, // AnimationDurations.DRAW相当
     batchId: context.batchId,
     origin: 'other'
   })];
@@ -224,6 +288,12 @@ export function buildAnimationTasksFromActions(actions: GameAction[], spec: Anim
         break;
       case 'creature_destroyed':
         result.push(...processCreatureDestroyedAction(action, context));
+        break;
+      case 'card_play':
+        result.push(...processCardPlayAction(action, context));
+        break;
+      case 'card_draw':
+        result.push(...processCardDrawAction(action, context));
         break;
       default:
         break;

@@ -19,7 +19,7 @@ import { buildAnimationTasksFromActions, type AnimationTask } from '@/lib/animat
  */
 export interface AnimationState {
   isAnimating: boolean;
-  animationType: 'attack' | 'damage' | 'destroy' | 'none';
+  animationType: 'attack' | 'damage' | 'destroy' | 'summon' | 'draw' | 'spell_cast' | 'heal' | 'none';
   sourceCardId: string | undefined;
   targetCardId: string | undefined;
   destroySnapshot?: {
@@ -501,6 +501,22 @@ export class CompletionAwareProcessor {
         targetCardId: undefined,
         destroySnapshot: undefined,
       });
+      return;
+    }
+    if (task.kind === 'summon') {
+      await this.playSimple(task, config, 'summon');
+      return;
+    }
+    if (task.kind === 'draw') {
+      await this.playSimple(task, config, 'draw');
+      return;
+    }
+    if (task.kind === 'spell_cast') {
+      await this.playSimple(task, config, 'spell_cast');
+      return;
+    }
+    if (task.kind === 'heal') {
+      await this.playSimple(task, config, 'heal');
       return;
     }
   }
