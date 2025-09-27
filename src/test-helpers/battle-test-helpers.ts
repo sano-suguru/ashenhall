@@ -7,6 +7,7 @@
 
 import { createInitialGameState, processGameStep } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
+import { ensureTwoCreatures, findCreatureById } from '@/lib/type-guards';
 import type { Card, Faction, TacticsType, GameState, FieldCard, CreatureCard } from '@/types/game';
 
 /**
@@ -84,24 +85,17 @@ export function setupMultipleGuardBattleScenario(
   );
 
   // 攻撃者カードを取得
-  const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
-  if (!attackerCard || attackerCard.type !== 'creature') {
-    throw new Error('攻撃者カードが見つかりません');
-  }
+  const attackerCard = findCreatureById(berserkerCards, 'ber_warrior', '攻撃者カード');
 
   // 守護カードを取得
   const guardCard1 = necromancerCards.find(c => c.id === 'necro_skeleton');
   const guardCard2 = necromancerCards.find(c => c.id === 'necro_wraith');
-  
-  if (!guardCard1 || guardCard1.type !== 'creature' || 
-      !guardCard2 || guardCard2.type !== 'creature') {
-    throw new Error('守護カードが見つかりません');
-  }
+  const [guard1, guard2] = ensureTwoCreatures(guardCard1, guardCard2, '守護カード1', '守護カード2');
 
   return {
     gameState,
-    attackerCard: attackerCard as CreatureCard,
-    guardCards: [guardCard1 as CreatureCard, guardCard2 as CreatureCard],
+    attackerCard,
+    guardCards: [guard1, guard2],
     normalCards: []
   };
 }
@@ -348,22 +342,16 @@ export function setupNoGuardBattleScenario(
   );
 
   // 攻撃者カードを取得
-  const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
-  if (!attackerCard || attackerCard.type !== 'creature') {
-    throw new Error('攻撃者カードが見つかりません');
-  }
+  const attackerCard = findCreatureById(berserkerCards, 'ber_warrior', '攻撃者カード');
 
   // 通常カード（守護なし）を取得
-  const normalCard = necromancerCards.find(c => c.id === 'necro_wraith');
-  if (!normalCard || normalCard.type !== 'creature') {
-    throw new Error('通常カードが見つかりません');
-  }
+  const normalCard = findCreatureById(necromancerCards, 'necro_wraith', '通常カード');
 
   return {
     gameState,
-    attackerCard: attackerCard as CreatureCard,
+    attackerCard,
     guardCards: [],
-    normalCards: [normalCard as CreatureCard]
+    normalCards: [normalCard]
   };
 }
 

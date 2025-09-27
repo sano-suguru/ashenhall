@@ -9,6 +9,7 @@
 
 import type { DeckCollection, CustomDeck, Faction } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
+import { logError } from './error-handling';
 
 const DECK_STORAGE_KEY = 'ashenhall_deck_collection';
 
@@ -42,7 +43,7 @@ export function loadDeckCollection(): DeckCollection {
       return JSON.parse(storedDecks) as DeckCollection;
     }
   } catch (error) {
-    console.error('Failed to load deck collection from localStorage:', error);
+    logError('Failed to load deck collection from localStorage', error);
   }
   return getInitialDeckCollection();
 }
@@ -55,7 +56,7 @@ export function saveDeckCollection(deckCollection: DeckCollection): void {
     const decksString = JSON.stringify(deckCollection);
     localStorage.setItem(DECK_STORAGE_KEY, decksString);
   } catch (error) {
-    console.error('Failed to save deck collection to localStorage:', error);
+    logError('Failed to save deck collection to localStorage', error);
   }
 }
 

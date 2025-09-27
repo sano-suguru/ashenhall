@@ -14,10 +14,7 @@ import NoSSR from '@/components/NoSSR';
 import DeckBuilder from './DeckBuilder';
 import GameStatsDisplay from './GameStatsDisplay';
 import { GameSetupProvider, useGameSetup } from './game-setup/GameSetupProvider';
-import FactionSelection from './game-setup/FactionSelection';
-import DeckManagement from './game-setup/DeckManagement';
-import TacticsSelection from './game-setup/TacticsSelection';
-import GameRules from './game-setup/GameRules';
+// 統合により外部コンポーネント依存を削除
 // 旧GameSetupConstants.tsから統合
 import { 
   Skull, 
@@ -29,8 +26,12 @@ import {
   ShieldCheck,
   Gauge,
   Scale,
+  PlusCircle,
+  Edit
 } from 'lucide-react';
-import { FACTION_DESCRIPTIONS } from '@/types/game';
+import { FACTION_DESCRIPTIONS, GAME_CONSTANTS } from '@/types/game';
+import { validateDeck } from '@/lib/deck-utils';
+import { useMemo } from 'react';
 
 // === 統合された定数定義（旧GameSetupConstants.tsから） ===
 
@@ -104,6 +105,266 @@ export const getSelectionCardStyle = (isSelected: boolean) => `
 interface GameSetupProps {
   onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void;
   stats: LocalStats | null;
+}
+
+// === 統合された内部コンポーネント（旧game-setup/ディレクトリから） ===
+
+// 勢力選択コンポーネント（旧FactionSelection.tsxから統合）
+function FactionSelection({ 
+  selectedFaction, 
+  onFactionSelect 
+}: {
+  selectedFaction: Faction | null;
+  onFactionSelect: (faction: Faction) => void;
+}) {
+  return (
+    <section>
+      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
+        勢力選択
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {Object.entries(FACTION_DATA).map(([faction, data]) => (
+          <div
+            key={faction}
+            className={getSelectionCardStyle(selectedFaction === faction)}
+            onClick={() => onFactionSelect(faction as Faction)}
+          >
+            <div className="text-center">
+              <div className="mb-4 text-amber-400 flex justify-center group-hover:scale-110 transition-transform">
+                <data.icon size={48} strokeWidth={1.5} />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white font-serif">
+                {data.name}
+              </h3>
+              <p className="text-sm text-gray-400 font-serif leading-relaxed">
+                {data.description}
+              </p>
+            </div>
+            
+            {selectedFaction === faction && (
+              <div className="absolute -top-2 -right-2">
+                <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-black text-sm font-bold">✓</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// デッキ管理コンポーネント（旧DeckManagement.tsxから統合）
+function DeckManagement({ 
+  selectedFaction,
+  deckCollection,
+  activeDeckId,
+  onCreateNewDeck,
+  onEditDeck,
+  onSetActiveDeck
+}: {
+  selectedFaction: Faction | null;
+  deckCollection: import('@/types/game').DeckCollection;
+  activeDeckId?: string;
+  onCreateNewDeck: () => void;
+  onEditDeck: (deck: import('@/types/game').CustomDeck) => void;
+  onSetActiveDeck: (deckId: string) => void;
+}) {
+  const factionDecks = useMemo(() => {
+    if (!selectedFaction) return [];
+    return deckCollection.decks.filter(d => d.faction === selectedFaction);
+  }, [deckCollection.decks, selectedFaction]);
+
+  if (!selectedFaction) {
+    return null;
+  }
+
+  return (
+    <section className="animate-fade-in">
+      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
+        デッキ選択
+      </h2>
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {factionDecks.map(deck => {
+          const validation = validateDeck(deck);
+          return (
+            <div 
+              key={deck.id} 
+              className={`p-4 rounded-lg border-2 transition-all ${
+                activeDeckId === deck.id 
+                  ? 'border-amber-400 bg-amber-500/10' 
+                  : 'border-gray-700 bg-gray-800/50'
+              }`}
+            >
+              <h4 className="font-bold text-lg">{deck.name}</h4>
+              <p className="text-sm text-gray-400">
+                {deck.cards.length} / {GAME_CONSTANTS.DECK_SIZE} 枚
+              </p>
+              {!validation.isValid && (
+                <p className="text-xs text-red-400 mt-1">
+                  {validation.errors[0]}
+                </p>
+              )}
+              <div className="mt-4 flex space-x-2">
+                <button 
+                  onClick={() => onSetActiveDeck(deck.id)} 
+                  disabled={activeDeckId === deck.id || !validation.isValid}
+                  className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded disabled:bg-gray-500 text-sm transition-colors"
+                >
+                  {activeDeckId === deck.id ? '選択中' : '選択'}
+                </button>
+                <button 
+                  onClick={() => onEditDeck(deck)} 
+                  className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+                >
+                  <Edit size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        <button
+          onClick={onCreateNewDeck}
+          className="p-4 rounded-lg border-2 border-dashed border-gray-600 hover:border-amber-400 hover:text-amber-400 transition-all flex flex-col items-center justify-center text-gray-500"
+        >
+          <PlusCircle size={32} />
+          <span className="mt-2 font-bold">新しいデッキを作成</span>
+        </button>
+      </div>
+      
+      {selectedFaction && (
+        <div className="text-center mt-8">
+          <p className="text-gray-400 text-sm">
+            {FACTION_DATA[selectedFaction].name}のデッキを管理できます
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// 戦術選択コンポーネント（旧TacticsSelection.tsxから統合）
+function TacticsSelection({ 
+  selectedTactics, 
+  onTacticsSelect 
+}: {
+  selectedTactics: TacticsType | null;
+  onTacticsSelect: (tactics: TacticsType) => void;
+}) {
+  return (
+    <section className="animate-fade-in">
+      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
+        戦術選択
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Object.entries(TACTICS_DATA).map(([tactics, data]) => (
+          <div
+            key={tactics}
+            className={getSelectionCardStyle(selectedTactics === tactics)}
+            onClick={() => onTacticsSelect(tactics as TacticsType)}
+          >
+            <div className="text-center">
+              <div className="mb-4 text-amber-400 flex justify-center group-hover:scale-110 transition-transform">
+                <data.icon size={40} strokeWidth={1.5} />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white font-serif">
+                {data.name}
+              </h3>
+              <p className="text-sm text-gray-400 font-serif leading-relaxed">
+                {data.description}
+              </p>
+            </div>
+            
+            {selectedTactics === tactics && (
+              <div className="absolute -top-2 -right-2">
+                <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-black text-sm font-bold">✓</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ゲームルール表示コンポーネント（旧GameRules.tsxから統合）
+function GameRules() {
+  return (
+    <section className="relative z-10">
+      <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-gradient-to-b from-amber-200 via-amber-300 to-amber-500 bg-clip-text font-serif">
+        基本ルール
+      </h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* デッキ構成 */}
+        <div className="p-8 bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl hover:shadow-amber-400/10 transition-all duration-300 group">
+          <h3 className="text-2xl font-bold text-amber-300 mb-6 text-center font-serif group-hover:text-amber-200 transition-colors">
+            デッキ構成
+          </h3>
+          <div className="space-y-4 text-gray-200">
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="font-serif">デッキサイズ</span>
+              <span className="text-amber-300 font-bold">{GAME_CONSTANTS.DECK_SIZE}枚</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="font-serif">初期ライフ</span>
+              <span className="text-amber-300 font-bold">{GAME_CONSTANTS.INITIAL_LIFE}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-white/10">
+              <span className="font-serif">場の上限</span>
+              <span className="text-amber-300 font-bold">{GAME_CONSTANTS.FIELD_LIMIT}体</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="font-serif">エネルギー上限</span>
+              <span className="text-amber-300 font-bold">{GAME_CONSTANTS.ENERGY_LIMIT}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 勝利条件 */}
+        <div className="p-8 bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl hover:shadow-amber-400/10 transition-all duration-300 group">
+          <h3 className="text-2xl font-bold text-amber-300 mb-6 text-center font-serif group-hover:text-amber-200 transition-colors">
+            勝利条件
+          </h3>
+          <div className="space-y-4 text-gray-200 text-center">
+            <div className="p-4 bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl border border-amber-400/20">
+              <p className="font-semibold text-amber-200 mb-2 font-serif">主要勝利</p>
+              <p className="text-sm">相手のライフを0にする</p>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl border border-amber-400/20">
+              <p className="font-semibold text-amber-200 mb-2 font-serif">時間切れ勝利</p>
+              <p className="text-sm">30ターン経過時にライフが多い方</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ゲームの流れ */}
+        <div className="p-8 bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl hover:shadow-amber-400/10 transition-all duration-300 group">
+          <h3 className="text-2xl font-bold text-amber-300 mb-6 text-center font-serif group-hover:text-amber-200 transition-colors">
+            ゲームの流れ
+          </h3>
+          <div className="space-y-4 text-gray-200">
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">1</div>
+              <p className="text-sm font-serif">戦術でカード自動配置</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">2</div>
+              <p className="text-sm font-serif">戦闘は自動進行</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">3</div>
+              <p className="text-sm font-serif">結果を観戦して楽しむ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // ゲーム開始確認セクション

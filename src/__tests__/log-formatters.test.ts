@@ -2,7 +2,7 @@ import { describe, it, expect, jest } from "@jest/globals";
 import type { GameAction, GameState } from "@/types/game";
 
 // Formatters (統合後)
-import { logFormatters } from "@/lib/log-formatters";
+import { logFormatters } from "@/lib/game-state-utils";
 
 // Mocks
 jest.mock("@/data/cards/base-cards", () => ({

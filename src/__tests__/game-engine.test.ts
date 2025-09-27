@@ -16,6 +16,7 @@ import {
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { GAME_CONSTANTS } from '@/types/game';
 import type { Card, Faction, TacticsType, GameState } from '@/types/game';
+import { findCreatureById } from '@/lib/type-guards';
 import { 
   runMultipleGuardSelectionTest, 
   testDirectAttackWhenFieldEmpty,
@@ -369,12 +370,8 @@ describe('Ashenhall ゲームエンジン', () => {
       const deck2 = createTestDeck();
 
       // on_damage_takenを持つカードと、攻撃用のカードを準備
-      const thornOrc = berserkerCards.find(c => c.id === 'ber_thorn_orc');
-      const skeletonSwordsman = necromancerCards.find(c => c.id === 'necro_skeleton');
-      
-      if (!thornOrc || thornOrc.type !== 'creature' || !skeletonSwordsman || skeletonSwordsman.type !== 'creature') {
-        throw new Error('Test creature cards not found');
-      }
+      const thornOrc = findCreatureById(berserkerCards, 'ber_thorn_orc', 'Thorn Orc');
+      const skeletonSwordsman = findCreatureById(necromancerCards, 'necro_skeleton', 'Skeleton Swordsman');
 
       let gameState = createInitialGameState(
         testGameId,
