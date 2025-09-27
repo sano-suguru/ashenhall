@@ -124,22 +124,11 @@ function calculateDamageFromValueChange(change: ValueChange, fallbackValue: numb
 
 /** combat_stageアクションの処理 */
 function processCombatStageAction(
-  action: Extract<GameAction, { type: 'combat_stage' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  _action: Extract<GameAction, { type: 'combat_stage' }>,
+  _context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
 ): AnimationTask[] {
-  const stage = action.data.stage;
-  if (stage === 'attack_declare' || stage === 'damage_defender' || stage === 'damage_attacker') {
-    return [createAnimationTask({
-      id: context.nextId('attack', action.sequence),
-      sequence: action.sequence,
-      kind: 'attack',
-      attackerId: action.data.attackerId,
-      targetId: action.data.targetId,
-      duration: ensureMin(context.spec.ATTACK_WINDUP, context.spec),
-      batchId: context.batchId,
-      origin: 'attack'
-    })];
-  }
+  // combat_stageは演出を生成しない（ログ記録専用）
+  // card_attackアクションのみが演出を担当することで重複を防ぐ
   return [];
 }
 

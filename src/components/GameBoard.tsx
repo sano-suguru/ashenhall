@@ -30,6 +30,11 @@ interface GameBoardProps {
     isBeingAttacked: boolean;
     isDying: boolean;
     damageAmount: number;
+    isSummoning: boolean;
+    isDrawing: boolean;
+    isSpellCasting: boolean;
+    isHealing: boolean;
+    healAmount: number;
   };
   currentAnimationState?: {
     isAnimating: boolean;
@@ -322,6 +327,11 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
     isBeingAttacked: boolean;
     isDying: boolean;
     damageAmount: number;
+    isSummoning: boolean;
+    isDrawing: boolean;
+    isSpellCasting: boolean;
+    isHealing: boolean;
+    healAmount: number;
   };
 }) => {
   // 攻撃状態を判定するヘルパー関数（新アニメーションシステム統合版）
@@ -332,8 +342,20 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
     }
     
     // 従来システムとの後方互換性（段階的廃止予定）
+    const baseState = {
+      isAttacking: false,
+      isBeingAttacked: false,
+      isDying: false,
+      damageAmount: 0,
+      isSummoning: false,
+      isDrawing: false,
+      isSpellCasting: false,
+      isHealing: false,
+      healAmount: 0,
+    };
+
     if (!currentAttackAction || currentAttackAction.type !== 'card_attack') {
-      return { isAttacking: false, isBeingAttacked: false, isDying: false, damageAmount: 0 };
+      return baseState;
     }
 
     const attackData = currentAttackAction.data;
@@ -341,7 +363,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
     const isBeingAttacked = attackData.targetId === cardId;
     const damageAmount = isBeingAttacked ? attackData.damage : 0;
 
-    return { isAttacking, isBeingAttacked, isDying: false, damageAmount };
+    return { ...baseState, isAttacking, isBeingAttacked, damageAmount };
   };
 
   const playerInfo = (
@@ -373,6 +395,11 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
                 isBeingAttacked={attackState.isBeingAttacked}
                 damageAmount={attackState.damageAmount}
                 isDying={attackState.isDying}
+                isSummoning={attackState.isSummoning}
+                isDrawing={attackState.isDrawing}
+                isSpellCasting={attackState.isSpellCasting}
+                isHealing={attackState.isHealing}
+                healAmount={attackState.healAmount}
               />
             );
           })

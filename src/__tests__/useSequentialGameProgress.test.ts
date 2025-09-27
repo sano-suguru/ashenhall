@@ -94,6 +94,11 @@ describe('useSequentialGameProgress', () => {
         isBeingAttacked: false,
         isDying: false,
         damageAmount: 0,
+        isSummoning: false,
+        isDrawing: false,
+        isSpellCasting: false,
+        isHealing: false,
+        healAmount: 0,
       });
     });
 
@@ -284,11 +289,22 @@ describe('useSequentialGameProgress', () => {
       expect(animationState).toHaveProperty('isBeingAttacked');
       expect(animationState).toHaveProperty('isDying');
       expect(animationState).toHaveProperty('damageAmount');
+      // 新演出プロパティも確認
+      expect(animationState).toHaveProperty('isSummoning');
+      expect(animationState).toHaveProperty('isDrawing');
+      expect(animationState).toHaveProperty('isSpellCasting');
+      expect(animationState).toHaveProperty('isHealing');
+      expect(animationState).toHaveProperty('healAmount');
       
       expect(typeof animationState.isAttacking).toBe('boolean');
       expect(typeof animationState.isBeingAttacked).toBe('boolean');
       expect(typeof animationState.isDying).toBe('boolean');
       expect(typeof animationState.damageAmount).toBe('number');
+      expect(typeof animationState.isSummoning).toBe('boolean');
+      expect(typeof animationState.isDrawing).toBe('boolean');
+      expect(typeof animationState.isSpellCasting).toBe('boolean');
+      expect(typeof animationState.isHealing).toBe('boolean');
+      expect(typeof animationState.healAmount).toBe('number');
     });
 
     test('displayStateの形式が従来と一致', () => {

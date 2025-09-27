@@ -34,6 +34,12 @@ interface CardComponentProps {
   damageAmount?: number;
   // 破壊演出用のprops
   isDying?: boolean;
+  // 新演出用のprops
+  isSummoning?: boolean;
+  isDrawing?: boolean;
+  isSpellCasting?: boolean;
+  isHealing?: boolean;
+  healAmount?: number;
 }
 
 
@@ -245,6 +251,12 @@ export default function CardComponent({
   isBeingAttacked = false,
   damageAmount = 0,
   isDying = false,
+  // 新演出用のprops
+  isSummoning = false,
+  isDrawing = false,
+  isSpellCasting = false,
+  isHealing = false,
+  healAmount = 0,
 }: CardComponentProps) {
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
@@ -264,6 +276,11 @@ export default function CardComponent({
     isBeingAttacked,
     isDying,
     damageAmount,
+    isSummoning,
+    isDrawing,
+    isSpellCasting,
+    isHealing,
+    healAmount,
   });
 
   const tooltipContent = (

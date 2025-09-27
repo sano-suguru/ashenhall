@@ -204,62 +204,52 @@ export function processEnergyPhase(state: GameState): void {
 
 /**
  * 配置フェーズの処理（AI自動配置）
- * 完全実装: エネルギー上限まで配置可能、自然な制約で最適化
+ * 修正版: 1カードずつ配置・演出完了待機方式
  */
 export function processDeployPhase(state: GameState): void {
   applyPassiveEffects(state);
   const player = state.players[state.currentPlayer];
   
-  // 注意: 現在のAI配置ロジックは決定論的評価スコアを使用
-  // 将来的にランダム性が必要な場合は以下を有効化:
-  // const random = new SeededRandom(state.randomSeed + state.turnNumber);
+  // 配置可能なカードを評価（エネルギー・場・プレイ条件を含む）
+  const playableCards = player.hand.filter(
+    (card) => canPlayCard(card, state, state.currentPlayer)
+  );
 
-  // 無限ループ防止: 理論的最大配置数（場の上限5 + 安全マージン）
-  const MAX_DEPLOYMENT_ATTEMPTS = 10;
-  let deploymentAttempts = 0;
-
-  // 完全実装: エネルギーと場の制約内で最大配置
-  while (deploymentAttempts < MAX_DEPLOYMENT_ATTEMPTS) {
-    deploymentAttempts++;
-
-    // 配置可能なカードを再評価（エネルギー・場・プレイ条件を含む）
-    const playableCards = player.hand.filter(
-      (card) => canPlayCard(card, state, state.currentPlayer)
-    );
-
-    // 配置可能なカードがない場合は終了
-    if (playableCards.length === 0) {
-      break;
-    }
-
-    // 戦術タイプに応じてカードを評価
-    const evaluatedCards = playableCards
-      .map((card) => ({
-        card,
-        score: evaluateCardForPlay(card, state, state.currentPlayer),
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    // 最も評価の高いカードを配置
-    const bestCard = evaluatedCards[0].card;
-    const position = player.field.length; // 最後尾に配置
-
-    // カードを配置
-    const success = playCardToField(
-      state,
-      state.currentPlayer,
-      bestCard.id,
-      position
-    );
-
-    if (!success) {
-      // 配置に失敗した場合は終了（予期しない状況）
-      break;
-    }
-    // 成功した場合は次のカードの配置を試行
+  // 配置可能なカードがない場合はフェーズ終了
+  if (playableCards.length === 0) {
+    advancePhase(state);
+    return;
   }
 
-  advancePhase(state);
+  // 戦術タイプに応じてカードを評価
+  const evaluatedCards = playableCards
+    .map((card) => ({
+      card,
+      score: evaluateCardForPlay(card, state, state.currentPlayer),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  // 最も評価の高いカードを1体のみ配置
+  const bestCard = evaluatedCards[0].card;
+  const position = player.field.length; // 最後尾に配置
+
+  // カードを配置
+  const success = playCardToField(
+    state,
+    state.currentPlayer,
+    bestCard.id,
+    position
+  );
+
+  if (!success) {
+    // 配置に失敗した場合はフェーズ終了（予期しない状況）
+    advancePhase(state);
+    return;
+  }
+  
+  // 配置成功→フェーズ継続（advancePhaseしない）
+  // 次のprocessGameStep呼び出しで再度processDeployPhaseが実行され、
+  // 次のカードの配置を試行する
 }
 
 /**

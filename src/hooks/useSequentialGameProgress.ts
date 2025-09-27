@@ -52,6 +52,12 @@ export interface SequentialGameProgressReturn {
     isBeingAttacked: boolean;
     isDying: boolean;
     damageAmount: number;
+    // 新演出状態追加
+    isSummoning: boolean;
+    isDrawing: boolean;
+    isSpellCasting: boolean;
+    isHealing: boolean;
+    healAmount: number;
   };
   
   // エラー状態
@@ -192,44 +198,64 @@ export const useSequentialGameProgress = (config: SequentialGameProgressConfig):
   const getCardAnimationState = useCallback((cardId: string) => {
     const { isAnimating, animationType, sourceCardId, targetCardId } = currentAnimationState;
     const processor = processorRef.current;
+    
+    const baseState = {
+      isAttacking: false,
+      isBeingAttacked: false,
+      isDying: false,
+      damageAmount: 0,
+      isSummoning: false,
+      isDrawing: false,
+      isSpellCasting: false,
+      isHealing: false,
+      healAmount: 0,
+    };
+
     if (!isAnimating) {
-      return {
-        isAttacking: false,
-        isBeingAttacked: false,
-        isDying: false,
-        damageAmount: 0,
-      };
+      return baseState;
     }
 
     switch (animationType) {
       case 'attack':
         return {
+          ...baseState,
           isAttacking: sourceCardId === cardId,
           isBeingAttacked: targetCardId === cardId,
-          isDying: false,
-          damageAmount: 0,
         };
       case 'damage':
         return {
-          isAttacking: false,
-            isBeingAttacked: targetCardId === cardId,
-            isDying: false,
-            damageAmount: processor.getCurrentDamageAmount(),
+          ...baseState,
+          isBeingAttacked: targetCardId === cardId,
+          damageAmount: processor.getCurrentDamageAmount(),
         };
       case 'destroy':
         return {
-          isAttacking: false,
-          isBeingAttacked: false,
+          ...baseState,
           isDying: targetCardId === cardId,
-          damageAmount: 0,
+        };
+      case 'summon':
+        return {
+          ...baseState,
+          isSummoning: targetCardId === cardId,
+        };
+      case 'draw':
+        return {
+          ...baseState,
+          isDrawing: targetCardId === cardId,
+        };
+      case 'spell_cast':
+        return {
+          ...baseState,
+          isSpellCasting: sourceCardId === cardId,
+        };
+      case 'heal':
+        return {
+          ...baseState,
+          isHealing: targetCardId === cardId,
+          healAmount: processor.getCurrentDamageAmount(), // 回復量も同じ方法で取得
         };
       default:
-        return {
-          isAttacking: false,
-          isBeingAttacked: false,
-          isDying: false,
-          damageAmount: 0,
-        };
+        return baseState;
     }
   }, [currentAnimationState]);
 
