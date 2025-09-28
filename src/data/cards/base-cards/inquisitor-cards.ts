@@ -7,10 +7,10 @@
  * - 条件付き強力効果による戦略性
  */
 
-import type { Card } from '@/types/game';
+import type { CardTemplate } from '@/types/cards';
 
-/** 審問官カード - 弱体化と除去 */
-export const inquisitorCards: Card[] = [
+/** 審問官カード - 制圧と除去 */
+export const inquisitorCards: CardTemplate[] = [
   {
     templateId: 'inq_venomtongue',
     name: '毒牙の審問官',

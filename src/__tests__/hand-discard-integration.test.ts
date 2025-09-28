@@ -9,7 +9,8 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { executeHandDiscardEffect } from "@/lib/game-engine/effects/core-effects";
 import { createInitialGameState } from "@/lib/game-engine/core";
 import { necromancerCards, mageCards, knightCards } from "@/data/cards/base-cards";
-import type { GameState, FilterRule, Keyword } from "@/types/game";
+import { createCardFromTemplate } from "@/data/cards/card-registry";
+import type { GameState, FilterRule } from "@/types/game";
 import { SeededRandom } from "@/lib/game-engine/seeded-random";
 
 describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () => {
@@ -17,11 +18,17 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
   let seededRandom: SeededRandom;
 
   beforeEach(() => {
-    // テスト用デッキを作成
+    // テスト用デッキを作成（CardTemplateからCardインスタンスを生成）
     const testDeck = [
-      ...necromancerCards.slice(0, 5),
-      ...mageCards.slice(0, 5),
-      ...knightCards.slice(0, 5),
+      ...necromancerCards.slice(0, 5).map((template, i) => 
+        createCardFromTemplate(template, `necro-test-${i}`)
+      ),
+      ...mageCards.slice(0, 5).map((template, i) => 
+        createCardFromTemplate(template, `mage-test-${i}`)
+      ),
+      ...knightCards.slice(0, 5).map((template, i) => 
+        createCardFromTemplate(template, `knight-test-${i}`)
+      ),
     ];
 
     gameState = createInitialGameState(
@@ -83,8 +90,11 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("破壊枚数が手札枚数を超える場合は全て破壊する", () => {
-      // 手札を2枚にする
-      gameState.players.player1.hand = [necromancerCards[0], mageCards[0]];
+      // 手札を2枚にする（Cardインスタンスを生成）
+      gameState.players.player1.hand = [
+        createCardFromTemplate(necromancerCards[0], 'test-hand-1'),
+        createCardFromTemplate(mageCards[0], 'test-hand-2')
+      ];
 
       const initialGraveyardSize = gameState.players.player1.graveyard.length;
 
@@ -99,11 +109,11 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
   describe("FilterRuleによるフィルタリング", () => {
     it("勢力フィルターで正しくカードを破壊する", () => {
-      // テスト用に特定勢力のカードを手札に配置
+      // テスト用に特定勢力のカードを手札に配置（Cardインスタンスを生成）
       gameState.players.player1.hand = [
-        necromancerCards[0], // ネクロマンサー
-        mageCards[0],        // メイジ
-        knightCards[0],      // ナイト
+        createCardFromTemplate(necromancerCards[0], 'faction-test-necro'), // ネクロマンサー
+        createCardFromTemplate(mageCards[0], 'faction-test-mage'),        // メイジ
+        createCardFromTemplate(knightCards[0], 'faction-test-knight'),    // ナイト
       ];
 
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
@@ -127,12 +137,16 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("コスト範囲フィルターで正しくカードを破壊する", () => {
-      // 異なるコストのカードを手札に配置
-      const lowCostCard = necromancerCards.find(c => c.cost === 1)!;
-      const midCostCard = necromancerCards.find(c => c.cost === 3)!;
-      const highCostCard = knightCards.find(c => c.cost === 4)!;
+      // 異なるコストのカードを手札に配置（Cardインスタンスを生成）
+      const lowCostTemplate = necromancerCards.find(c => c.cost === 1)!;
+      const midCostTemplate = necromancerCards.find(c => c.cost === 3)!;
+      const highCostTemplate = knightCards.find(c => c.cost === 4)!;
       
-      gameState.players.player1.hand = [lowCostCard, midCostCard, highCostCard];
+      gameState.players.player1.hand = [
+        createCardFromTemplate(lowCostTemplate, 'cost-test-low'),
+        createCardFromTemplate(midCostTemplate, 'cost-test-mid'),
+        createCardFromTemplate(highCostTemplate, 'cost-test-high')
+      ];
 
       const rules: FilterRule[] = [{ 
         type: 'cost', 
@@ -153,11 +167,14 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("カード種別フィルターで正しくカードを破壊する", () => {
-      // クリーチャーとスペルカードを混在させる
-      const creatureCard = necromancerCards.find(c => c.type === 'creature')!;
-      const spellCard = necromancerCards.find(c => c.type === 'spell')!;
+      // クリーチャーとスペルカードを混在させる（Cardインスタンスを生成）
+      const creatureTemplate = necromancerCards.find(c => c.type === 'creature')!;
+      const spellTemplate = necromancerCards.find(c => c.type === 'spell')!;
       
-      gameState.players.player1.hand = [creatureCard, spellCard];
+      gameState.players.player1.hand = [
+        createCardFromTemplate(creatureTemplate, 'type-test-creature'),
+        createCardFromTemplate(spellTemplate, 'type-test-spell')
+      ];
 
       const rules: FilterRule[] = [{ type: 'card_type', operator: 'eq', value: 'spell' }];
       
@@ -175,10 +192,13 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("複数フィルターの組み合わせで正しくカードを破壊する", () => {
-      // 条件に合うクリーチャーカードを選択
-      const targetCard = necromancerCards.find(c => c.type === 'creature' && c.cost <= 3)!;
-      // 条件に合わないスペルカードを選択
-      const nonTargetCard = necromancerCards.find(c => c.type === 'spell')!;
+      // 条件に合うクリーチャーカードを選択（Cardインスタンスを生成）
+      const targetTemplate = necromancerCards.find(c => c.type === 'creature' && c.cost <= 3)!;
+      // 条件に合わないスペルカードを選択（Cardインスタンスを生成）
+      const nonTargetTemplate = necromancerCards.find(c => c.type === 'spell')!;
+      
+      const targetCard = createCardFromTemplate(targetTemplate, 'multi-filter-target');
+      const nonTargetCard = createCardFromTemplate(nonTargetTemplate, 'multi-filter-non-target');
       
       gameState.players.player1.hand = [targetCard, nonTargetCard];
 
@@ -196,7 +216,7 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("条件に合うカードがない場合は何もしない", () => {
-      gameState.players.player1.hand = [necromancerCards[0]];
+      gameState.players.player1.hand = [createCardFromTemplate(necromancerCards[0], 'no-match-test')];
 
       // 存在しない条件でフィルター
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'berserker' }];
@@ -214,9 +234,9 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
   describe("ランダム選択機能", () => {
     it("複数の候補から正しく選択する", () => {
-      // 同じ条件を満たすカードを複数配置
-      const card1 = { ...mageCards[0], templateId: 'mage-discard-1' };
-      const card2 = { ...mageCards[1], templateId: 'mage-discard-2' };
+      // 同じ条件を満たすカードを複数配置（Cardインスタンスを生成）
+      const card1 = createCardFromTemplate(mageCards[0], 'mage-discard-1');
+      const card2 = createCardFromTemplate(mageCards[1], 'mage-discard-2');
       gameState.players.player1.hand = [card1, card2];
 
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
@@ -281,11 +301,11 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
   describe("実際のカード効果との統合", () => {
     it("《懺悔するサキュバス》のhand_discard効果が正しく動作する", () => {
-      // プレイヤー2の手札にカードを配置
+      // プレイヤー2の手札にカードを配置（Cardインスタンスを生成）
       gameState.players.player2.hand = [
-        necromancerCards[0],
-        mageCards[0],
-        knightCards[0],
+        createCardFromTemplate(necromancerCards[0], 'succubus-test-necro'),
+        createCardFromTemplate(mageCards[0], 'succubus-test-mage'),
+        createCardFromTemplate(knightCards[0], 'succubus-test-knight'),
       ];
 
       const initialPlayer2HandSize = gameState.players.player2.hand.length;
@@ -302,13 +322,13 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
   describe("フィルタリング精度テスト", () => {
     it("キーワードフィルターで正しくカードを破壊する", () => {
-      // キーワード付きカードを手札に追加
-      const guardCard = {
-        ...knightCards[0],
-        templateId: 'test-guard-hand',
-        keywords: ['guard'] as Keyword[]
-      };
-      const normalCard = necromancerCards[0];
+      // キーワード付きカードを手札に追加（Cardインスタンスを生成）
+      const guardTemplate = knightCards[0];
+      const guardCard = createCardFromTemplate({
+        ...guardTemplate,
+        keywords: ['guard']
+      }, 'keyword-test-guard');
+      const normalCard = createCardFromTemplate(necromancerCards[0], 'keyword-test-normal');
       
       gameState.players.player1.hand = [guardCard, normalCard];
 
@@ -326,8 +346,9 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
     });
 
     it("自分除外フィルターで正しくカードを破壊する", () => {
-      const sourceCard = necromancerCards[0];
-      const targetCard = { ...sourceCard, templateId: 'different-card' };
+      // 異なるtemplateIdのカードを使用（exclude_selfは同じtemplateIdを除外するため）
+      const sourceCard = createCardFromTemplate(necromancerCards[0], 'exclude-test-source'); // necro_skeleton
+      const targetCard = createCardFromTemplate(necromancerCards[1], 'exclude-test-target'); // necro_zombie
       
       gameState.players.player1.hand = [sourceCard, targetCard];
 
@@ -337,11 +358,11 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
       // ソースカード以外が破壊されることを確認
       expect(gameState.players.player1.hand.length).toBe(1);
-      expect(gameState.players.player1.hand[0].templateId).toBe(sourceCard.templateId);
+      expect(gameState.players.player1.hand[0]).toBe(sourceCard);
       
-      // 破壊されたカードが異なるIDであることを確認
+      // 破壊されたカードが異なるtemplateIdであることを確認
       const discardedCard = gameState.players.player1.graveyard[gameState.players.player1.graveyard.length - 1];
-      expect(discardedCard.templateId).toBe('different-card');
+      expect(discardedCard.instanceId).toBe('exclude-test-target');
     });
   });
 });

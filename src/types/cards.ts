@@ -81,8 +81,10 @@ export interface CardEffect {
 
 // === カード定義 ===
 
-/** 全カード共通の基本情報 */
-export interface BaseCard {
+// === カードマスターデータ（テンプレート） ===
+
+/** カードテンプレート共通情報（マスターデータ） */
+export interface BaseCardTemplate {
   templateId: string;
   name: string;
   faction: Faction;
@@ -94,23 +96,56 @@ export interface BaseCard {
   playConditions?: EffectCondition[];
 }
 
-/** クリーチャーカード情報 */
+/** クリーチャーカードテンプレート */
+export interface CreatureCardTemplate extends BaseCardTemplate {
+  type: 'creature';
+  attack: number;
+  health: number;
+}
+
+/** スペルカードテンプレート */
+export interface SpellCardTemplate extends BaseCardTemplate {
+  type: 'spell';
+}
+
+/** カードテンプレート（マスターデータ用） */
+export type CardTemplate = CreatureCardTemplate | SpellCardTemplate;
+
+// === ゲーム内カードインスタンス ===
+
+/** ゲーム内カード共通情報（instanceId必須） */
+export interface BaseCard {
+  templateId: string;
+  instanceId: string; // ゲーム内では必須
+  name: string;
+  faction: Faction;
+  cost: number;
+  keywords: Keyword[];
+  effects: CardEffect[];
+  flavor?: string;
+  /** カードをプレイするための条件（空打ち防止用） */
+  playConditions?: EffectCondition[];
+}
+
+/** ゲーム内クリーチャーカード */
 export interface CreatureCard extends BaseCard {
   type: 'creature';
   attack: number;
   health: number;
 }
 
-/** スペルカード情報 */
+/** ゲーム内スペルカード */
 export interface SpellCard extends BaseCard {
   type: 'spell';
 }
 
-/** カード情報（クリーチャーまたはスペル） */
+/** ゲーム内カード（instanceId付き） */
 export type Card = CreatureCard | SpellCard;
 
 /** 場のクリーチャーカード（戦闘中の状態を含む） */
 export interface FieldCard extends CreatureCard {
+  /** 個別インスタンス識別子（同一カード複数枚の区別用） */
+  instanceId: string;
   /** カードの所有者 */
   owner: PlayerId;
   /** 現在の体力 */

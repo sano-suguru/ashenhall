@@ -7,10 +7,10 @@
  * - 魔法相互作用による複合効果
  */
 
-import type { Card } from '@/types/game';
+import type { CardTemplate } from '@/types/cards';
 
-/** 魔導士カード - 魔法効果とエレメンタル */
-export const mageCards: Card[] = [
+/** 魔導士カード - 知恵と戦術の極致 */
+export const mageCards: CardTemplate[] = [
   {
     templateId: 'mag_apprentice',
     name: '術師見習い',

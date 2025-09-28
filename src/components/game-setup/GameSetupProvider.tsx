@@ -18,7 +18,8 @@ import {
   validateDeck
 } from '@/lib/deck-utils';
 import { decodeDeck } from '@/lib/deck-sharing';
-import { getCardById } from '@/data/cards/base-cards';
+import { getCardTemplateById, createCardFromTemplate } from '@/data/cards/card-registry';
+import { generateDeckInstanceId } from '@/lib/instance-id-generator';
 import { sampleDecks } from '@/data/decks/sample-decks';
 import { FACTION_DATA } from '../GameSetup';
 
@@ -143,15 +144,30 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
   };
 
   /**
-   * デッキのカードIDからCardオブジェクト配列を生成
+   * デッキのカードIDからCardオブジェクト配列を生成（決定論的instanceId付与）
+   * バトル開始時に各カードに一意のinstanceIdを付与
    */
   const createUniqueCardDeck = (cardIds: string[]): Card[] => {
     const cardObjects: Card[] = [];
+    const cardCountMap = new Map<string, number>();
     
-    for (const cardId of cardIds) {
-      const masterCard = getCardById(cardId);
-      if (masterCard) {
-        cardObjects.push(masterCard);
+    for (let index = 0; index < cardIds.length; index++) {
+      const cardId = cardIds[index];
+      const template = getCardTemplateById(cardId);
+      if (template) {
+        // 同一カードの通し番号を管理
+        const currentCount = cardCountMap.get(cardId) || 0;
+        cardCountMap.set(cardId, currentCount + 1);
+        
+        // 決定論的instanceId生成: templateId-deck-position-cardCount
+        const instanceId = generateDeckInstanceId(
+          template.templateId,
+          index,
+          currentCount
+        );
+        
+        const cardInstance = createCardFromTemplate(template, instanceId);
+        cardObjects.push(cardInstance);
       }
     }
     

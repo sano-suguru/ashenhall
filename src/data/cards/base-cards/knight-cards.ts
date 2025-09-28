@@ -7,10 +7,10 @@
  * - 守護による戦線維持
  */
 
-import type { Card } from '@/types/game';
+import type { CardTemplate } from '@/types/cards';
 
-/** 騎士カード - 連携効果と回復 */
-export const knightCards: Card[] = [
+/** 騎士カード - 秩序と結束の力 */
+export const knightCards: CardTemplate[] = [
   {
     templateId: 'kni_squire',
     name: '見習い騎士',

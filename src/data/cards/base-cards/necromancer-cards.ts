@@ -7,10 +7,10 @@
  * - 相手の攻撃力を削ぐ弱体化効果
  */
 
-import type { Card } from '@/types/game';
+import type { CardTemplate } from '@/types/cards';
 
 /** 死霊術師カード - 墓地活用と復活効果 */
-export const necromancerCards: Card[] = [
+export const necromancerCards: CardTemplate[] = [
   {
     templateId: 'necro_skeleton',
     name: '骸骨剣士',

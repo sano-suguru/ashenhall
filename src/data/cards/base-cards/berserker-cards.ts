@@ -7,10 +7,10 @@
  * - 体力が減ることで強くなる背水の陣戦術
  */
 
-import type { Card } from '@/types/game';
+import type { CardTemplate } from '@/types/cards';
 
-/** 戦狂いカード - 自己犠牲と爆発力 */
-export const berserkerCards: Card[] = [
+/** 戦狂いカード - 攻撃力重視と破壊的効果 */
+export const berserkerCards: CardTemplate[] = [
   {
     templateId: 'ber_warrior',
     name: '狂戦士',

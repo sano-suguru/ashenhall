@@ -30,6 +30,7 @@ import {
 } from "./card-effects";
 import { evaluateCardForPlay } from "./ai-tactics";
 import { checkAllConditions } from "./core/game-logic-utils";
+import { generateFieldInstanceId } from "@/lib/instance-id-generator";
 import type { Card } from "@/types/game";
 
 /**
@@ -51,16 +52,17 @@ function canPlayCard(card: Card, state: GameState, playerId: PlayerId): boolean 
 }
 
 /**
- * カードを場に出す
+ * カードを場に出す（instanceIdベース）
  */
 function playCardToField(
   state: GameState,
   playerId: PlayerId,
-  cardId: string,
+  cardInstanceId: string,
   position: number
 ): boolean {
   const player = state.players[playerId];
-  const cardIndex = player.hand.findIndex((c) => c.templateId === cardId);
+  // instanceIdで手札を検索（同一カード問題の解決）
+  const cardIndex = player.hand.findIndex((c) => c.instanceId === cardInstanceId);
 
   if (cardIndex === -1) return false;
   const card = player.hand[cardIndex];
@@ -84,6 +86,7 @@ function playCardToField(
 
     const fieldCard: FieldCard = {
       ...card,
+      instanceId: generateFieldInstanceId(card.templateId, state, playerId),
       owner: playerId,
       currentHealth: card.health,
       attackModifier: 0,
@@ -100,8 +103,9 @@ function playCardToField(
     };
     player.field.splice(position, 0, fieldCard);
     player.field.forEach((c, i) => (c.position = i));
+    // GameActionでもinstanceIdを記録（アニメーション対応）
     addCardPlayAction(state, playerId, {
-      cardId: card.templateId,
+      cardId: fieldCard.instanceId, // 場のinstanceIdを使用
       position,
       initialStats: { attack: card.attack, health: card.health },
       playerEnergy: { before: energyBefore, after: energyAfter },
@@ -109,8 +113,9 @@ function playCardToField(
     processEffectTrigger(state, "on_play", fieldCard, playerId, fieldCard);
   } else if (card.type === "spell") {
     player.graveyard.push(card); // Move to graveyard before resolving effects
+    // スペルでも手札のinstanceIdを記録
     addCardPlayAction(state, playerId, {
-      cardId: card.templateId,
+      cardId: card.instanceId,
       position: -1,
       playerEnergy: { before: energyBefore, after: energyAfter },
     });
@@ -234,11 +239,11 @@ export function processDeployPhase(state: GameState): void {
   const bestCard = evaluatedCards[0].card;
   const position = player.field.length; // 最後尾に配置
 
-  // カードを配置
+  // カードを配置（instanceIdを使用）
   const success = playCardToField(
     state,
     state.currentPlayer,
-    bestCard.templateId,
+    bestCard.instanceId,
     position
   );
 

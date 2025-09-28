@@ -31,6 +31,7 @@ describe('カード効果システム', () => {
   // テスト用のフィールドカードを作成
   const createTestFieldCard = (cardData: CreatureCard, owner: 'player1' | 'player2' = 'player1'): FieldCard => ({
     ...cardData,
+    instanceId: `test-instance-${Date.now()}-${Math.random()}`,
     owner,
     currentHealth: cardData.health,
     attackModifier: 0,

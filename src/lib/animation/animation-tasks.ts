@@ -234,6 +234,7 @@ function processCardPlayAction(
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
   
+  // 注意: card_playではtemplateIdを使用（instanceIdはFieldCard生成後に利用可能）
   const targetId = action.data.cardId;
   
   // カードプレイ演出（召喚・スペル共通）

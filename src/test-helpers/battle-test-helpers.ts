@@ -7,7 +7,9 @@
 
 import { createInitialGameState, processGameStep } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
-import { ensureTwoCreatures, findCreatureById } from '@/lib/type-guards';
+import { createCardFromTemplate } from '@/data/cards/card-registry';
+import { findCreatureTemplateById, ensureTwoCreatureTemplates } from '@/lib/type-guards';
+import { generateFieldInstanceId } from '@/lib/instance-id-generator';
 import type { Card, Faction, TacticsType, GameState, FieldCard, CreatureCard } from '@/types/game';
 
 /**
@@ -41,9 +43,11 @@ export function createStandardTestDeck(): Card[] {
   const deck: Card[] = [];
   const availableCards = necromancerCards.slice(0, 4);
   
-  availableCards.forEach(card => {
+  availableCards.forEach((card, cardIndex) => {
     for (let i = 0; i < 5; i++) {
-      deck.push({ ...card, templateId: `${card.templateId}_${i}` });
+      const instanceId = `test-${card.templateId}_${cardIndex}_${i}`;
+      const cardInstance = createCardFromTemplate(card, instanceId);
+      deck.push(cardInstance);
     }
   });
   
@@ -84,13 +88,17 @@ export function setupMultipleGuardBattleScenario(
     testSeed
   );
 
-  // 攻撃者カードを取得
-  const attackerCard = findCreatureById(berserkerCards, 'ber_warrior', '攻撃者カード');
+  // 攻撃者カードを取得してインスタンス化
+  const attackerTemplate = findCreatureTemplateById(berserkerCards, 'ber_warrior', '攻撃者カード');
+  const attackerCard = createCardFromTemplate(attackerTemplate, `test-attacker-${attemptNumber}`) as CreatureCard;
 
-  // 守護カードを取得
-  const guardCard1 = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-  const guardCard2 = necromancerCards.find(c => c.templateId === 'necro_wraith');
-  const [guard1, guard2] = ensureTwoCreatures(guardCard1, guardCard2, '守護カード1', '守護カード2');
+  // 守護カードを取得してインスタンス化
+  const guardCard1Template = necromancerCards.find(c => c.templateId === 'necro_skeleton');
+  const guardCard2Template = necromancerCards.find(c => c.templateId === 'necro_wraith');
+  const [guard1Template, guard2Template] = ensureTwoCreatureTemplates(guardCard1Template, guardCard2Template, '守護カード1', '守護カード2');
+  
+  const guard1 = createCardFromTemplate(guard1Template, `test-guard1-${attemptNumber}`) as CreatureCard;
+  const guard2 = createCardFromTemplate(guard2Template, `test-guard2-${attemptNumber}`) as CreatureCard;
 
   return {
     gameState,
@@ -114,9 +122,11 @@ export function placeCreatureOnField(
     currentHealth?: number;
   } = {}
 ): void {
+  const effectiveTemplateId = options.id || creature.templateId;
   const fieldCreature: FieldCard = {
     ...creature,
-    templateId: options.id || creature.templateId,
+    templateId: effectiveTemplateId,
+    instanceId: generateFieldInstanceId(effectiveTemplateId, gameState, playerId),
     keywords: options.addGuardKeyword 
       ? [...creature.keywords, 'guard'] 
       : creature.keywords,
@@ -341,11 +351,13 @@ export function setupNoGuardBattleScenario(
     `${finalConfig.testSeed}_no_guard`
   );
 
-  // 攻撃者カードを取得
-  const attackerCard = findCreatureById(berserkerCards, 'ber_warrior', '攻撃者カード');
+  // 攻撃者カードを取得してインスタンス化
+  const attackerTemplate = findCreatureTemplateById(berserkerCards, 'ber_warrior', '攻撃者カード');
+  const attackerCard = createCardFromTemplate(attackerTemplate, 'test-attacker-no-guard') as CreatureCard;
 
-  // 通常カード（守護なし）を取得
-  const normalCard = findCreatureById(necromancerCards, 'necro_wraith', '通常カード');
+  // 通常カード（守護なし）を取得してインスタンス化
+  const normalTemplate = findCreatureTemplateById(necromancerCards, 'necro_wraith', '通常カード');
+  const normalCard = createCardFromTemplate(normalTemplate, 'test-normal-no-guard') as CreatureCard;
 
   return {
     gameState,

@@ -14,6 +14,7 @@ function setupState(partial?: Partial<GameState>): GameState {
 function pushCreature(state: GameState, owner: 'player1' | 'player2', card: Partial<FieldCard> & { templateId: string; name: string }): FieldCard {
   const base: FieldCard = {
     templateId: card.templateId,
+    instanceId: `test-${card.templateId}-${Date.now()}-${Math.random()}`,
     name: card.name,
     type: 'creature',
     owner,

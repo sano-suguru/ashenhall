@@ -25,6 +25,7 @@ import {
   addEffectTriggerAction as addEffectTriggerActionFromLogger,
 } from "../action-logger";
 import { UniversalFilterEngine } from "../core/target-filter";
+import { generateTokenInstanceId, generateFieldInstanceId } from "@/lib/instance-id-generator";
 
 // =============================================================================
 // SHARED UTILITIES
@@ -88,6 +89,118 @@ export function executeReadyEffect(
 
   if (Object.keys(valueChanges).length > 0) {
     addEffectTriggerAction(state, sourceCardId, "ready", 1, valueChanges);
+  }
+}
+
+// =============================================================================
+// SUMMON HELPERS (複雑度削減)
+// =============================================================================
+
+/**
+ * トークン初期化ヘルパー（複雑度削減）
+ */
+function createTokenFieldCard(
+  state: GameState,
+  sourcePlayerId: PlayerId,
+  tokenTemplateId: string,
+  tokenStats?: { name?: string; attack: number; health: number }
+): FieldCard {
+  const player = state.players[sourcePlayerId];
+  
+  return {
+    templateId: tokenTemplateId,
+    instanceId: generateTokenInstanceId(state, sourcePlayerId, tokenStats?.name),
+    owner: sourcePlayerId,
+    name: tokenStats?.name || "トークン",
+    type: "creature",
+    faction: player.faction,
+    cost: 0,
+    attack: tokenStats?.attack ?? 1,
+    health: tokenStats?.health ?? 1,
+    keywords: [],
+    currentHealth: tokenStats?.health ?? 1,
+    attackModifier: 0,
+    healthModifier: 0,
+    passiveAttackModifier: 0,
+    passiveHealthModifier: 0,
+    effects: [],
+    summonTurn: state.turnNumber,
+    position: player.field.length,
+    hasAttacked: false,
+    isStealthed: false,
+    isSilenced: false,
+    statusEffects: [],
+    readiedThisTurn: false,
+  };
+}
+
+/**
+ * トークン召喚効果の処理（内部実装・複雑度削減版）
+ */
+function applySummon(
+  state: GameState,
+  sourcePlayerId: PlayerId,
+  sourceCardId: string,
+  random: SeededRandom,
+  tokenStats?: { name?: string; attack: number; health: number }
+): void {
+  const player = state.players[sourcePlayerId];
+
+  // 場が満杯の場合は召喚できない
+  if (player.field.length >= 5) {
+    return;
+  }
+
+  // トークン生成と配置
+  const tokenTemplateId = `token-${state.turnNumber}-${random.next()}`;
+  const token = createTokenFieldCard(state, sourcePlayerId, tokenTemplateId, tokenStats);
+
+  player.field.push(token);
+  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.templateId]: {} });
+}
+
+/**
+ * 蘇生効果の処理（内部実装）
+ */
+function applyResurrect(
+  state: GameState,
+  sourcePlayerId: PlayerId,
+  targetCardIds: string[],
+  sourceCardId: string
+): void {
+  const player = state.players[sourcePlayerId];
+
+  for (const cardId of targetCardIds) {
+    if (player.field.length >= 5) break;
+
+    const graveyardIndex = player.graveyard.findIndex((c) => c.templateId === cardId);
+    if (graveyardIndex === -1) continue;
+
+    const [resurrectedCard] = player.graveyard.splice(graveyardIndex, 1);
+    if (resurrectedCard.type !== "creature") continue;
+
+    const newFieldCard: FieldCard = {
+      ...resurrectedCard,
+      instanceId: generateFieldInstanceId(resurrectedCard.templateId, state, sourcePlayerId),
+      owner: sourcePlayerId,
+      currentHealth: resurrectedCard.health,
+      attackModifier: 0,
+      healthModifier: 0,
+      passiveAttackModifier: 0,
+      passiveHealthModifier: 0,
+      summonTurn: state.turnNumber,
+      position: player.field.length,
+      hasAttacked: true,
+      isStealthed: false,
+      isSilenced: false,
+      statusEffects: [],
+      readiedThisTurn: false,
+    };
+
+    player.field.push(newFieldCard);
+    addEffectTriggerAction(state, sourceCardId, "resurrect", 1, {
+      [newFieldCard.templateId]: {},
+    });
   }
 }
 
@@ -306,96 +419,5 @@ export function executeResurrectEffect(
         sourceCard.templateId
       );
     }
-  }
-}
-
-/**
- * トークン召喚効果の処理（内部実装）
- */
-function applySummon(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  sourceCardId: string,
-  random: SeededRandom,
-  tokenStats?: { name?: string; attack: number; health: number }
-): void {
-  const player = state.players[sourcePlayerId];
-
-  // 場が満杯の場合は召喚できない
-  if (player.field.length >= 5) {
-    return;
-  }
-
-  // 基本的なトークン（スケルトン・ウォリアー風）を召喚
-  const token: FieldCard = {
-    templateId: `token-${state.turnNumber}-${random.next()}`, // 決定論的なID生成
-    owner: sourcePlayerId,
-    name: tokenStats?.name || "トークン",
-    type: "creature",
-    faction: player.faction,
-    cost: 0,
-    attack: tokenStats?.attack ?? 1,
-    health: tokenStats?.health ?? 1,
-    keywords: [],
-    currentHealth: tokenStats?.health ?? 1,
-    attackModifier: 0,
-    healthModifier: 0,
-    passiveAttackModifier: 0,
-    passiveHealthModifier: 0,
-    effects: [],
-    summonTurn: state.turnNumber,
-    position: player.field.length,
-    hasAttacked: false,
-    isStealthed: false,
-    isSilenced: false,
-    statusEffects: [],
-    readiedThisTurn: false,
-  };
-
-  player.field.push(token);
-  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.templateId]: {} });
-}
-
-/**
- * 蘇生効果の処理（内部実装）
- */
-function applyResurrect(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  targetCardIds: string[],
-  sourceCardId: string
-): void {
-  const player = state.players[sourcePlayerId];
-
-  for (const cardId of targetCardIds) {
-    if (player.field.length >= 5) break;
-
-    const graveyardIndex = player.graveyard.findIndex((c) => c.templateId === cardId);
-    if (graveyardIndex === -1) continue;
-
-    const [resurrectedCard] = player.graveyard.splice(graveyardIndex, 1);
-    if (resurrectedCard.type !== "creature") continue;
-
-    const newFieldCard: FieldCard = {
-      ...resurrectedCard,
-      owner: sourcePlayerId,
-      currentHealth: resurrectedCard.health,
-      attackModifier: 0,
-      healthModifier: 0,
-      passiveAttackModifier: 0,
-      passiveHealthModifier: 0,
-      summonTurn: state.turnNumber,
-      position: player.field.length,
-      hasAttacked: true,
-      isStealthed: false,
-      isSilenced: false,
-      statusEffects: [],
-      readiedThisTurn: false,
-    };
-
-    player.field.push(newFieldCard);
-    addEffectTriggerAction(state, sourceCardId, "resurrect", 1, {
-      [newFieldCard.templateId]: {},
-    });
   }
 }

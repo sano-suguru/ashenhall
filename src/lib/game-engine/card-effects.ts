@@ -75,7 +75,7 @@ export function handleCreatureDeath(
   const player = state.players[ownerId];
 
   // 既に場からいなくなっている場合は処理しない
-  const cardIndexOnField = player.field.findIndex(c => c.templateId === deadCard.templateId);
+  const cardIndexOnField = player.field.findIndex(c => c.instanceId === deadCard.instanceId);
   if (cardIndexOnField === -1) {
     return;
   }
