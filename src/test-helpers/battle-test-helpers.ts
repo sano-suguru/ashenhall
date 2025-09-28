@@ -43,7 +43,7 @@ export function createStandardTestDeck(): Card[] {
   
   availableCards.forEach(card => {
     for (let i = 0; i < 5; i++) {
-      deck.push({ ...card, id: `${card.id}_${i}` });
+      deck.push({ ...card, templateId: `${card.templateId}_${i}` });
     }
   });
   
@@ -88,8 +88,8 @@ export function setupMultipleGuardBattleScenario(
   const attackerCard = findCreatureById(berserkerCards, 'ber_warrior', '攻撃者カード');
 
   // 守護カードを取得
-  const guardCard1 = necromancerCards.find(c => c.id === 'necro_skeleton');
-  const guardCard2 = necromancerCards.find(c => c.id === 'necro_wraith');
+  const guardCard1 = necromancerCards.find(c => c.templateId === 'necro_skeleton');
+  const guardCard2 = necromancerCards.find(c => c.templateId === 'necro_wraith');
   const [guard1, guard2] = ensureTwoCreatures(guardCard1, guardCard2, '守護カード1', '守護カード2');
 
   return {
@@ -116,7 +116,7 @@ export function placeCreatureOnField(
 ): void {
   const fieldCreature: FieldCard = {
     ...creature,
-    id: options.id || creature.id,
+    templateId: options.id || creature.templateId,
     keywords: options.addGuardKeyword 
       ? [...creature.keywords, 'guard'] 
       : creature.keywords,

@@ -25,8 +25,8 @@ export const cardIdToIntegerMap = new Map<string, number>();
 export const integerToCardIdMap = new Map<number, string>();
 
 ALL_CARDS.forEach((card, index) => {
-  cardIdToIntegerMap.set(card.id, index);
-  integerToCardIdMap.set(index, card.id);
+  cardIdToIntegerMap.set(card.templateId, index);
+  integerToCardIdMap.set(index, card.templateId);
 });
 
 // --- 勢力IDマッピング ---

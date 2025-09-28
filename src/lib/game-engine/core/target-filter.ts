@@ -78,7 +78,7 @@ function evaluateHealthRule(target: Card | FieldCard, rule: FilterRule): boolean
  * 自己除外ルール評価（複雑度: 1）
  */
 function evaluateExcludeSelfRule(target: Card | FieldCard, rule: FilterRule, sourceCardId?: string): boolean {
-  return sourceCardId ? target.id !== sourceCardId : true;
+  return sourceCardId ? target.templateId !== sourceCardId : true;
 }
 
 /**

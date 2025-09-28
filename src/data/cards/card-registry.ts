@@ -44,7 +44,7 @@ export const ALL_CARDS: Card[] = [
  * @returns マッチするカード、または undefined
  */
 export function getCardById(cardId: string): Card | undefined {
-  return ALL_CARDS.find(card => card.id === cardId);
+  return ALL_CARDS.find(card => card.templateId === cardId);
 }
 
 /**

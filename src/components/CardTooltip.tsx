@@ -128,7 +128,7 @@ const TooltipEffects = ({ card }: { card: Card }) => {
       <div className="space-y-2">
         {card.effects.map((effect, index) => (
           <div key={index} className="text-purple-200">
-            {getEffectText(effect, card.type, card.id)}
+            {getEffectText(effect, card.type, card.templateId)}
           </div>
         ))}
       </div>

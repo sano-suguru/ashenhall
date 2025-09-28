@@ -12,7 +12,7 @@ import type { Card } from '@/types/game';
 /** 死霊術師カード - 墓地活用と復活効果 */
 export const necromancerCards: Card[] = [
   {
-    id: 'necro_skeleton',
+    templateId: 'necro_skeleton',
     name: '骸骨剣士',
     type: 'creature',
     faction: 'necromancer',
@@ -24,7 +24,7 @@ export const necromancerCards: Card[] = [
     flavor: '朽ちた骨に宿るは、永遠なる戦への誓い',
   },
   {
-    id: 'necro_zombie',
+    templateId: 'necro_zombie',
     name: '腐肉の護衛',
     type: 'creature',
     faction: 'necromancer',
@@ -43,7 +43,7 @@ export const necromancerCards: Card[] = [
     flavor: '死してなお響く、静寂への讃美歌',
   },
   {
-    id: 'necro_wraith',
+    templateId: 'necro_wraith',
     name: '亡霊暗殺者',
     type: 'creature',
     faction: 'necromancer',
@@ -62,7 +62,7 @@ export const necromancerCards: Card[] = [
     flavor: '生者の血潮を凍らせる、死の囁き',
   },
   {
-    id: 'necro_necromancer',
+    templateId: 'necro_necromancer',
     name: '死霊法師',
     type: 'creature',
     faction: 'necromancer',
@@ -81,7 +81,7 @@ export const necromancerCards: Card[] = [
     flavor: '静寂なる王座に仕える、死者の招待者',
   },
   {
-    id: 'necro_lich',
+    templateId: 'necro_lich',
     name: '不死王',
     type: 'creature',
     faction: 'necromancer',
@@ -100,7 +100,7 @@ export const necromancerCards: Card[] = [
     flavor: '朽ちることなき玉座に座す、永劫の統治者',
   },
   {
-    id: 'necro_ghoul',
+    templateId: 'necro_ghoul',
     name: '漁り食らう者',
     type: 'creature',
     faction: 'necromancer',
@@ -119,7 +119,7 @@ export const necromancerCards: Card[] = [
     flavor: '戦場の残骸に、古き知恵を求む者',
   },
   {
-    id: 'necro_harvester',
+    templateId: 'necro_harvester',
     name: '魂の収穫者',
     type: 'creature',
     faction: 'necromancer',
@@ -138,7 +138,7 @@ export const necromancerCards: Card[] = [
     flavor: '一つ消えるごとに、我は一つ強く。',
   },
   {
-    id: 'necro_grave_master',
+    templateId: 'necro_grave_master',
     name: '墓所の支配者',
     type: 'creature',
     faction: 'necromancer',
@@ -157,7 +157,7 @@ export const necromancerCards: Card[] = [
     flavor: '死は終わりではない。我が手の中では、駒の一つに過ぎぬ。',
   },
   {
-    id: 'necro_soul_offering',
+    templateId: 'necro_soul_offering',
     name: '魂の供物',
     type: 'spell',
     faction: 'necromancer',
@@ -174,7 +174,7 @@ export const necromancerCards: Card[] = [
     flavor: '一つの魂は終わり、二つの魂が始まる。これぞ死の円環なり。',
   },
   {
-    id: 'necro_grave_giant',
+    templateId: 'necro_grave_giant',
     name: '墓守の巨人',
     type: 'creature',
     faction: 'necromancer',
@@ -194,7 +194,7 @@ export const necromancerCards: Card[] = [
     flavor: '古の王たちの眠りを守るため、彼は死者の力をその身に宿す。',
   },
   {
-    id: 'necro_librarian',
+    templateId: 'necro_librarian',
     name: '囁きの書庫番',
     type: 'creature',
     faction: 'necromancer',
@@ -221,7 +221,7 @@ export const necromancerCards: Card[] = [
     flavor: '死者の声が囁く古き知恵。静寂の奥深くに、力の源泉が眠っている。',
   },
   {
-    id: 'necro_soul_vortex',
+    templateId: 'necro_soul_vortex',
     name: '魂の渦',
     type: 'spell',
     faction: 'necromancer',

@@ -7,7 +7,7 @@ describe("TargetFilterEngine - FilterRule System", () => {
   
   beforeEach(() => {
     mockTarget = {
-      id: "test-card",
+      templateId: "test-card",
       name: "Test Card",
       faction: "knight",
       type: "creature",
@@ -86,14 +86,14 @@ describe("TargetFilterEngine - FilterRule System", () => {
 
   describe("Exclude Self Filter", () => {
     it("should exclude self when specified", () => {
-      const mockTarget2 = { ...mockTarget, id: "other-card" };
+      const mockTarget2 = { ...mockTarget, templateId: "other-card" };
       const targets = [mockTarget, mockTarget2];
       
       const rules: FilterRule[] = [{ type: 'exclude_self', operator: 'eq', value: true }];
       const result = TargetFilterEngine.applyRules(targets, rules, "test-card");
       
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("other-card");
+      expect(result[0].templateId).toBe("other-card");
     });
   });
 
@@ -114,7 +114,7 @@ describe("TargetFilterEngine - FilterRule System", () => {
       const result = TargetFilterEngine.applyRules(targets, rules);
       
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card");
+      expect(result[0].templateId).toBe("test-card");
     });
   });
 

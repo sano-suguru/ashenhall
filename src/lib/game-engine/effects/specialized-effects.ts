@@ -64,7 +64,7 @@ export function executeSilenceEffect(
   const valueChanges: Record<string, ValueChange> = {};
   targets.forEach((target) => {
     target.isSilenced = true;
-    valueChanges[target.id] = {};
+    valueChanges[target.templateId] = {};
   });
   addEffectTriggerAction(state, sourceCardId, "silence", 1, valueChanges);
 }
@@ -82,7 +82,7 @@ export function executeReadyEffect(
     if (!target.readiedThisTurn) {
       target.hasAttacked = false;
       target.readiedThisTurn = true;
-      valueChanges[target.id] = {}; // Just log that the effect happened
+      valueChanges[target.templateId] = {}; // Just log that the effect happened
     }
   });
 
@@ -110,7 +110,7 @@ export function executeStunEffect(
   });
   const valueChanges: Record<string, ValueChange> = {};
   targets.forEach((target) => {
-    valueChanges[target.id] = {};
+    valueChanges[target.templateId] = {};
   });
   addEffectTriggerAction(state, sourceCardId, "stun", duration, valueChanges);
 }
@@ -162,7 +162,7 @@ export function executeApplyBrandEffect(
     const hasExistingBrand = target.statusEffects.some(e => e.type === 'branded');
     if (!hasExistingBrand) {
       target.statusEffects.push({ type: 'branded' });
-      valueChanges[target.id] = {}; // ログ用
+      valueChanges[target.templateId] = {}; // ログ用
     }
   });
 
@@ -206,7 +206,7 @@ export function executeDeckSearchEffect(
     
   if (chosenCard) {
     // デッキから除去
-    player.deck = player.deck.filter(c => c.id !== chosenCard.id);
+    player.deck = player.deck.filter(c => c.templateId !== chosenCard.templateId);
     // 手札に追加
     player.hand.push(chosenCard);
     
@@ -230,11 +230,11 @@ export function executeSummonEffect(
   random: SeededRandom,
   value: number
 ): void {
-  if (sourceCard.id === "necro_soul_vortex") {
+  if (sourceCard.templateId === "necro_soul_vortex") {
     // 特殊効果: 魂の渦 - valueはeffect-registryで計算された墓地の枚数
     const sourcePlayer = state.players[sourcePlayerId];
     sourcePlayer.graveyard = []; // 墓地を空にする
-    applySummon(state, sourcePlayerId, sourceCard.id, random, {
+    applySummon(state, sourcePlayerId, sourceCard.templateId, random, {
       name: "魂の集合体",
       attack: value,
       health: value,
@@ -242,7 +242,7 @@ export function executeSummonEffect(
   } else {
     // 通常の召喚 (necro_necromancerなど、valueは召喚回数)
     for (let i = 0; i < value; i++) {
-      applySummon(state, sourcePlayerId, sourceCard.id, random);
+      applySummon(state, sourcePlayerId, sourceCard.templateId, random);
     }
   }
 }
@@ -259,7 +259,7 @@ export function executeResurrectEffect(
 ): void {
   const sourcePlayer = state.players[sourcePlayerId];
   
-  if (sourceCard.id === "necro_soul_offering") {
+  if (sourceCard.templateId === "necro_soul_offering") {
     // 特殊効果: 魂の供物
     const allies = sourcePlayer.field.filter((c) => c.currentHealth > 0);
     if (allies.length > 0) {
@@ -274,8 +274,8 @@ export function executeResurrectEffect(
       applyResurrect(
         state,
         sourcePlayerId,
-        [toResurrect.id],
-        sourceCard.id
+        [toResurrect.templateId],
+        sourceCard.templateId
       );
     }
   } else {
@@ -288,13 +288,13 @@ export function executeResurrectEffect(
     for (let i = 0; i < value && i < resurrectTargets.length; i++) {
       // 既に選択済みのカードを除外してランダム選択
       const availableTargets = resurrectTargets.filter(
-        target => !chosenIds.includes(target.id)
+        target => !chosenIds.includes(target.templateId)
       );
       if (availableTargets.length === 0) break;
       
       const chosen = random.choice(availableTargets);
       if (chosen) {
-        chosenIds.push(chosen.id);
+        chosenIds.push(chosen.templateId);
       }
     }
     
@@ -303,7 +303,7 @@ export function executeResurrectEffect(
         state,
         sourcePlayerId,
         chosenIds,
-        sourceCard.id
+        sourceCard.templateId
       );
     }
   }
@@ -328,7 +328,7 @@ function applySummon(
 
   // 基本的なトークン（スケルトン・ウォリアー風）を召喚
   const token: FieldCard = {
-    id: `token-${state.turnNumber}-${random.next()}`, // 決定論的なID生成
+    templateId: `token-${state.turnNumber}-${random.next()}`, // 決定論的なID生成
     owner: sourcePlayerId,
     name: tokenStats?.name || "トークン",
     type: "creature",
@@ -353,7 +353,7 @@ function applySummon(
   };
 
   player.field.push(token);
-  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.id]: {} });
+  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.templateId]: {} });
 }
 
 /**
@@ -370,7 +370,7 @@ function applyResurrect(
   for (const cardId of targetCardIds) {
     if (player.field.length >= 5) break;
 
-    const graveyardIndex = player.graveyard.findIndex((c) => c.id === cardId);
+    const graveyardIndex = player.graveyard.findIndex((c) => c.templateId === cardId);
     if (graveyardIndex === -1) continue;
 
     const [resurrectedCard] = player.graveyard.splice(graveyardIndex, 1);
@@ -395,7 +395,7 @@ function applyResurrect(
 
     player.field.push(newFieldCard);
     addEffectTriggerAction(state, sourceCardId, "resurrect", 1, {
-      [newFieldCard.id]: {},
+      [newFieldCard.templateId]: {},
     });
   }
 }

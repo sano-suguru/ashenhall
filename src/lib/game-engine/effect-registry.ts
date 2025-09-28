@@ -73,69 +73,69 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
   'damage': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
     const opponentId = getOpponentId(sourcePlayerId);
     if (effect.target === "player") {
-      executeDamageEffect(state, [], opponentId, value, sourceCard.id, sourceCard, random);
+      executeDamageEffect(state, [], opponentId, value, sourceCard.templateId, sourceCard, random);
     } else if (effect.target === "self_player") {
-      executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.id, sourceCard, random);
+      executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.templateId, sourceCard, random);
     } else {
-      executeDamageEffect(state, targets, null, value, sourceCard.id, sourceCard, random);
+      executeDamageEffect(state, targets, null, value, sourceCard.templateId, sourceCard, random);
     }
   },
   'heal': (state, effect, sourceCard, sourcePlayerId, _random, targets, value) => {
     if (effect.target === "player") {
-      executeHealEffect(state, [], sourcePlayerId, value, sourceCard.id);
+      executeHealEffect(state, [], sourcePlayerId, value, sourceCard.templateId);
     } else {
-      executeHealEffect(state, targets, null, value, sourceCard.id);
+      executeHealEffect(state, targets, null, value, sourceCard.templateId);
     }
   },
   'buff_attack': (state, effect, sourceCard, _sp, _r, targets, value) => 
-    executeBuffAttackEffect(state, targets, value, sourceCard.id, effect),
+    executeBuffAttackEffect(state, targets, value, sourceCard.templateId, effect),
   'buff_health': (state, effect, sourceCard, _sp, _r, targets, value) => 
-    executeBuffHealthEffect(state, targets, value, sourceCard.id, effect),
+    executeBuffHealthEffect(state, targets, value, sourceCard.templateId, effect),
   'debuff_attack': (state, _e, sourceCard, _sp, _r, targets, value) => 
-    executeDebuffAttackEffect(state, targets, value, sourceCard.id),
+    executeDebuffAttackEffect(state, targets, value, sourceCard.templateId),
   'debuff_health': (state, _e, sourceCard, _sp, _r, targets, value) => 
-    executeDebuffHealthEffect(state, targets, value, sourceCard.id),
+    executeDebuffHealthEffect(state, targets, value, sourceCard.templateId),
   'summon': (state, _e, sourceCard, sourcePlayerId, random, _t, value) => 
     executeSummonEffect(state, sourcePlayerId, sourceCard, random, value),
   'draw_card': (state, _e, sourceCard, sourcePlayerId, _r, _t, value) => 
-    executeDrawCardEffect(state, sourcePlayerId, value, sourceCard.id),
+    executeDrawCardEffect(state, sourcePlayerId, value, sourceCard.templateId),
   'silence': (state, _e, sourceCard, _sp, _r, targets, _v) => {
     void _v;
-    return executeSilenceEffect(state, targets, sourceCard.id);
+    return executeSilenceEffect(state, targets, sourceCard.templateId);
   },
   'resurrect': (state, _e, sourceCard, sourcePlayerId, random, _t, value) => 
     executeResurrectEffect(state, sourcePlayerId, sourceCard, random, value),
   'stun': (state, _e, sourceCard, _sp, _r, targets, value) => 
-    executeStunEffect(state, targets, value, sourceCard.id),
+    executeStunEffect(state, targets, value, sourceCard.templateId),
   'ready': (state, _e, sourceCard, _sp, _r, targets, _v) => {
     void _v; // JSDoc上保持する value パラメータとの整合性確保
-    return executeReadyEffect(state, targets, sourceCard.id);
+    return executeReadyEffect(state, targets, sourceCard.templateId);
   },
   'destroy_deck_top': (state, _e, sourceCard, sourcePlayerId, _r, _t, value) => 
-    executeDestroyDeckTopEffect(state, sourcePlayerId, value, sourceCard.id),
+    executeDestroyDeckTopEffect(state, sourcePlayerId, value, sourceCard.templateId),
   'swap_attack_health': (state, _e, sourceCard, _sp, _r, targets, _v) => {
     void _v;
-    return executeSwapAttackHealthEffect(state, targets, sourceCard.id);
+    return executeSwapAttackHealthEffect(state, targets, sourceCard.templateId);
   },
   'hand_discard': (state, effect, sourceCard, sourcePlayerId, random, _t, value) => {
     const opponentId = getOpponentId(sourcePlayerId);
-    executeHandDiscardEffect(state, opponentId, value, sourceCard.id, random, effect.selectionRules);
+    executeHandDiscardEffect(state, opponentId, value, sourceCard.templateId, random, effect.selectionRules);
   },
   'destroy_all_creatures': (state, _e, sourceCard, _sp, _r, _t, _v) => {
     void _sp; void _r; void _t; void _v;
-    return executeDestroyAllCreaturesEffect(state, sourceCard.id);
+    return executeDestroyAllCreaturesEffect(state, sourceCard.templateId);
   },
   'apply_brand': (state, _e, sourceCard, _sp, _r, targets, _v) => {
     void _v;
-    return executeApplyBrandEffect(state, targets, sourceCard.id);
+    return executeApplyBrandEffect(state, targets, sourceCard.templateId);
   },
   'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => {
     void _v;
-    return executeBanishEffect(state, targets, sourceCard.id);
+    return executeBanishEffect(state, targets, sourceCard.templateId);
   },
   'deck_search': (state, effect, sourceCard, sourcePlayerId, random, _t, _v) => {
     void _t; void _v;
-    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.id, effect.selectionRules, random);
+    executeDeckSearchEffect(state, sourcePlayerId, sourceCard.templateId, effect.selectionRules, random);
   },
 };
 
@@ -165,7 +165,7 @@ function calculateNewDynamicValue(
       if (descriptor.filter === 'creatures') {
         calculatedValue = GraveyardLookup.countCreatures(state, sourcePlayerId);
       } else if (descriptor.filter === 'exclude_self') {
-        calculatedValue = GraveyardLookup.countExcludingSelf(state, sourcePlayerId, sourceCard.id);
+        calculatedValue = GraveyardLookup.countExcludingSelf(state, sourcePlayerId, sourceCard.templateId);
       } else {
         calculatedValue = sourcePlayer.graveyard.length;
       }
@@ -175,7 +175,7 @@ function calculateNewDynamicValue(
       if (descriptor.filter === 'alive') {
         calculatedValue = fieldLookup.findAliveCreatures(state, sourcePlayerId).length;
       } else if (descriptor.filter === 'exclude_self') {
-        calculatedValue = sourcePlayer.field.filter(c => c.id !== sourceCard.id).length;
+        calculatedValue = sourcePlayer.field.filter(c => c.templateId !== sourceCard.templateId).length;
       } else {
         calculatedValue = sourcePlayer.field.length;
       }

@@ -66,14 +66,14 @@ function collectDuplicatePresence(state: GameState, cardId: string) {
     hand_p1: 0, hand_p2: 0,
     banished_p1: 0, banished_p2: 0,
   };
-  state.players.player1.field.forEach(c => { if (c.id === cardId) zones.field_p1++; });
-  state.players.player2.field.forEach(c => { if (c.id === cardId) zones.field_p2++; });
-  state.players.player1.graveyard.forEach(c => { if (c.id === cardId) zones.grave_p1++; });
-  state.players.player2.graveyard.forEach(c => { if (c.id === cardId) zones.grave_p2++; });
-  state.players.player1.hand.forEach(c => { if (c.id === cardId) zones.hand_p1++; });
-  state.players.player2.hand.forEach(c => { if (c.id === cardId) zones.hand_p2++; });
-  state.players.player1.banishedCards.forEach(c => { if (c.id === cardId) zones.banished_p1++; });
-  state.players.player2.banishedCards.forEach(c => { if (c.id === cardId) zones.banished_p2++; });
+  state.players.player1.field.forEach(c => { if (c.templateId === cardId) zones.field_p1++; });
+  state.players.player2.field.forEach(c => { if (c.templateId === cardId) zones.field_p2++; });
+  state.players.player1.graveyard.forEach(c => { if (c.templateId === cardId) zones.grave_p1++; });
+  state.players.player2.graveyard.forEach(c => { if (c.templateId === cardId) zones.grave_p2++; });
+  state.players.player1.hand.forEach(c => { if (c.templateId === cardId) zones.hand_p1++; });
+  state.players.player2.hand.forEach(c => { if (c.templateId === cardId) zones.hand_p2++; });
+  state.players.player1.banishedCards.forEach(c => { if (c.templateId === cardId) zones.banished_p1++; });
+  state.players.player2.banishedCards.forEach(c => { if (c.templateId === cardId) zones.banished_p2++; });
   return zones;
 }
 
@@ -89,13 +89,13 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
   function inspectCard(card: FieldCard) {
     if (card.currentHealth > 0) return; // only <=0
     // 既に破壊アクションが存在するなら許容（同フレーム中にまだ盤面から splice されていない状況は通常起きないが保険）
-    if (destroyedIds.has(card.id)) return;
+    if (destroyedIds.has(card.templateId)) return;
 
     // 直近関連アクション収集
     const relevant: RelevantActionSummary[] = [];
     for (let i = actions.length - 1; i >= 0 && relevant.length < 5; i--) {
       const act = actions[i];
-      if (actionReferencesCard(act, card.id)) {
+      if (actionReferencesCard(act, card.templateId)) {
         relevant.push({
           sequence: act.sequence,
             type: act.type,
@@ -106,16 +106,16 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
     const lastCombatStage = actions
       .slice()
       .reverse()
-      .find(a => a.type === 'combat_stage' && actionReferencesCard(a, card.id)) as Extract<GameAction,{type:'combat_stage'}> | undefined;
+      .find(a => a.type === 'combat_stage' && actionReferencesCard(a, card.templateId)) as Extract<GameAction,{type:'combat_stage'}> | undefined;
 
-    const zones = collectDuplicatePresence(state, card.id);
+    const zones = collectDuplicatePresence(state, card.templateId);
 
     const totalHealthBase = card.health + card.healthModifier + card.passiveHealthModifier;
     const totalAttack = card.attack + card.attackModifier + card.passiveAttackModifier;
 
     const msgLines: string[] = [];
     msgLines.push('InvariantViolation: lingering dead creature (hp<=0) not destroyed');
-    msgLines.push(` cardId=${card.id} name=${card.name} owner=${card.owner} pos=${card.position}`);
+    msgLines.push(` cardId=${card.templateId} name=${card.name} owner=${card.owner} pos=${card.position}`);
     msgLines.push(` health: current=${card.currentHealth} base=${card.health} mods(h=${card.healthModifier} ph=${card.passiveHealthModifier}) totalBase=${totalHealthBase}`);
     msgLines.push(` attack: base=${card.attack} mods(a=${card.attackModifier} pa=${card.passiveAttackModifier}) total=${totalAttack}`);
     if (card.statusEffects.length > 0) {

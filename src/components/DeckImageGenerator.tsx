@@ -29,9 +29,9 @@ export default function DeckImageGenerator({ deck }: DeckImageGeneratorProps) {
       <div style={{ backgroundColor: 'rgba(31, 41, 55, 0.5)', borderRadius: '0.5rem', padding: '8px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {sortedCards.map((card, index) => {
-            const isCore = deck.coreCardIds.includes(card.id);
+            const isCore = deck.coreCardIds.includes(card.templateId);
             return (
-              <div key={`${card.id}-${index}`} style={{ position: 'relative' }}>
+              <div key={`${card.templateId}-${index}`} style={{ position: 'relative' }}>
                 <CardComponent card={card} size="medium" />
                 {isCore && <Star size={16} style={{ position: 'absolute', top: '8px', left: '8px', color: '#FBBF24' }} />}
               </div>

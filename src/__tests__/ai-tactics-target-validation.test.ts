@@ -19,7 +19,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -102,7 +102,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('効果を持たないスペルは常にtrueを返すこと', () => {
       // 効果なしのテスト用スペル（該当するカードがない場合は、テスト用に作成）
       const testSpell = {
-        id: 'test_spell',
+        templateId: 'test_spell',
         name: 'テスト呪文',
         type: 'spell' as const,
         faction: 'mage' as const,

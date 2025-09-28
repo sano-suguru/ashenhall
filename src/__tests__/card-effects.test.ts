@@ -52,7 +52,7 @@ describe('カード効果システム', () => {
       
       // テスト用ダメージ効果カード
       const sourceCard = createTestFieldCard({
-        id: 'damage_test',
+        templateId: 'damage_test',
         name: 'ダメージテスト',
         type: 'creature',
         faction: 'mage',
@@ -70,7 +70,7 @@ describe('カード効果システム', () => {
 
       // 敵カードを配置
       const enemyCard = createTestFieldCard({
-        id: 'enemy_test',
+        templateId: 'enemy_test',
         name: '敵テスト',
         type: 'creature',
         faction: 'berserker',
@@ -94,7 +94,7 @@ describe('カード効果システム', () => {
       
       // 味方カードを配置（ダメージを受けた状態）
       const allyCard = createTestFieldCard({
-        id: 'ally_test',
+        templateId: 'ally_test',
         name: '味方テスト',
         type: 'creature',
         faction: 'knight',
@@ -109,7 +109,7 @@ describe('カード効果システム', () => {
 
       // 回復効果カード
       const healerCard = createTestFieldCard({
-        id: 'healer_test',
+        templateId: 'healer_test',
         name: 'ヒーラーテスト',
         type: 'creature',
         faction: 'knight',
@@ -137,7 +137,7 @@ describe('カード効果システム', () => {
       
       // 味方カードを配置
       const allyCard = createTestFieldCard({
-        id: 'ally_test',
+        templateId: 'ally_test',
         name: '味方テスト',
         type: 'creature',
         faction: 'berserker',
@@ -151,7 +151,7 @@ describe('カード効果システム', () => {
 
       // バフ効果カード
       const bufferCard = createTestFieldCard({
-        id: 'buffer_test',
+        templateId: 'buffer_test',
         name: 'バッファーテスト',
         type: 'creature',
         faction: 'berserker',
@@ -179,7 +179,7 @@ describe('カード効果システム', () => {
       
       // 敵カードを配置
       const enemyCard = createTestFieldCard({
-        id: 'enemy_test',
+        templateId: 'enemy_test',
         name: '敵テスト',
         type: 'creature',
         faction: 'knight',
@@ -193,7 +193,7 @@ describe('カード効果システム', () => {
 
       // デバフ効果カード
       const debufferCard = createTestFieldCard({
-        id: 'debuffer_test',
+        templateId: 'debuffer_test',
         name: 'デバッファーテスト',
         type: 'creature',
         faction: 'inquisitor',
@@ -222,7 +222,7 @@ describe('カード効果システム', () => {
       
       // 召喚効果カード
       const summonerCard = createTestFieldCard({
-        id: 'summoner_test',
+        templateId: 'summoner_test',
         name: 'サモナーテスト',
         type: 'creature',
         faction: 'necromancer',
@@ -257,7 +257,7 @@ describe('カード効果システム', () => {
       
       // ドロー効果カード
       const drawerCard = createTestFieldCard({
-        id: 'drawer_test',
+        templateId: 'drawer_test',
         name: 'ドローテスト',
         type: 'creature',
         faction: 'mage',
@@ -291,7 +291,7 @@ describe('Brand System', () => {
     
     // プレイヤー2の場にクリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'necro_skeleton',
+      templateId: 'necro_skeleton',
       name: '骸骨剣士',
       type: 'creature',
       faction: 'necromancer',
@@ -312,7 +312,7 @@ describe('Brand System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_sin_burden',
+      templateId: 'inq_sin_burden',
       name: '罪の重圧',
       type: 'spell' as const,
       faction: 'inquisitor' as const,
@@ -340,7 +340,7 @@ describe('Brand System', () => {
     
     // プレイヤー2の場にクリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'necro_skeleton',
+      templateId: 'necro_skeleton',
       name: '骸骨剣士',
       type: 'creature',
       faction: 'necromancer',
@@ -360,7 +360,7 @@ describe('Brand System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_sin_burden',
+      templateId: 'inq_sin_burden',
       name: '罪の重圧',
       type: 'spell' as const,
       faction: 'inquisitor' as const,
@@ -387,7 +387,7 @@ describe('Brand System', () => {
     
     // プレイヤー2の場にクリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'necro_skeleton',
+      templateId: 'necro_skeleton',
       name: '骸骨剣士',
       type: 'creature',
       faction: 'necromancer',
@@ -407,7 +407,7 @@ describe('Brand System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_sin_burden',
+      templateId: 'inq_sin_burden',
       name: '罪の重圧',
       type: 'spell' as const,
       faction: 'inquisitor' as const,
@@ -436,7 +436,7 @@ describe('Brand Condition System', () => {
     
     // プレイヤー2の場に複数クリーチャーを配置
     const enemy1 = createTestFieldCard({
-      id: 'enemy1',
+      templateId: 'enemy1',
       name: 'エネミー1',
       type: 'creature',
       faction: 'necromancer',
@@ -447,7 +447,7 @@ describe('Brand Condition System', () => {
       effects: [],
     }, 'player2');
     const enemy2 = createTestFieldCard({
-      id: 'enemy2',
+      templateId: 'enemy2',
       name: 'エネミー2', 
       type: 'creature',
       faction: 'necromancer',
@@ -467,7 +467,7 @@ describe('Brand Condition System', () => {
     gameState.players.player1.life = 10;
     
     // 実際の《集団懺悔》カードを取得
-    const collectiveConfession = inquisitorCards.find(c => c.id === 'inq_collective_confession')!;
+    const collectiveConfession = inquisitorCards.find(c => c.templateId === 'inq_collective_confession')!;
     
     // 実際のカードの回復効果を使用（dynamicValueが含まれる）
     const healEffect = collectiveConfession.effects[0];
@@ -484,7 +484,7 @@ describe('Brand Condition System', () => {
     
     // プレイヤー2の場にクリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'necro_skeleton',
+      templateId: 'necro_skeleton',
       name: '骸骨剣士',
       type: 'creature',
       faction: 'necromancer',
@@ -511,7 +511,7 @@ describe('Brand Condition System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_chain_of_faith',
+      templateId: 'inq_chain_of_faith',
       name: '信仰の鎖',
       type: 'spell' as const,
       faction: 'inquisitor' as const,
@@ -532,7 +532,7 @@ describe('Brand Condition System', () => {
     
     // プレイヤー2の場にクリーチャーを配置（烙印なし）
     const enemyCreature = createTestFieldCard({
-      id: 'necro_skeleton',
+      templateId: 'necro_skeleton',
       name: '骸骨剣士',
       type: 'creature',
       faction: 'necromancer',
@@ -556,7 +556,7 @@ describe('Brand Condition System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_chain_of_faith',
+      templateId: 'inq_chain_of_faith',
       name: '信仰の鎖',
       type: 'spell' as const,
       faction: 'inquisitor' as const,
@@ -579,7 +579,7 @@ describe('Brand Condition System', () => {
     
     // プレイヤー2の場に複数クリーチャーを配置
     const enemy1 = createTestFieldCard({
-      id: 'enemy1',
+      templateId: 'enemy1',
       name: 'エネミー1',
       type: 'creature',
       faction: 'necromancer',
@@ -590,7 +590,7 @@ describe('Brand Condition System', () => {
       effects: [],
     }, 'player2');
     const enemy2 = createTestFieldCard({
-      id: 'enemy2', 
+      templateId: 'enemy2', 
       name: 'エネミー2',
       type: 'creature',
       faction: 'necromancer',
@@ -623,7 +623,7 @@ describe('Banish System', () => {
     
     // プレイヤー2の場に烙印を持つクリーチャーを配置
     const brandedEnemy = createTestFieldCard({
-      id: 'branded_target',
+      templateId: 'branded_target',
       name: '烙印付きクリーチャー',
       type: 'creature',
       faction: 'necromancer',
@@ -645,7 +645,7 @@ describe('Banish System', () => {
     
     // 他の敵クリーチャーも配置（死亡時効果の確認用）
     const otherEnemy = createTestFieldCard({
-      id: 'other_enemy',
+      templateId: 'other_enemy',
       name: '他の敵',
       type: 'creature',
       faction: 'necromancer',
@@ -671,7 +671,7 @@ describe('Banish System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_divine_punisher',
+      templateId: 'inq_divine_punisher',
       name: '神罰の執行者',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -693,7 +693,7 @@ describe('Banish System', () => {
     
     // 消滅領域に送られたことを確認
     expect(gameState.players.player2.banishedCards.length).toBe(initialBanishedSize + 1);
-    expect(gameState.players.player2.banishedCards[0].id).toBe('branded_target');
+    expect(gameState.players.player2.banishedCards[0].templateId).toBe('branded_target');
     
     // 他の敵クリーチャーの攻撃力が増加していないことを確認（死亡時効果が発動していない）
     expect(otherEnemy.attackModifier).toBe(0);
@@ -704,7 +704,7 @@ describe('Banish System', () => {
     
     // プレイヤー2の場に烙印なし敵クリーチャーを複数配置
     const enemy1 = createTestFieldCard({
-      id: 'normal_enemy1',
+      templateId: 'normal_enemy1',
       name: '通常敵1',
       type: 'creature',
       faction: 'berserker',
@@ -715,7 +715,7 @@ describe('Banish System', () => {
       effects: [],
     }, 'player2');
     const enemy2 = createTestFieldCard({
-      id: 'normal_enemy2',
+      templateId: 'normal_enemy2',
       name: '通常敵2',
       type: 'creature',
       faction: 'berserker',
@@ -729,7 +729,7 @@ describe('Banish System', () => {
     
     // プレイヤー1の場に神罰の執行者を配置（自己バフ確認用）
     const punisher = createTestFieldCard({
-      id: 'inq_divine_punisher',
+      templateId: 'inq_divine_punisher',
       name: '神罰の執行者',
       type: 'creature',
       faction: 'inquisitor',
@@ -779,7 +779,7 @@ describe('Banish System', () => {
     
     // 烙印を持つ敵クリーチャーを配置
     const brandedEnemy = createTestFieldCard({
-      id: 'test_branded',
+      templateId: 'test_branded',
       name: 'テスト烙印',
       type: 'creature',
       faction: 'berserker',
@@ -801,7 +801,7 @@ describe('Banish System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_divine_punisher',
+      templateId: 'inq_divine_punisher',
       name: '神罰の執行者',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -828,7 +828,7 @@ describe('Banish System', () => {
     
     // 烙印を持たない敵クリーチャーを配置
     const normalEnemy = createTestFieldCard({
-      id: 'normal_enemy',
+      templateId: 'normal_enemy',
       name: '通常の敵',
       type: 'creature',
       faction: 'berserker',
@@ -852,7 +852,7 @@ describe('Banish System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_divine_punisher',
+      templateId: 'inq_divine_punisher',
       name: '神罰の執行者',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -878,7 +878,7 @@ describe('Sanctuary Guard', () => {
     
     // プレイヤー2の場に敵クリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'target_enemy',
+      templateId: 'target_enemy',
       name: 'ターゲット敵',
       type: 'creature',
       faction: 'berserker',
@@ -899,7 +899,7 @@ describe('Sanctuary Guard', () => {
     };
     
     const sourceCard = {
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -922,7 +922,7 @@ describe('Sanctuary Guard', () => {
     
     // プレイヤー1の場に《聖域の見張り》を配置
     const sanctuaryGuard = createTestFieldCard({
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature',
       faction: 'inquisitor',
@@ -944,7 +944,7 @@ describe('Sanctuary Guard', () => {
     
     // プレイヤー2の場に烙印を持たない敵を配置
     const normalEnemy = createTestFieldCard({
-      id: 'normal_enemy',
+      templateId: 'normal_enemy',
       name: '通常の敵',
       type: 'creature',
       faction: 'berserker',
@@ -979,7 +979,7 @@ describe('Sanctuary Guard', () => {
     
     // プレイヤー1の場に《聖域の見張り》を配置
     const sanctuaryGuard = createTestFieldCard({
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature',
       faction: 'inquisitor',
@@ -1001,7 +1001,7 @@ describe('Sanctuary Guard', () => {
     
     // プレイヤー2の場に烙印を持つ敵を配置
     const brandedEnemy = createTestFieldCard({
-      id: 'branded_enemy',
+      templateId: 'branded_enemy',
       name: '烙印付き敵',
       type: 'creature',
       faction: 'berserker',
@@ -1039,7 +1039,7 @@ describe('Sanctuary Guard System', () => {
     
     // プレイヤー2の場に敵クリーチャーを配置
     const enemyCreature = createTestFieldCard({
-      id: 'target_enemy',
+      templateId: 'target_enemy',
       name: 'ターゲット敵',
       type: 'creature',
       faction: 'berserker',
@@ -1060,7 +1060,7 @@ describe('Sanctuary Guard System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1083,7 +1083,7 @@ describe('Sanctuary Guard System', () => {
     
     // プレイヤー1の場に《聖域の見張り》を配置
     const sanctuaryGuard = createTestFieldCard({
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature',
       faction: 'inquisitor',
@@ -1105,7 +1105,7 @@ describe('Sanctuary Guard System', () => {
     
     // プレイヤー2の場に烙印を持たない敵を配置
     const normalEnemy = createTestFieldCard({
-      id: 'normal_enemy',
+      templateId: 'normal_enemy',
       name: '通常の敵',
       type: 'creature',
       faction: 'berserker',
@@ -1140,7 +1140,7 @@ describe('Sanctuary Guard System', () => {
     
     // プレイヤー1の場に《聖域の見張り》を配置
     const sanctuaryGuard = createTestFieldCard({
-      id: 'inq_sanctuary_guard',
+      templateId: 'inq_sanctuary_guard',
       name: '聖域の見張り',
       type: 'creature',
       faction: 'inquisitor',
@@ -1162,7 +1162,7 @@ describe('Sanctuary Guard System', () => {
     
     // プレイヤー2の場に烙印を持つ敵を配置
     const brandedEnemy = createTestFieldCard({
-      id: 'branded_enemy',
+      templateId: 'branded_enemy',
       name: '烙印付き敵',
       type: 'creature',
       faction: 'berserker',
@@ -1210,7 +1210,7 @@ describe('Repentant Succubus System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_repentant_succubus',
+      templateId: 'inq_repentant_succubus',
       name: '懺悔するサキュバス',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1233,7 +1233,7 @@ describe('Repentant Succubus System', () => {
     
     // プレイヤー2の場に敵クリーチャーを配置
     const enemy = createTestFieldCard({
-      id: 'brand_target',
+      templateId: 'brand_target',
       name: 'ブランド対象',
       type: 'creature',
       faction: 'berserker',
@@ -1254,7 +1254,7 @@ describe('Repentant Succubus System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_repentant_succubus',
+      templateId: 'inq_repentant_succubus',
       name: '懺悔するサキュバス',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1277,7 +1277,7 @@ describe('Repentant Succubus System', () => {
     
     // プレイヤー2の場に敵クリーチャーを配置
     const enemy = createTestFieldCard({
-      id: 'debuff_target',
+      templateId: 'debuff_target',
       name: 'デバフ対象',
       type: 'creature',
       faction: 'berserker',
@@ -1298,7 +1298,7 @@ describe('Repentant Succubus System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_repentant_succubus',
+      templateId: 'inq_repentant_succubus',
       name: '懺悔するサキュバス',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1325,7 +1325,7 @@ describe('Repentant Succubus System', () => {
     
     // プレイヤー2の場に敵クリーチャーを配置
     const enemy = createTestFieldCard({
-      id: 'combined_target',
+      templateId: 'combined_target',
       name: '総合対象',
       type: 'creature',
       faction: 'berserker',
@@ -1338,7 +1338,7 @@ describe('Repentant Succubus System', () => {
     gameState.players.player2.field.push(enemy);
     
     // 実際の《懺悔するサキュバス》カードを取得
-    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    const repentantSuccubus = inquisitorCards.find(c => c.templateId === 'inq_repentant_succubus')! as CreatureCard;
     
     // 全効果を順次実行
     repentantSuccubus.effects.forEach((effect) => {
@@ -1362,7 +1362,7 @@ describe('Repentant Succubus System', () => {
     gameState.players.player1.life = 15;
     
     // 実際の《懺悔するサキュバス》カードを取得
-    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    const repentantSuccubus = inquisitorCards.find(c => c.templateId === 'inq_repentant_succubus')! as CreatureCard;
     
     // 全効果を順次実行
     repentantSuccubus.effects.forEach((effect) => {
@@ -1381,7 +1381,7 @@ describe('Repentant Succubus System', () => {
     
     // プレイヤー2の場に複数敵クリーチャーを配置
     const enemy1 = createTestFieldCard({
-      id: 'multi_enemy1',
+      templateId: 'multi_enemy1',
       name: 'マルチ敵1',
       type: 'creature',
       faction: 'berserker',
@@ -1392,7 +1392,7 @@ describe('Repentant Succubus System', () => {
       effects: [],
     }, 'player2');
     const enemy2 = createTestFieldCard({
-      id: 'multi_enemy2',
+      templateId: 'multi_enemy2',
       name: 'マルチ敵2',
       type: 'creature',
       faction: 'berserker',
@@ -1403,7 +1403,7 @@ describe('Repentant Succubus System', () => {
       effects: [],
     }, 'player2');
     const enemy3 = createTestFieldCard({
-      id: 'multi_enemy3',
+      templateId: 'multi_enemy3',
       name: 'マルチ敵3',
       type: 'creature',
       faction: 'berserker',
@@ -1416,7 +1416,7 @@ describe('Repentant Succubus System', () => {
     gameState.players.player2.field.push(enemy1, enemy2, enemy3);
     
     // 実際の《懺悔するサキュバス》カードを取得
-    const repentantSuccubus = inquisitorCards.find(c => c.id === 'inq_repentant_succubus')! as CreatureCard;
+    const repentantSuccubus = inquisitorCards.find(c => c.templateId === 'inq_repentant_succubus')! as CreatureCard;
     
     // 全効果を順次実行
     repentantSuccubus.effects.forEach((effect) => {
@@ -1439,7 +1439,7 @@ describe('Judgment Angel System', () => {
     
     // プレイヤー2の場に複数敵クリーチャーを配置
     const brandedEnemy = createTestFieldCard({
-      id: 'branded_target',
+      templateId: 'branded_target',
       name: '烙印対象',
       type: 'creature',
       faction: 'berserker',
@@ -1452,7 +1452,7 @@ describe('Judgment Angel System', () => {
     brandedEnemy.statusEffects.push({ type: 'branded' });
     
     const normalEnemy1 = createTestFieldCard({
-      id: 'normal_enemy1',
+      templateId: 'normal_enemy1',
       name: '通常敵1',
       type: 'creature',
       faction: 'berserker',
@@ -1464,7 +1464,7 @@ describe('Judgment Angel System', () => {
     }, 'player2');
     
     const normalEnemy2 = createTestFieldCard({
-      id: 'normal_enemy2',
+      templateId: 'normal_enemy2',
       name: '通常敵2',
       type: 'creature',
       faction: 'berserker',
@@ -1497,7 +1497,7 @@ describe('Judgment Angel System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_judgment_angel',
+      templateId: 'inq_judgment_angel',
       name: '審判の天使',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1524,7 +1524,7 @@ describe('Judgment Angel System', () => {
     
     // プレイヤー2の場に烙印なし敵クリーチャーを配置
     const normalEnemy1 = createTestFieldCard({
-      id: 'normal_target1',
+      templateId: 'normal_target1',
       name: '通常対象1',
       type: 'creature',
       faction: 'berserker',
@@ -1536,7 +1536,7 @@ describe('Judgment Angel System', () => {
     }, 'player2');
     
     const normalEnemy2 = createTestFieldCard({
-      id: 'normal_target2',
+      templateId: 'normal_target2',
       name: '通常対象2',
       type: 'creature',
       faction: 'berserker',
@@ -1570,7 +1570,7 @@ describe('Judgment Angel System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_judgment_angel',
+      templateId: 'inq_judgment_angel',
       name: '審判の天使',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1597,7 +1597,7 @@ describe('Judgment Angel System', () => {
     
     // プレイヤー2の場に烙印つき敵1体のみ配置
     const singleBrandedEnemy = createTestFieldCard({
-      id: 'single_branded',
+      templateId: 'single_branded',
       name: '単独烙印敵',
       type: 'creature',
       faction: 'berserker',
@@ -1628,7 +1628,7 @@ describe('Judgment Angel System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_judgment_angel',
+      templateId: 'inq_judgment_angel',
       name: '審判の天使',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1673,7 +1673,7 @@ describe('Judgment Angel System', () => {
     };
     
     const sourceCard = {
-      id: 'inq_judgment_angel',
+      templateId: 'inq_judgment_angel',
       name: '審判の天使',
       type: 'creature' as const,
       faction: 'inquisitor' as const,
@@ -1700,7 +1700,7 @@ describe('Judgment Angel System', () => {
       
       // on_play効果を持つカード
       const testCard = createTestFieldCard({
-        id: 'on_play_test',
+        templateId: 'on_play_test',
         name: 'プレイ時効果',
         type: 'creature',
         faction: 'knight',
@@ -1730,7 +1730,7 @@ describe('Judgment Angel System', () => {
       
       // on_death効果を持つカード
       const testCard = createTestFieldCard({
-        id: 'on_death_test',
+        templateId: 'on_death_test',
         name: '死亡時効果',
         type: 'creature',
         faction: 'berserker',
@@ -1748,7 +1748,7 @@ describe('Judgment Angel System', () => {
 
       // 敵カードを配置
       const enemyCard = createTestFieldCard({
-        id: 'enemy_target',
+        templateId: 'enemy_target',
         name: '敵ターゲット',
         type: 'creature',
         faction: 'knight',
@@ -1772,7 +1772,7 @@ describe('Judgment Angel System', () => {
       
       // on_ally_death効果を持つカード
       const watcherCard = createTestFieldCard({
-        id: 'watcher_test',
+        templateId: 'watcher_test',
         name: 'ウォッチャー',
         type: 'creature',
         faction: 'necromancer',
@@ -1791,7 +1791,7 @@ describe('Judgment Angel System', () => {
 
       // 死亡する味方カード
       const dyingAlly = createTestFieldCard({
-        id: 'dying_ally',
+        templateId: 'dying_ally',
         name: '死に行く味方',
         type: 'creature',
         faction: 'necromancer',
@@ -1814,7 +1814,7 @@ describe('Judgment Angel System', () => {
       
       // turn_start効果を持つカード
       const turnStartCard = createTestFieldCard({
-        id: 'turn_start_test',
+        templateId: 'turn_start_test',
         name: 'ターン開始時効果',
         type: 'creature',
         faction: 'mage',
@@ -1847,12 +1847,12 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // ゾンビ・ガード（死亡時に味方全体の攻撃力+1）
-      const zombieGuard = necromancerCards.find(card => card.id === 'necro_zombie')! as CreatureCard;
+      const zombieGuard = necromancerCards.find(card => card.templateId === 'necro_zombie')! as CreatureCard;
       const zombieFieldCard = createTestFieldCard(zombieGuard);
 
       // 味方カードを配置
       const allyCard = createTestFieldCard({
-        id: 'ally_skeleton',
+        templateId: 'ally_skeleton',
         name: 'スケルトン',
         type: 'creature',
         faction: 'necromancer',
@@ -1875,7 +1875,7 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // 魔法使いの弟子（配置時にカードドロー）
-      const apprentice = mageCards.find(card => card.id === 'mag_apprentice')! as CreatureCard;
+      const apprentice = mageCards.find(card => card.templateId === 'mag_apprentice')! as CreatureCard;
       const apprenticeFieldCard = createTestFieldCard(apprentice);
 
       const initialHandSize = gameState.players.player1.hand.length;
@@ -1892,7 +1892,7 @@ describe('Judgment Angel System', () => {
       
       // 味方カードを配置（ダメージを受けた状態）
       const allyCard = createTestFieldCard({
-        id: 'ally_damaged',
+        templateId: 'ally_damaged',
         name: 'ダメージを受けた味方',
         type: 'creature',
         faction: 'knight',
@@ -1906,7 +1906,7 @@ describe('Judgment Angel System', () => {
       gameState.players.player1.field.push(allyCard);
 
       // ナイト・スクワイア（配置時に味方全体回復）
-      const squire = knightCards.find(card => card.id === 'kni_squire')! as CreatureCard;
+      const squire = knightCards.find(card => card.templateId === 'kni_squire')! as CreatureCard;
       const squireFieldCard = createTestFieldCard(squire);
 
       // 配置時効果発動
@@ -1924,7 +1924,7 @@ describe('Judgment Angel System', () => {
       // 場を満杯にする
       for (let i = 0; i < 5; i++) {
         const card = createTestFieldCard({
-          id: `field_card_${i}`,
+          templateId: `field_card_${i}`,
           name: `フィールドカード${i}`,
           type: 'creature',
           faction: 'necromancer',
@@ -1938,7 +1938,7 @@ describe('Judgment Angel System', () => {
       }
 
       const summonerCard = createTestFieldCard({
-        id: 'summoner_full',
+        templateId: 'summoner_full',
         name: 'フルサモナー',
         type: 'creature',
         faction: 'necromancer',
@@ -1970,7 +1970,7 @@ describe('Judgment Angel System', () => {
       }
 
       const drawerCard = createTestFieldCard({
-        id: 'drawer_full',
+        templateId: 'drawer_full',
         name: 'フルドローワー',
         type: 'creature',
         faction: 'mage',
@@ -1997,7 +1997,7 @@ describe('Judgment Angel System', () => {
   describe('新カード効果のテスト', () => {
     test('《断罪の宣告》が敵を1ターンスタンさせる', () => {
       const gameState = createTestGameState();
-      const stunSpell = inquisitorCards.find(c => c.id === 'inq_verdict_of_conviction')!;
+      const stunSpell = inquisitorCards.find(c => c.templateId === 'inq_verdict_of_conviction')!;
       const enemyCard = createTestFieldCard(berserkerCards[0] as CreatureCard);
       gameState.players.player2.field.push(enemyCard);
 
@@ -2011,7 +2011,7 @@ describe('Judgment Angel System', () => {
 
     test('《真実を暴く者》が条件付きでデッキトップを破壊する', () => {
       const gameState = createTestGameState();
-      const revealer = inquisitorCards.find(c => c.id === 'inq_truth_revealer')! as CreatureCard;
+      const revealer = inquisitorCards.find(c => c.templateId === 'inq_truth_revealer')! as CreatureCard;
       const sourceCard = createTestFieldCard(revealer);
       
       // 条件を満たす場合 (コスト3)
@@ -2024,7 +2024,7 @@ describe('Judgment Angel System', () => {
       
       expect(gameState.players.player2.deck.length).toBe(initialDeckSize - 1);
       expect(gameState.players.player2.graveyard.length).toBe(initialGraveSize + 1);
-      expect(gameState.players.player2.graveyard.at(-1)?.id).toBe(highCostCard.id);
+      expect(gameState.players.player2.graveyard.at(-1)?.templateId).toBe(highCostCard.templateId);
 
       // 条件を満たさない場合 (コスト2)
       const lowCostCard = mageCards.find(c => c.cost === 2)!;
@@ -2040,7 +2040,7 @@ describe('Judgment Angel System', () => {
 
     test('《墓守の巨人》が墓地のクリーチャー数に応じて攻撃力を得る', () => {
       const gameState = createTestGameState();
-      const giant = necromancerCards.find(c => c.id === 'necro_grave_giant')! as CreatureCard;
+      const giant = necromancerCards.find(c => c.templateId === 'necro_grave_giant')! as CreatureCard;
       const sourceCard = createTestFieldCard(giant);
       gameState.players.player1.field.push(sourceCard);
       
@@ -2054,15 +2054,15 @@ describe('Judgment Angel System', () => {
 
     test('《白翼の元帥》が自分以外の味方の攻撃力を上げる', () => {
       const gameState = createTestGameState();
-      const marshal = knightCards.find(c => c.id === 'kni_white_wing_marshal')! as CreatureCard;
+      const marshal = knightCards.find(c => c.templateId === 'kni_white_wing_marshal')! as CreatureCard;
       const sourceCard = createTestFieldCard(marshal);
       const ally = createTestFieldCard(knightCards[0] as CreatureCard);
       gameState.players.player1.field.push(sourceCard, ally);
 
       applyPassiveEffects(gameState);
 
-      const marshalOnField = gameState.players.player1.field.find(c => c.id === marshal.id)!;
-      const allyOnField = gameState.players.player1.field.find(c => c.id === ally.id)!;
+      const marshalOnField = gameState.players.player1.field.find(c => c.templateId === marshal.templateId)!;
+      const allyOnField = gameState.players.player1.field.find(c => c.templateId === ally.templateId)!;
 
       expect(marshalOnField.passiveAttackModifier).toBe(0); // 自分は影響を受けない
       expect(allyOnField.passiveAttackModifier).toBe(1);
@@ -2070,7 +2070,7 @@ describe('Judgment Angel System', () => {
 
     test('《魂の渦》が墓地の枚数に応じたステータスのトークンを召喚し、墓地を空にする', () => {
       const gameState = createTestGameState();
-      const soulVortex = necromancerCards.find(c => c.id === 'necro_soul_vortex')!;
+      const soulVortex = necromancerCards.find(c => c.templateId === 'necro_soul_vortex')!;
       
       // 墓地にカードを5枚置く
       for (let i = 0; i < 5; i++) {
@@ -2092,7 +2092,7 @@ describe('Judgment Angel System', () => {
 
     test('《不動の聖壁、ガレオン》が他の味方の数だけ攻撃力を得る', () => {
       const gameState = createTestGameState();
-      const galleon = knightCards.find(c => c.id === 'kni_galleon')! as CreatureCard;
+      const galleon = knightCards.find(c => c.templateId === 'kni_galleon')! as CreatureCard;
       const sourceCard = createTestFieldCard(galleon);
       const ally1 = createTestFieldCard(knightCards[0] as CreatureCard);
       const ally2 = createTestFieldCard(knightCards[1] as CreatureCard);
@@ -2100,7 +2100,7 @@ describe('Judgment Angel System', () => {
 
       applyPassiveEffects(gameState);
 
-      const galleonOnField = gameState.players.player1.field.find(c => c.id === galleon.id)!;
+      const galleonOnField = gameState.players.player1.field.find(c => c.templateId === galleon.templateId)!;
       expect(galleonOnField.passiveAttackModifier).toBe(2);
 
       // 味方が1体減る
@@ -2114,10 +2114,10 @@ describe('Judgment Angel System', () => {
   describe('パッシブ効果の重複適用バグ再現テスト', () => {
     test('applyPassiveEffectsが複数回呼び出されても体力が増加し続けない', () => {
       const gameState = createTestGameState();
-      const golemCard = mageCards.find(c => c.id === 'mag_golem')! as CreatureCard;
+      const golemCard = mageCards.find(c => c.templateId === 'mag_golem')! as CreatureCard;
       const golemFieldCard = createTestFieldCard(golemCard);
       
-      const otherCard = createTestFieldCard(mageCards.find(c => c.id === 'mag_apprentice')! as CreatureCard);
+      const otherCard = createTestFieldCard(mageCards.find(c => c.templateId === 'mag_apprentice')! as CreatureCard);
 
       gameState.players.player1.field.push(golemFieldCard, otherCard);
 
@@ -2145,7 +2145,7 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // 魂の収穫者を場に配置
-      const harvester = necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard;
+      const harvester = necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard;
       const harvesterCard = createTestFieldCard(harvester, 'player1');
       gameState.players.player1.field.push(harvesterCard);
       
@@ -2165,7 +2165,7 @@ describe('Judgment Angel System', () => {
       handleCreatureDeath(gameState, dyingAlly, 'combat', 'test_source');
       
       // 魂の収穫者の攻撃力が+1されていることを確認（+複数回ではない）
-      const harvesterOnField = gameState.players.player1.field.find(c => c.id === harvester.id)!;
+      const harvesterOnField = gameState.players.player1.field.find(c => c.templateId === harvester.templateId)!;
       expect(harvesterOnField.attackModifier).toBe(1);
       expect(harvesterOnField.attack + harvesterOnField.attackModifier).toBe(initialAttack + 1);
     });
@@ -2174,9 +2174,9 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // 魂の収穫者を2体場に配置
-      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
-      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
-      harvester2.id = 'necro_harvester_2'; // IDを変更して区別
+      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard, 'player1');
+      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard, 'player1');
+      harvester2.templateId = 'necro_harvester_2'; // IDを変更して区別
       gameState.players.player1.field.push(harvester1, harvester2);
       
       // 死亡する味方を配置
@@ -2189,8 +2189,8 @@ describe('Judgment Angel System', () => {
       handleCreatureDeath(gameState, dyingAlly, 'combat', 'test_source');
       
       // 両方の魂の収穫者の攻撃力が+1されていることを確認
-      const harvester1OnField = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
-      const harvester2OnField = gameState.players.player1.field.find(c => c.id === 'necro_harvester_2')!;
+      const harvester1OnField = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester')!;
+      const harvester2OnField = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester_2')!;
       
       expect(harvester1OnField.attackModifier).toBe(1);
       expect(harvester2OnField.attackModifier).toBe(1);
@@ -2200,14 +2200,14 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // 魂の収穫者を場に配置
-      const harvester = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
+      const harvester = createTestFieldCard(necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard, 'player1');
       gameState.players.player1.field.push(harvester);
       
       // 死亡時効果を持たない味方を4体配置（骸骨剣士を使用）
-      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
+      const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
       for (let i = 0; i < 4; i++) {
         const ally = createTestFieldCard(skeleton, 'player1');
-        ally.id = `skeleton_${i}`;
+        ally.templateId = `skeleton_${i}`;
         gameState.players.player1.field.push(ally);
       }
       
@@ -2220,7 +2220,7 @@ describe('Judgment Angel System', () => {
       handleCreatureDeath(gameState, firstVictim, 'combat', 'test_source');
       
       // 魂の収穫者の攻撃力が+1されていることを確認（骸骨は死亡時効果なし）
-      const harvesterAfterFirst = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
+      const harvesterAfterFirst = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester')!;
       expect(harvesterAfterFirst.attackModifier).toBe(initialAttackModifier + 1);
       
       // 2体目を死亡させる  
@@ -2229,7 +2229,7 @@ describe('Judgment Angel System', () => {
       handleCreatureDeath(gameState, secondVictim, 'combat', 'test_source');
       
       // 魂の収穫者の攻撃力がさらに+1されていることを確認（合計+2）
-      const harvesterAfterSecond = gameState.players.player1.field.find(c => c.id === 'necro_harvester')!;
+      const harvesterAfterSecond = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester')!;
       expect(harvesterAfterSecond.attackModifier).toBe(initialAttackModifier + 2);
     });
 
@@ -2237,9 +2237,9 @@ describe('Judgment Angel System', () => {
       const gameState = createTestGameState();
       
       // 魂の収穫者を2体配置
-      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
-      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.id === 'necro_harvester')! as CreatureCard, 'player1');
-      harvester2.id = 'necro_harvester_2';
+      const harvester1 = createTestFieldCard(necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard, 'player1');
+      const harvester2 = createTestFieldCard(necromancerCards.find(c => c.templateId === 'necro_harvester')! as CreatureCard, 'player1');
+      harvester2.templateId = 'necro_harvester_2';
       gameState.players.player1.field.push(harvester1, harvester2);
       
       const initialAttackModifier = harvester2.attackModifier;
@@ -2250,11 +2250,11 @@ describe('Judgment Angel System', () => {
       handleCreatureDeath(gameState, harvester1, 'combat', 'test_source');
       
       // 生き残った魂の収穫者の攻撃力が+1されていることを確認
-      const survivingHarvester = gameState.players.player1.field.find(c => c.id === 'necro_harvester_2')!;
+      const survivingHarvester = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester_2')!;
       expect(survivingHarvester.attackModifier).toBe(initialAttackModifier + 1);
       
       // 死亡した魂の収穫者は場からいなくなっていることを確認
-      const deadHarvester = gameState.players.player1.field.find(c => c.id === 'necro_harvester');
+      const deadHarvester = gameState.players.player1.field.find(c => c.templateId === 'necro_harvester');
       expect(deadHarvester).toBeUndefined();
     });
   });
@@ -2265,7 +2265,7 @@ describe('Judgment Angel System', () => {
       gameState.currentPlayer = 'player2'; // 相手のターンに設定
 
       // 自軍（player1）の場に背水の狂戦士を配置
-      const berserker = berserkerCards.find(c => c.id === 'ber_desperate_berserker')! as CreatureCard;
+      const berserker = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker')! as CreatureCard;
       const berserkerFieldCard = createTestFieldCard(berserker, 'player1');
       berserkerFieldCard.hasAttacked = true; // 攻撃済み状態にしておく
       gameState.players.player1.field.push(berserkerFieldCard);
@@ -2286,8 +2286,8 @@ describe('Judgment Angel System', () => {
 
     test('《囁きの書庫番》墓地条件テスト', () => {
       const gameState = createTestGameState();
-      const librarian = necromancerCards.find(c => c.id === 'necro_librarian')!;
-      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+      const librarian = necromancerCards.find(c => c.templateId === 'necro_librarian')!;
+      const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
       
       // 墓地に10枚配置
       for (let i = 0; i < 10; i++) {
@@ -2315,8 +2315,8 @@ describe('Judgment Angel System', () => {
 
     test('《囁きの書庫番》墓地条件不足テスト', () => {
       const gameState = createTestGameState();
-      const librarian = necromancerCards.find(c => c.id === 'necro_librarian')!;
-      const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+      const librarian = necromancerCards.find(c => c.templateId === 'necro_librarian')!;
+      const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
       
       // 墓地に3枚のみ配置（条件不足）
       for (let i = 0; i < 3; i++) {

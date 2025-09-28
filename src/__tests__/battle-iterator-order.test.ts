@@ -3,10 +3,10 @@ import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 import type { FieldCard, GameState, GameAction } from '@/types/game';
 import { CompletionAwareProcessor } from '@/lib/game-engine/completion-aware-processor';
 
-function makeFieldCard(id: string, atk: number, hp: number, owner: 'player1' | 'player2'): FieldCard {
+function makeFieldCard(templateId: string, atk: number, hp: number, owner: 'player1' | 'player2'): FieldCard {
   return {
-    id,
-    name: id,
+    templateId,
+    name: templateId,
     faction: 'mage',
     cost: 1,
     keywords: [],

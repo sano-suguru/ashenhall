@@ -69,6 +69,6 @@ export function ensureTwoCreatures(
  * カードIDでクリーチャーを検索し、型安全に取得
  */
 export function findCreatureById(cards: Card[], cardId: string, context: string): CreatureCard {
-  const card = cards.find(c => c.id === cardId);
+  const card = cards.find(c => c.templateId === cardId);
   return ensureCreature(card, context);
 }

@@ -25,7 +25,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
     };
     // テスト用Card (デッキ・手札用)
     mockCard = {
-      id: "test-card-deck",
+      templateId: "test-card-deck",
       name: "テストカード",
       faction: "mage",
       type: "creature",
@@ -38,7 +38,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
 
     // テスト用FieldCard (場用)
     mockFieldCard = {
-      id: "test-card-field",
+      templateId: "test-card-field",
       name: "テストフィールドカード",
       faction: "knight",
       type: "creature",
@@ -76,7 +76,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       
       const result = UniversalFilterEngine.applyRules(cards, rules);
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card-deck");
+      expect(result[0].templateId).toBe("test-card-deck");
     });
 
     it("勢力フィルターがCard[]で正しく動作する", () => {
@@ -116,19 +116,19 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
     });
 
     it("自分除外フィルターがCard[]で正しく動作する", () => {
-      const card2 = { ...mockCard, id: "other-card" };
+      const card2 = { ...mockCard, templateId: "other-card" };
       const cards = [mockCard, card2];
       const rules: FilterRule[] = [{ type: 'exclude_self', operator: 'eq', value: true }];
       
       const result = UniversalFilterEngine.applyRules(cards, rules, "test-card-deck");
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("other-card");
+      expect(result[0].templateId).toBe("other-card");
     });
 
     it("複数フィルターの組み合わせがCard[]で正しく動作する", () => {
       const card2 = { 
         ...mockCard, 
-        id: "expensive-spell",
+        templateId: "expensive-spell",
         type: "spell" as const,
         cost: 5,
         keywords: ["rush"] as Keyword[]
@@ -143,7 +143,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       
       const result = UniversalFilterEngine.applyRules(cards, rules);
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("test-card-deck");
+      expect(result[0].templateId).toBe("test-card-deck");
     });
   });
 
@@ -239,7 +239,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       
       // 型推論でCard[]が返されることを確認
       expect(Array.isArray(result)).toBe(true);
-      expect(result[0]).toHaveProperty('id');
+      expect(result[0]).toHaveProperty('templateId');
       expect(result[0]).toHaveProperty('cost');
       expect(result[0]).not.toHaveProperty('currentHealth'); // FieldCard特有のプロパティなし
     });
@@ -252,7 +252,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
       
       // 型推論でFieldCard[]が返されることを確認
       expect(Array.isArray(result)).toBe(true);
-      expect(result[0]).toHaveProperty('id');
+      expect(result[0]).toHaveProperty('templateId');
       expect(result[0]).toHaveProperty('cost');
       expect(result[0]).toHaveProperty('currentHealth'); // FieldCard特有のプロパティあり
       expect(result[0]).toHaveProperty('owner');

@@ -215,8 +215,8 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
   describe("ランダム選択機能", () => {
     it("複数の候補から正しく選択する", () => {
       // 同じ条件を満たすカードを複数配置
-      const card1 = { ...mageCards[0], id: 'mage-discard-1' };
-      const card2 = { ...mageCards[1], id: 'mage-discard-2' };
+      const card1 = { ...mageCards[0], templateId: 'mage-discard-1' };
+      const card2 = { ...mageCards[1], templateId: 'mage-discard-2' };
       gameState.players.player1.hand = [card1, card2];
 
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
@@ -305,7 +305,7 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
       // キーワード付きカードを手札に追加
       const guardCard = {
         ...knightCards[0],
-        id: 'test-guard-hand',
+        templateId: 'test-guard-hand',
         keywords: ['guard'] as Keyword[]
       };
       const normalCard = necromancerCards[0];
@@ -327,21 +327,21 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
 
     it("自分除外フィルターで正しくカードを破壊する", () => {
       const sourceCard = necromancerCards[0];
-      const targetCard = { ...sourceCard, id: 'different-card' };
+      const targetCard = { ...sourceCard, templateId: 'different-card' };
       
       gameState.players.player1.hand = [sourceCard, targetCard];
 
       const rules: FilterRule[] = [{ type: 'exclude_self', operator: 'eq', value: true }];
       
-      executeHandDiscardEffect(gameState, 'player1', 1, sourceCard.id, seededRandom, rules);
+      executeHandDiscardEffect(gameState, 'player1', 1, sourceCard.templateId, seededRandom, rules);
 
       // ソースカード以外が破壊されることを確認
       expect(gameState.players.player1.hand.length).toBe(1);
-      expect(gameState.players.player1.hand[0].id).toBe(sourceCard.id);
+      expect(gameState.players.player1.hand[0].templateId).toBe(sourceCard.templateId);
       
       // 破壊されたカードが異なるIDであることを確認
       const discardedCard = gameState.players.player1.graveyard[gameState.players.player1.graveyard.length - 1];
-      expect(discardedCard.id).toBe('different-card');
+      expect(discardedCard.templateId).toBe('different-card');
     });
   });
 });

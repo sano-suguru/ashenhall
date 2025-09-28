@@ -75,14 +75,14 @@ export function handleCreatureDeath(
   const player = state.players[ownerId];
 
   // 既に場からいなくなっている場合は処理しない
-  const cardIndexOnField = player.field.findIndex(c => c.id === deadCard.id);
+  const cardIndexOnField = player.field.findIndex(c => c.templateId === deadCard.templateId);
   if (cardIndexOnField === -1) {
     return;
   }
 
   // 破壊ログを記録
   addCreatureDestroyedAction(state, ownerId, {
-    destroyedCardId: deadCard.id,
+    destroyedCardId: deadCard.templateId,
     source,
     sourceCardId,
   });
@@ -112,7 +112,7 @@ function executeCardEffectWithoutConditionCheck(
 ): void {
   try {
     const random = new SeededRandom(
-      state.randomSeed + state.turnNumber + sourceCard.id
+      state.randomSeed + state.turnNumber + sourceCard.templateId
     );
 
     // 1. 初期対象を選択
@@ -124,7 +124,7 @@ function executeCardEffectWithoutConditionCheck(
     );
     if (effect.target === "self" && sourceCard.type === "creature") {
       const fieldCard = state.players[sourcePlayerId].field.find(
-        (c) => c.id === sourceCard.id
+        (c) => c.templateId === sourceCard.templateId
       );
       if (fieldCard) {
         initialTargets = [fieldCard];
@@ -135,7 +135,7 @@ function executeCardEffectWithoutConditionCheck(
     const selectionRules = effect.selectionRules;
     
     if (selectionRules) {
-      initialTargets = TargetFilterEngine.applyRules(initialTargets, selectionRules, sourceCard.id);
+      initialTargets = TargetFilterEngine.applyRules(initialTargets, selectionRules, sourceCard.templateId);
     }
 
     // 3. 動的パラメータを解決
@@ -262,8 +262,8 @@ function handleSingleCardTrigger(
   if (effectsToExecute.length > 0) {
     addTriggerEventAction(state, sourcePlayerId, {
       triggerType: trigger,
-      sourceCardId: triggeringCard?.id,
-      targetCardId: sourceCard.id,
+      sourceCardId: triggeringCard?.templateId,
+      targetCardId: sourceCard.templateId,
     });
   }
 
@@ -317,7 +317,7 @@ export function processEffectTrigger(
   const handler = triggerHandlers[trigger] || handleGlobalTrigger;
   handler(state, trigger, sourceCard, sourcePlayerId, triggeringCard);
   // トリガー内で複数効果がチェーンし別ユニットが HP0 になったケースを回収
-  evaluatePendingDeaths(state, 'trigger', sourceCard?.id || triggeringCard?.id);
+  evaluatePendingDeaths(state, 'trigger', sourceCard?.templateId || triggeringCard?.templateId);
 }
 
 /**

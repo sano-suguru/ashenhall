@@ -12,7 +12,7 @@ import type { Card } from '@/types/game';
 /** 戦狂いカード - 自己犠牲と爆発力 */
 export const berserkerCards: Card[] = [
   {
-    id: 'ber_warrior',
+    templateId: 'ber_warrior',
     name: '狂戦士',
     type: 'creature',
     faction: 'berserker',
@@ -31,7 +31,7 @@ export const berserkerCards: Card[] = [
     flavor: '鋼の歌声響く時、血は最も美しく輝く',
   },
   {
-    id: 'ber_berserker',
+    templateId: 'ber_berserker',
     name: '血染めの戦士',
     type: 'creature',
     faction: 'berserker',
@@ -50,7 +50,7 @@ export const berserkerCards: Card[] = [
     flavor: '真紅に染まる刃に、魂の咆哮を込めて',
   },
   {
-    id: 'ber_champion',
+    templateId: 'ber_champion',
     name: '英雄殺し',
     type: 'creature',
     faction: 'berserker',
@@ -62,7 +62,7 @@ export const berserkerCards: Card[] = [
     flavor: '一撃に全てを託す者の、純粋なる美学',
   },
   {
-    id: 'ber_raider',
+    templateId: 'ber_raider',
     name: '略奪団首領',
     type: 'creature',
     faction: 'berserker',
@@ -81,7 +81,7 @@ export const berserkerCards: Card[] = [
     flavor: '戦場に響く雄叫びが、仲間の血を沸かす',
   },
   {
-    id: 'ber_fury',
+    templateId: 'ber_fury',
     name: '憤怒の戦士',
     type: 'creature',
     faction: 'berserker',
@@ -100,7 +100,7 @@ export const berserkerCards: Card[] = [
     flavor: '燃え尽きる炎が残すは、不屈の意志',
   },
   {
-    id: 'ber_bomber',
+    templateId: 'ber_bomber',
     name: '爆破兵',
     type: 'creature',
     faction: 'berserker',
@@ -119,7 +119,7 @@ export const berserkerCards: Card[] = [
     flavor: '混沌の中にこそ、真の戦の美が宿る',
   },
   {
-    id: 'ber_craver',
+    templateId: 'ber_craver',
     name: '血の渇望者',
     type: 'creature',
     faction: 'berserker',
@@ -131,7 +131,7 @@ export const berserkerCards: Card[] = [
     flavor: '敵の血こそ、我が渇きを癒す唯一の泉。',
   },
   {
-    id: 'ber_last_stand',
+    templateId: 'ber_last_stand',
     name: '最後の抵抗',
     type: 'spell',
     faction: 'berserker',
@@ -149,7 +149,7 @@ export const berserkerCards: Card[] = [
     flavor: '追い詰められた獣こそ、最も牙を剥く。',
   },
   {
-    id: 'ber_thorn_orc',
+    templateId: 'ber_thorn_orc',
     name: '棘の鎧のオーク',
     type: 'creature',
     faction: 'berserker',
@@ -168,7 +168,7 @@ export const berserkerCards: Card[] = [
     flavor: '近づけば血を流すことになるぞ。それでも来るか？',
   },
   {
-    id: 'ber_desperate_berserker',
+    templateId: 'ber_desperate_berserker',
     name: '背水の狂戦士',
     type: 'creature',
     faction: 'berserker',
@@ -188,7 +188,7 @@ export const berserkerCards: Card[] = [
     flavor: '死の淵こそ我が故郷。貴様も故郷に還りたくなったか？',
   },
   {
-    id: 'ber_blood_awakening',
+    templateId: 'ber_blood_awakening',
     name: '血の覚醒',
     type: 'spell',
     faction: 'berserker',

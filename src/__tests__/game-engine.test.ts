@@ -43,7 +43,7 @@ describe('Ashenhall ゲームエンジン', () => {
     // 各カードを5枚ずつ（20枚デッキ）
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     
@@ -442,7 +442,7 @@ describe('守護キーワード処理テスト', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -454,14 +454,14 @@ describe('守護キーワード処理テスト', () => {
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed);
 
     // 攻撃者（攻撃力4）を配置
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_champion');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_champion');
     if (!attackerCard || attackerCard.type !== 'creature') {
       throw new Error('攻撃者カードが見つかりません');
     }
 
     // 守護クリーチャー（攻撃力1、体力2）と通常クリーチャー（攻撃力2、体力1）を配置
-    const guardCard = necromancerCards.find(c => c.id === 'necro_skeleton');
-    const normalCard = necromancerCards.find(c => c.id === 'necro_wraith');
+    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
+    const normalCard = necromancerCards.find(c => c.templateId === 'necro_wraith');
     if (!guardCard || guardCard.type !== 'creature' || !normalCard || normalCard.type !== 'creature') {
       throw new Error('守護・通常カードが見つかりません');
     }
@@ -520,7 +520,7 @@ describe('守護キーワード処理テスト', () => {
     const normalCreature = gameState.players.player2.field.find(c => !c.keywords.includes('guard'));
     if (normalCreature) {
       const normalAttack = attackActions.find(action => 
-        action.type === 'card_attack' && action.data.targetId === normalCreature.id
+        action.type === 'card_attack' && action.data.targetId === normalCreature.templateId
       );
       expect(normalAttack).toBeUndefined();
     }
@@ -562,13 +562,13 @@ describe('守護キーワード処理テスト', () => {
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed + '_silenced');
 
     // 攻撃者を配置
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
     if (!attackerCard || attackerCard.type !== 'creature') {
       throw new Error('攻撃者カードが見つかりません');
     }
 
     // 沈黙状態の守護クリーチャーを配置
-    const guardCard = necromancerCards.find(c => c.id === 'necro_skeleton');
+    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
     if (!guardCard || guardCard.type !== 'creature') {
       throw new Error('守護カードが見つかりません');
     }
@@ -615,13 +615,13 @@ describe('守護キーワード処理テスト', () => {
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed + '_dead_guard');
 
     // 攻撃者を配置
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
     if (!attackerCard || attackerCard.type !== 'creature') {
       throw new Error('攻撃者カードが見つかりません');
     }
 
     // 体力0の守護クリーチャーを配置
-    const guardCard = necromancerCards.find(c => c.id === 'necro_skeleton');
+    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
     if (!guardCard || guardCard.type !== 'creature') {
       throw new Error('守護カードが見つかりません');
     }
@@ -700,7 +700,7 @@ describe('Card Keyword and Effect Tests', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -711,8 +711,8 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.id === 'necro_skeleton');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
+    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
     if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
       throw new Error('Test cards not found');
     }
@@ -753,7 +753,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 10;
@@ -788,7 +788,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 15;
@@ -831,7 +831,7 @@ describe('Card Keyword and Effect Tests', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -842,8 +842,8 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.id === 'necro_skeleton');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
+    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
     if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
       throw new Error('Test cards not found');
     }
@@ -884,7 +884,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 10;
@@ -919,7 +919,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 15;
@@ -962,7 +962,7 @@ describe('Card Keyword and Effect Tests', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -973,8 +973,8 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.id === 'necro_skeleton');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
+    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
     if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
       throw new Error('Test cards not found');
     }
@@ -1015,7 +1015,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 10;
@@ -1050,7 +1050,7 @@ describe('Card Keyword and Effect Tests', () => {
     const deck2 = createTestDeck();
     let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test');
 
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_desperate_berserker');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
     gameState.players.player1.life = 15;
@@ -1345,7 +1345,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, id: `${card.id}_${i}` });
+        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
       }
     });
     return deck;
@@ -1363,14 +1363,14 @@ describe('戦闘システム - 勝利判定後の処理', () => {
     gameState.players.player2.field = [];
 
     // player1の場に攻撃力2のクリーチャーを3体配置
-    const attackerCard = berserkerCards.find(c => c.id === 'ber_warrior');
+    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
     if (!attackerCard || attackerCard.type !== 'creature') {
       throw new Error('攻撃者カードが見つかりません');
     }
     for (let i = 0; i < 3; i++) {
       gameState.players.player1.field.push({
         ...attackerCard,
-        id: `attacker_${i}`,
+        templateId: `attacker_${i}`,
         owner: 'player1',
         currentHealth: attackerCard.health,
         attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,

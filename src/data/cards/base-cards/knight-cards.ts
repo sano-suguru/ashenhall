@@ -12,7 +12,7 @@ import type { Card } from '@/types/game';
 /** 騎士カード - 連携効果と回復 */
 export const knightCards: Card[] = [
   {
-    id: 'kni_squire',
+    templateId: 'kni_squire',
     name: '見習い騎士',
     type: 'creature',
     faction: 'knight',
@@ -31,7 +31,7 @@ export const knightCards: Card[] = [
     flavor: '小さき光も、共に在れば闇を払う',
   },
   {
-    id: 'kni_paladin',
+    templateId: 'kni_paladin',
     name: '聖騎士',
     type: 'creature',
     faction: 'knight',
@@ -50,7 +50,7 @@ export const knightCards: Card[] = [
     flavor: '黄金の鷲が舞う空に、癒しの光は降り注ぐ',
   },
   {
-    id: 'kni_templar',
+    templateId: 'kni_templar',
     name: '聖堂騎士',
     type: 'creature',
     faction: 'knight',
@@ -62,7 +62,7 @@ export const knightCards: Card[] = [
     flavor: '神聖なる誓いに宿る、不屈の守護',
   },
   {
-    id: 'kni_guardian',
+    templateId: 'kni_guardian',
     name: '守護騎士',
     type: 'creature',
     faction: 'knight',
@@ -74,7 +74,7 @@ export const knightCards: Card[] = [
     flavor: '我が盾に込めし祈りよ、永遠に仲間を護れ',
   },
   {
-    id: 'kni_crusader',
+    templateId: 'kni_crusader',
     name: '十字軍騎士',
     type: 'creature',
     faction: 'knight',
@@ -93,7 +93,7 @@ export const knightCards: Card[] = [
     flavor: '仲間への信頼が、我が剣に力を与える',
   },
   {
-    id: 'kni_chaplain',
+    templateId: 'kni_chaplain',
     name: '従軍僧',
     type: 'creature',
     faction: 'knight',
@@ -112,7 +112,7 @@ export const knightCards: Card[] = [
     flavor: '最後の祈りに込める、永遠なる加護',
   },
   {
-    id: 'kni_vindicator',
+    templateId: 'kni_vindicator',
     name: '報復の聖騎士',
     type: 'creature',
     faction: 'knight',
@@ -124,7 +124,7 @@ export const knightCards: Card[] = [
     flavor: '受けた祈りは、倍の祈りて返すべし。',
   },
   {
-    id: 'kni_banneret',
+    templateId: 'kni_banneret',
     name: '団結の旗手',
     type: 'creature',
     faction: 'knight',
@@ -143,7 +143,7 @@ export const knightCards: Card[] = [
     flavor: 'この旗の下に、我らは一つ。',
   },
   {
-    id: 'kni_sanctuary_prayer',
+    templateId: 'kni_sanctuary_prayer',
     name: '聖域の祈り',
     type: 'spell',
     faction: 'knight',
@@ -161,7 +161,7 @@ export const knightCards: Card[] = [
     flavor: '一人一人の祈りは小さくとも、共に捧げれば天に届く奇跡となる。',
   },
   {
-    id: 'kni_white_wing_marshal',
+    templateId: 'kni_white_wing_marshal',
     name: '白翼の元帥',
     type: 'creature',
     faction: 'knight',
@@ -181,7 +181,7 @@ export const knightCards: Card[] = [
     flavor: '恐れるな、我が翼の元に集え！光は我らと共にある！',
   },
   {
-    id: 'kni_galleon',
+    templateId: 'kni_galleon',
     name: '不動の聖壁、ガレオン',
     type: 'creature',
     faction: 'knight',
@@ -201,7 +201,7 @@ export const knightCards: Card[] = [
     flavor: '我が身は騎士団の礎。我が魂は仲間たちの盾。この誓いが破られることはない。',
   },
   {
-    id: 'kni_vow_of_unity',
+    templateId: 'kni_vow_of_unity',
     name: '団結の誓い',
     type: 'spell',
     faction: 'knight',

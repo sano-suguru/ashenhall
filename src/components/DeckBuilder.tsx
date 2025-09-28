@@ -41,12 +41,12 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
   };
 
   const addCardToDeck = (card: Card) => {
-    const cardCount = currentDeck.cards.filter(id => id === card.id).length;
-    const isCore = currentDeck.coreCardIds.includes(card.id);
+    const cardCount = currentDeck.cards.filter(id => id === card.templateId).length;
+    const isCore = currentDeck.coreCardIds.includes(card.templateId);
     const limit = isCore ? 3 : GAME_CONSTANTS.CARD_COPY_LIMIT;
 
     if (cardCount < limit && currentDeck.cards.length < GAME_CONSTANTS.DECK_SIZE) {
-      setCurrentDeck({ ...currentDeck, cards: [...currentDeck.cards, card.id] });
+      setCurrentDeck({ ...currentDeck, cards: [...currentDeck.cards, card.templateId] });
     }
   };
 
@@ -123,18 +123,18 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
             <p className="text-sm text-gray-400 mb-4">★アイコンクリックでコアカード(3枚まで)を選択</p>
             <div className="grid grid-cols-2 gap-2">
               {availableCards.map(card => {
-                const isCore = currentDeck.coreCardIds.includes(card.id);
+                const isCore = currentDeck.coreCardIds.includes(card.templateId);
                 return (
-                  <div key={card.id} className="relative">
+                  <div key={card.templateId} className="relative">
                     <div onClick={() => addCardToDeck(card)} className="cursor-pointer">
                       <CardComponent card={card} size="medium" />
                     </div>
                     <div className="absolute top-2 right-2 flex items-center space-x-1">
-                      <button onClick={() => toggleCoreCard(card.id)} className={`p-1 rounded-full ${isCore ? 'bg-amber-400 text-gray-900' : 'bg-black/70 text-gray-400 hover:text-white'}`}>
+                      <button onClick={() => toggleCoreCard(card.templateId)} className={`p-1 rounded-full ${isCore ? 'bg-amber-400 text-gray-900' : 'bg-black/70 text-gray-400 hover:text-white'}`}>
                         <Star size={16} />
                       </button>
                       <div className="bg-black/70 rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold">
-                        {getCardCountInDeck(card.id)}
+                        {getCardCountInDeck(card.templateId)}
                       </div>
                     </div>
                   </div>
@@ -156,12 +156,12 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
                 {currentDeck.cards
                   .slice()
                   .sort((a, b) => {
-                    const cardA = availableCards.find(c => c.id === a);
-                    const cardB = availableCards.find(c => c.id === b);
+                    const cardA = availableCards.find(c => c.templateId === a);
+                    const cardB = availableCards.find(c => c.templateId === b);
                     return (cardA?.cost ?? 0) - (cardB?.cost ?? 0);
                   })
                   .map((cardId, index) => {
-                    const card = availableCards.find(c => c.id === cardId);
+                    const card = availableCards.find(c => c.templateId === cardId);
                     const isCore = currentDeck.coreCardIds.includes(cardId);
                     return card ? (
                       <div key={`${cardId}-${index}`} onClick={() => removeCardFromDeck(cardId)} className="cursor-pointer relative">

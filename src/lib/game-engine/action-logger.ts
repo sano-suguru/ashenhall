@@ -75,11 +75,11 @@ export function addCreatureDestroyedAction(
   if (!data.cardSnapshot) {
     // 盤面上から対象カードを探索（除去前である想定）
     const player = state.players[playerId];
-    const found = player.field.find(c => c.id === data.destroyedCardId)
-      || state.players[playerId === 'player1' ? 'player2' : 'player1'].field.find(c => c.id === data.destroyedCardId);
+    const found = player.field.find(c => c.templateId === data.destroyedCardId)
+      || state.players[playerId === 'player1' ? 'player2' : 'player1'].field.find(c => c.templateId === data.destroyedCardId);
     if (found) {
       data.cardSnapshot = {
-        id: found.id,
+        id: found.templateId,
         owner: found.owner,
         name: found.name,
         attackTotal: found.attack + found.attackModifier + found.passiveAttackModifier,

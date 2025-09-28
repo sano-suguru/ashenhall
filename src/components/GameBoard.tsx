@@ -350,10 +350,10 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
           </div>
         ) : (
           player.field.map((card, index) => {
-            const animationState = getCardAttackState(card.id);
+            const animationState = getCardAttackState(card.templateId);
             return (
               <CardComponent
-                key={`${player.id}-field-${card.id}-${index}`}
+                key={`${player.id}-field-${card.templateId}-${index}`}
                 card={card}
                 isFieldCard={true}
                 isOpponent={isOpponent}
@@ -377,10 +377,10 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
           </div>
         ) : (
           player.hand.map((card, index) => {
-            const animationState = getCardAttackState(card.id);
+            const animationState = getCardAttackState(card.templateId);
             return (
               <CardComponent
-                key={`hand-${card.id}-${index}`}
+                key={`hand-${card.templateId}-${index}`}
                 card={card}
                 isFieldCard={false}
                 isOpponent={false}

@@ -72,7 +72,7 @@ describe('Card Mechanics Tests', () => {
     
     expect(gameState.players[p2].field.length).toBe(0);
     expect(gameState.players[p2].graveyard.length).toBe(1);
-    expect(gameState.players[p2].graveyard[0].id).toBe(skeleton.id);
+    expect(gameState.players[p2].graveyard[0].templateId).toBe(skeleton.templateId);
   });
 
   test('Retaliate keyword should deal damage back to the attacker', () => {
@@ -122,9 +122,9 @@ describe('Card Mechanics Tests', () => {
   // === Advanced Mechanics Tests (from advanced-card-mechanics.test.ts) ===
 
   test('墓所の支配者 should resurrect a creature from the graveyard', () => {
-    const graveMaster = necromancerCards.find(c => c.id === 'necro_grave_master')! as CreatureCard;
-    const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
-    
+    const graveMaster = necromancerCards.find(c => c.templateId === 'necro_grave_master')! as CreatureCard;
+    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
+
     baseState.players[p1].hand = [graveMaster];
     baseState.players[p1].graveyard = [skeleton];
     baseState.players[p1].energy = 4;
@@ -136,14 +136,14 @@ describe('Card Mechanics Tests', () => {
     state = processGameStep(state); 
 
     const playerField = state.players[p1].field;
-    expect(playerField.some((c: Card) => c.id === 'necro_grave_master')).toBe(true);
-    expect(playerField.some((c: Card) => c.id === 'necro_skeleton')).toBe(true);
+    expect(playerField.some((c: Card) => c.templateId === 'necro_grave_master')).toBe(true);
+    expect(playerField.some((c: Card) => c.templateId === 'necro_skeleton')).toBe(true);
     expect(state.players[p1].graveyard.length).toBe(0);
   });
 
   test('最後の抵抗 should only deal damage to creatures when player life is low', () => {
-    const lastStand = berserkerCards.find(c => c.id === 'ber_last_stand')!;
-    const enemyCreature = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
+    const lastStand = berserkerCards.find(c => c.templateId === 'ber_last_stand')!;
+    const enemyCreature = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
 
     baseState.players[p2].field = [{ ...enemyCreature, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     
@@ -166,14 +166,14 @@ describe('Card Mechanics Tests', () => {
 
     stateLowLife = processGameStep(stateLowLife);
     expect(stateLowLife.players[p2].field.length).toBe(0);
-    expect(stateLowLife.players[p2].graveyard.some((c: Card) => c.id === enemyCreature.id)).toBe(true);
+    expect(stateLowLife.players[p2].graveyard.some((c: Card) => c.templateId === enemyCreature.templateId)).toBe(true);
   });
 
   test('魔力循環の学者 should gain attack when a spell is played', () => {
-    const scholar = mageCards.find(c => c.id === 'mag_scholar')! as CreatureCard;
+    const scholar = mageCards.find(c => c.templateId === 'mag_scholar')! as CreatureCard;
     // プレイ条件のないスペル「理の崩壊」を使用
-    const spell = mageCards.find(c => c.id === 'mag_reality_collapse')!;
-    const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard;
+    const spell = mageCards.find(c => c.templateId === 'mag_reality_collapse')!;
+    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [{ ...scholar, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
@@ -186,13 +186,13 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
 
-    const scholarOnField = state.players[p1].field.find((c: Card) => c.id === 'mag_scholar');
+    const scholarOnField = state.players[p1].field.find((c: Card) => c.templateId === 'mag_scholar');
     expect(scholarOnField?.attackModifier).toBe(1);
   });
 
   test('団結の旗手 should passively buff other knights', () => {
-    const banneret = knightCards.find(c => c.id === 'kni_banneret')! as CreatureCard;
-    const squire = knightCards.find(c => c.id === 'kni_squire')! as CreatureCard;
+    const banneret = knightCards.find(c => c.templateId === 'kni_banneret')! as CreatureCard;
+    const squire = knightCards.find(c => c.templateId === 'kni_squire')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [
@@ -204,13 +204,13 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
 
-    const squireOnField = state.players[p1].field.find((c: Card) => c.id === 'kni_squire');
+    const squireOnField = state.players[p1].field.find((c: Card) => c.templateId === 'kni_squire');
     expect(squireOnField).toBeDefined();
   });
 
   test('沈黙の令状 should silence an enemy creature', () => {
-    const writ = inquisitorCards.find(c => c.id === 'inq_writ_of_silence')!;
-    const zombie = necromancerCards.find(c => c.id === 'necro_zombie')! as CreatureCard;
+    const writ = inquisitorCards.find(c => c.templateId === 'inq_writ_of_silence')!;
+    const zombie = necromancerCards.find(c => c.templateId === 'necro_zombie')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [writ];
@@ -221,7 +221,7 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
 
-    const silencedZombie = state.players[p2].field.find((c: Card) => c.id === 'necro_zombie');
+    const silencedZombie = state.players[p2].field.find((c: Card) => c.templateId === 'necro_zombie');
     expect(silencedZombie?.isSilenced).toBe(true);
 
     if (silencedZombie) {
@@ -232,13 +232,13 @@ describe('Card Mechanics Tests', () => {
     state = processGameStep(state);
 
     expect(state.players[p2].field.length).toBe(0);
-    expect(state.players[p2].graveyard.some((c: Card) => c.id === 'necro_zombie')).toBe(true);
+    expect(state.players[p2].graveyard.some((c: Card) => c.templateId === 'necro_zombie')).toBe(true);
   });
 
   // === New Mechanics Tests for Expansion ===
 
   test('Rush keyword should allow attacking on the same turn', () => {
-    const rushCreature = { ...necromancerCards.find(c => c.id === 'necro_skeleton')! as CreatureCard, keywords: ['rush'] };
+    const rushCreature = { ...necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard, keywords: ['rush'] };
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [{ ...rushCreature, owner: p1, currentHealth: rushCreature.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: state.turnNumber, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.players[p2].life = 10;
@@ -255,8 +255,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Echo mechanic should trigger effects based on graveyard size', () => {
-    const librarian = necromancerCards.find(c => c.id === 'necro_librarian')!;
-    const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+    const librarian = necromancerCards.find(c => c.templateId === 'necro_librarian')!;
+    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
     
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [librarian];
@@ -285,8 +285,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Formation mechanic should trigger effects based on ally count', () => {
-    const vowOfUnity = knightCards.find(c => c.id === 'kni_vow_of_unity')!;
-    const squire = knightCards.find(c => c.id === 'kni_squire')! as CreatureCard;
+    const vowOfUnity = knightCards.find(c => c.templateId === 'kni_vow_of_unity')!;
+    const squire = knightCards.find(c => c.templateId === 'kni_squire')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [vowOfUnity];
@@ -317,8 +317,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('魂の渦 should summon a token with stats equal to graveyard size and exile graveyard', () => {
-    const soulVortex = necromancerCards.find(c => c.id === 'necro_soul_vortex')!;
-    const skeleton = necromancerCards.find(c => c.id === 'necro_skeleton')!;
+    const soulVortex = necromancerCards.find(c => c.templateId === 'necro_soul_vortex')!;
+    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
     
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [soulVortex];
@@ -337,9 +337,9 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Attack debuff should reduce creature attack power', () => {
-    const sinBurden = inquisitorCards.find(c => c.id === 'inq_sin_burden')!;
-    const bloodWarrior = berserkerCards.find(c => c.id === 'ber_berserker')! as CreatureCard;
-    const bomber = berserkerCards.find(c => c.id === 'ber_bomber')! as CreatureCard;
+    const sinBurden = inquisitorCards.find(c => c.templateId === 'inq_sin_burden')!;
+    const bloodWarrior = berserkerCards.find(c => c.templateId === 'ber_berserker')! as CreatureCard;
+    const bomber = berserkerCards.find(c => c.templateId === 'ber_bomber')! as CreatureCard;
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [sinBurden];

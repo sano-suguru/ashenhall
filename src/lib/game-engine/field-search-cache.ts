@@ -24,7 +24,7 @@ class FieldCardLookup {
     // 全プレイヤーのフィールドカードをキャッシュ
     Object.values(gameState.players).forEach(player => {
       player.field.forEach(card => {
-        this.fieldMap.set(card.id, card);
+        this.fieldMap.set(card.templateId, card);
       });
     });
   }
@@ -98,7 +98,7 @@ export class GraveyardLookup {
    */
   static countExcludingSelf(gameState: GameState, playerId: PlayerId, selfCardId: string): number {
     const player = gameState.players[playerId];
-    return player.graveyard.filter(c => c.id !== selfCardId).length;
+    return player.graveyard.filter(c => c.templateId !== selfCardId).length;
   }
 }
 

@@ -85,23 +85,23 @@ export function executeDamageEffect(
   random: SeededRandom
 ): void {
   // 特殊効果: 秘術の連雷
-  if (sourceCard.id === "mag_arcane_lightning") {
+  if (sourceCard.templateId === "mag_arcane_lightning") {
     const opponentId = getOpponentId(state.currentPlayer);
     const initialTarget = random.choice(
       state.players[opponentId].field.filter((c) => c.currentHealth > 0)
     );
     if (initialTarget) {
       const initialHealth = initialTarget.currentHealth;
-      applyDamage(state, [initialTarget], null, damage, sourceCard.id);
+      applyDamage(state, [initialTarget], null, damage, sourceCard.templateId);
       if (initialTarget.currentHealth <= 0 && initialHealth > 0) {
         // 死亡した場合
         const secondaryTarget = random.choice(
           state.players[opponentId].field.filter(
-            (c) => c.currentHealth > 0 && c.id !== initialTarget.id
+            (c) => c.currentHealth > 0 && c.templateId !== initialTarget.templateId
           )
         );
         if (secondaryTarget) {
-          applyDamage(state, [secondaryTarget], null, 2, sourceCard.id);
+          applyDamage(state, [secondaryTarget], null, 2, sourceCard.templateId);
         }
       }
     }
@@ -139,7 +139,7 @@ function applyDamage(
     const before = target.currentHealth;
     applyCardDamage(target, damage);
     const after = target.currentHealth;
-    valueChanges[target.id] = { health: createValueChange(before, after) };
+    valueChanges[target.templateId] = { health: createValueChange(before, after) };
     // 即時破壊: 直接ダメージで 0 以下になった場合はここで破壊処理。
     // これにより Lifesteal や on_death 連鎖が元のテスト前提どおり同期的に発火する。
     if (after <= 0) {
@@ -178,7 +178,7 @@ function applyHeal(
     const before = target.currentHealth;
     target.currentHealth = Math.min(maxHealth, target.currentHealth + healing);
     const after = target.currentHealth;
-    valueChanges[target.id] = { health: createValueChange(before, after) };
+    valueChanges[target.templateId] = { health: createValueChange(before, after) };
   });
 
   if (targetPlayerId) {
@@ -282,13 +282,13 @@ function applyBuff(
       target.attackModifier += value;
       const after =
         target.attack + target.attackModifier + target.passiveAttackModifier;
-      valueChanges[target.id] = { attack: createValueChange(before, after) };
+      valueChanges[target.templateId] = { attack: createValueChange(before, after) };
     } else {
       const before = target.currentHealth;
       target.healthModifier += value;
       target.currentHealth += value;
       const after = target.currentHealth;
-      valueChanges[target.id] = { health: createValueChange(before, after) };
+      valueChanges[target.templateId] = { health: createValueChange(before, after) };
     }
   });
 
@@ -318,7 +318,7 @@ function applyDebuff(
       );
       const after =
         target.attack + target.attackModifier + target.passiveAttackModifier;
-      valueChanges[target.id] = { attack: createValueChange(before, after) };
+      valueChanges[target.templateId] = { attack: createValueChange(before, after) };
     } else {
       const before = target.currentHealth;
       target.healthModifier -= value;
@@ -328,7 +328,7 @@ function applyDebuff(
         target.currentHealth = maxHealth;
       }
       const after = target.currentHealth;
-      valueChanges[target.id] = { health: createValueChange(before, after) };
+      valueChanges[target.templateId] = { health: createValueChange(before, after) };
     }
   });
 
@@ -421,7 +421,7 @@ export function executeSwapAttackHealthEffect(
       target.attack + target.attackModifier + target.passiveAttackModifier;
     const newCurrentHealth = target.currentHealth;
 
-    valueChanges[target.id] = {
+    valueChanges[target.templateId] = {
       attack: createValueChange(oldAttack, newAttack),
       health: createValueChange(oldCurrentHealth, newCurrentHealth),
     };
@@ -461,7 +461,7 @@ export function executeHandDiscardEffect(
 
     const cardToDiscard = random.choice(potentialTargets);
     if (cardToDiscard) {
-      player.hand = player.hand.filter((c) => c.id !== cardToDiscard.id);
+      player.hand = player.hand.filter((c) => c.templateId !== cardToDiscard.templateId);
       player.graveyard.push(cardToDiscard);
       addEffectTriggerAction(state, sourceCardId, "hand_discard", 1, {
         [targetPlayerId]: {},
@@ -485,7 +485,7 @@ export function executeDestroyAllCreaturesEffect(
   targets.forEach((target) => {
     const before = target.currentHealth;
     target.currentHealth = 0;
-    valueChanges[target.id] = { health: createValueChange(before, 0) };
+    valueChanges[target.templateId] = { health: createValueChange(before, 0) };
   });
 
   addEffectTriggerAction(
@@ -512,12 +512,12 @@ export function executeBanishEffect(
     const player = state.players[ownerId];
     
     // 場から除去（handleCreatureDeathは使わない - 死亡時効果を発動させない）
-    const cardIndex = player.field.findIndex(c => c.id === target.id);
+    const cardIndex = player.field.findIndex(c => c.templateId === target.templateId);
     if (cardIndex !== -1) {
       const [removedCard] = player.field.splice(cardIndex, 1);
       // 墓地でなく消滅領域へ送る
       player.banishedCards.push(removedCard);
-      valueChanges[target.id] = { health: createValueChange(target.currentHealth, 0) };
+      valueChanges[target.templateId] = { health: createValueChange(target.currentHealth, 0) };
     }
   });
 

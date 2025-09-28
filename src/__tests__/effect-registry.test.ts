@@ -21,7 +21,7 @@ describe("resolveDynamicEffectParameters", () => {
     );
   });
 
-  const findCard = (id: string) => ALL_CARDS.find((c) => c.id === id)!;
+  const findCard = (templateId: string) => ALL_CARDS.find((c) => c.templateId === templateId)!;
 
   it("necro_grave_giantの攻撃力バフが墓地のクリーチャー数と等しくなること", () => {
     const sourceCard = findCard("necro_grave_giant");
@@ -39,9 +39,9 @@ describe("resolveDynamicEffectParameters", () => {
     const sourceCard = findCard("kni_sanctuary_prayer");
     const effect = sourceCard.effects.find(e => e.action === 'heal')!;
     gameState.players[sourcePlayerId].field = [
-      { id: "c1", currentHealth: 1 } as FieldCard,
-      { id: "c2", currentHealth: 1 } as FieldCard,
-      { id: "c3", currentHealth: 1 } as FieldCard,
+      { templateId: "c1", currentHealth: 1 } as FieldCard,
+      { templateId: "c2", currentHealth: 1 } as FieldCard,
+      { templateId: "c3", currentHealth: 1 } as FieldCard,
     ];
 
     const { value } = resolveDynamicEffectParameters(gameState, effect, sourceCard, sourcePlayerId, []);
@@ -57,8 +57,8 @@ describe("resolveDynamicEffectParameters", () => {
     
     // resolveDynamicEffectParameters自体は対象を変更しない
     const initialTargets: FieldCard[] = [
-      { id: sourceCard.id } as FieldCard,
-      { id: "ally2" } as FieldCard,
+      { templateId: sourceCard.templateId } as FieldCard,
+      { templateId: "ally2" } as FieldCard,
     ];
     const { targets } = resolveDynamicEffectParameters(gameState, effect, sourceCard, sourcePlayerId, initialTargets);
     expect(targets.length).toBe(2); // resolveDynamicEffectParameters では変更されない
@@ -74,7 +74,7 @@ describe("resolveDynamicEffectParameters", () => {
       target: "enemy_random",
       trigger: "on_play",
     };
-    const initialTargets: FieldCard[] = [{ id: "enemy1" } as FieldCard];
+    const initialTargets: FieldCard[] = [{ templateId: "enemy1" } as FieldCard];
 
     const { value, targets } = resolveDynamicEffectParameters(gameState, effect, sourceCard, sourcePlayerId, initialTargets);
     expect(value).toBe(2);

@@ -12,7 +12,7 @@ import type { Card } from '@/types/game';
 /** 審問官カード - 弱体化と除去 */
 export const inquisitorCards: Card[] = [
   {
-    id: 'inq_venomtongue',
+    templateId: 'inq_venomtongue',
     name: '毒牙の審問官',
     type: 'creature',
     faction: 'inquisitor',
@@ -24,7 +24,7 @@ export const inquisitorCards: Card[] = [
     flavor: '一度刺されし真実は、魂の芯まで蝕む。',
   },
   {
-    id: 'inq_writ_of_silence',
+    templateId: 'inq_writ_of_silence',
     name: '沈黙の令状',
     type: 'spell',
     faction: 'inquisitor',
@@ -48,7 +48,7 @@ export const inquisitorCards: Card[] = [
     flavor: '言葉を奪われし者に、抗う術はない。',
   },
   {
-    id: 'inq_verdict_of_conviction',
+    templateId: 'inq_verdict_of_conviction',
     name: '断罪の宣告',
     type: 'spell',
     faction: 'inquisitor',
@@ -72,7 +72,7 @@ export const inquisitorCards: Card[] = [
     flavor: '汝の罪は確定した。これより、沈黙の罰を執行する。',
   },
   {
-    id: 'inq_truth_revealer',
+    templateId: 'inq_truth_revealer',
     name: '真実を暴く者',
     type: 'creature',
     faction: 'inquisitor',
@@ -91,7 +91,7 @@ export const inquisitorCards: Card[] = [
     flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
   },
   {
-    id: 'inq_truth_extractor',
+    templateId: 'inq_truth_extractor',
     name: '思考検閲官',
     type: 'creature',
     faction: 'inquisitor',
@@ -111,7 +111,7 @@ export const inquisitorCards: Card[] = [
     flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
   },
   {
-    id: 'inq_purifying_flame',
+    templateId: 'inq_purifying_flame',
     name: '浄罪の天火',
     type: 'spell',
     faction: 'inquisitor',
@@ -134,7 +134,7 @@ export const inquisitorCards: Card[] = [
     flavor: '罪も、義も、等しく灰燼に帰す。その後にこそ、揺るぎなき秩序は再建される。',
   },
   {
-    id: 'inq_sin_burden',
+    templateId: 'inq_sin_burden',
     name: '罪の重圧',
     type: 'spell',
     faction: 'inquisitor',
@@ -164,7 +164,7 @@ export const inquisitorCards: Card[] = [
     flavor: '真実を問う声に、偽りは崩れ落ちる',
   },
   {
-    id: 'inq_collective_confession',
+    templateId: 'inq_collective_confession',
     name: '集団懺悔',
     type: 'spell',
     faction: 'inquisitor',
@@ -182,7 +182,7 @@ export const inquisitorCards: Card[] = [
     flavor: '罪人の悔恨が多ければ多いほど、神の慈悲は深く降り注ぐ',
   },
   {
-    id: 'inq_chain_of_faith',
+    templateId: 'inq_chain_of_faith',
     name: '信仰の鎖',
     type: 'spell',
     faction: 'inquisitor',
@@ -206,7 +206,7 @@ export const inquisitorCards: Card[] = [
     flavor: '罪深き者を縛る鎖は、同時に真理への道標となる',
   },
   {
-    id: 'inq_divine_punisher',
+    templateId: 'inq_divine_punisher',
     name: '神罰の執行者',
     type: 'creature',
     faction: 'inquisitor',
@@ -240,7 +240,7 @@ export const inquisitorCards: Card[] = [
     flavor: '神の裁きに墓地の安息はない。罪人は存在そのものを抹消される',
   },
   {
-    id: 'inq_sanctuary_guard',
+    templateId: 'inq_sanctuary_guard',
     name: '聖域の見張り',
     type: 'creature',
     faction: 'inquisitor',
@@ -266,7 +266,7 @@ export const inquisitorCards: Card[] = [
     flavor: '罪人なき世界でこそ、番人は己の使命に疑問を抱く',
   },
   {
-    id: 'inq_repentant_succubus',
+    templateId: 'inq_repentant_succubus',
     name: '懺悔するサキュバス',
     type: 'creature',
     faction: 'inquisitor',
@@ -297,7 +297,7 @@ export const inquisitorCards: Card[] = [
     flavor: '過去の罪を贖う痛みが、敵の戦意を削ぐ甘い囁きに変わる',
   },
   {
-    id: 'inq_judgment_angel',
+    templateId: 'inq_judgment_angel',
     name: '審判の天使',
     type: 'creature',
     faction: 'inquisitor',
@@ -324,7 +324,7 @@ export const inquisitorCards: Card[] = [
     flavor: '一人一人への審判こそが、真の正義の証明である',
   },
   {
-    id: 'inq_pyre',
+    templateId: 'inq_pyre',
     name: '火刑',
     type: 'spell',
     faction: 'inquisitor',
@@ -368,7 +368,7 @@ export const inquisitorCards: Card[] = [
     flavor: '罪深き者には死を、悔悟せし者には贖罪の炎を',
   },
   {
-    id: 'inq_heretical_inquisition',
+    templateId: 'inq_heretical_inquisition',
     name: '異端審問',
     type: 'spell',
     faction: 'inquisitor',
@@ -396,7 +396,7 @@ export const inquisitorCards: Card[] = [
     flavor: '異端者を見つけ出すには、同胞の知恵が必要だ',
   },
   {
-    id: 'inq_stone_guardian',
+    templateId: 'inq_stone_guardian',
     name: '石の番人',
     type: 'creature',
     faction: 'inquisitor',

@@ -9,7 +9,7 @@ import { AI_EVALUATION_WEIGHTS } from '@/types/game';
 // モックデータとヘルパー関数
 const createMockCard = (overrides: Partial<Card>): Card => {
   const baseCard = {
-    id: 'test-card',
+    templateId: 'test-card',
     name: 'Test Card',
     cost: 3,
     faction: 'necromancer',

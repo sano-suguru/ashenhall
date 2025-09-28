@@ -25,7 +25,7 @@ export function evaluatePendingDeaths(
   for (const pId of ['player1','player2'] as const) {
     const player = state.players[pId];
     for (const c of player.field) {
-      if (c.currentHealth <= 0 && !destroyedIds.has(c.id)) {
+      if (c.currentHealth <= 0 && !destroyedIds.has(c.templateId)) {
         pending.push(c);
       }
     }

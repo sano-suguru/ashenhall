@@ -60,7 +60,7 @@ function playCardToField(
   position: number
 ): boolean {
   const player = state.players[playerId];
-  const cardIndex = player.hand.findIndex((c) => c.id === cardId);
+  const cardIndex = player.hand.findIndex((c) => c.templateId === cardId);
 
   if (cardIndex === -1) return false;
   const card = player.hand[cardIndex];
@@ -101,7 +101,7 @@ function playCardToField(
     player.field.splice(position, 0, fieldCard);
     player.field.forEach((c, i) => (c.position = i));
     addCardPlayAction(state, playerId, {
-      cardId: card.id,
+      cardId: card.templateId,
       position,
       initialStats: { attack: card.attack, health: card.health },
       playerEnergy: { before: energyBefore, after: energyAfter },
@@ -110,7 +110,7 @@ function playCardToField(
   } else if (card.type === "spell") {
     player.graveyard.push(card); // Move to graveyard before resolving effects
     addCardPlayAction(state, playerId, {
-      cardId: card.id,
+      cardId: card.templateId,
       position: -1,
       playerEnergy: { before: energyBefore, after: energyAfter },
     });
@@ -139,7 +139,7 @@ export function processDrawPhase(state: GameState): void {
     const handBefore = player.hand.length;
     player.hand.push(drawnCard);
     addCardDrawAction(state, state.currentPlayer, {
-      cardId: drawnCard.id,
+      cardId: drawnCard.templateId,
       handSizeBefore: handBefore,
       handSizeAfter: player.hand.length,
       deckSizeAfter: player.deck.length,
@@ -238,7 +238,7 @@ export function processDeployPhase(state: GameState): void {
   const success = playCardToField(
     state,
     state.currentPlayer,
-    bestCard.id,
+    bestCard.templateId,
     position
   );
 
@@ -278,7 +278,7 @@ export function processEndPhase(state: GameState): void {
             effectType: "damage",
             effectValue: effect.damage,
             targets: {
-              [card.id]: {
+              [card.templateId]: {
                 health: { before: healthBefore, after: healthAfter },
               },
             },

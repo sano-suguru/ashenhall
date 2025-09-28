@@ -83,7 +83,7 @@ export interface CardEffect {
 
 /** 全カード共通の基本情報 */
 export interface BaseCard {
-  id: string;
+  templateId: string;
   name: string;
   faction: Faction;
   cost: number;

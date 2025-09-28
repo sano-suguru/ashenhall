@@ -63,7 +63,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
   function initPendingCombat(): void {
     attacker = snapshot.shift();
     if (!attacker) return;
-    ctx.currentAttackerId = attacker.id;
+    ctx.currentAttackerId = attacker.templateId;
     ctx.emittedForCurrent = 0;
     attacker.hasAttacked = true;
     processEffectTrigger(state, 'on_attack', attacker, attacker.owner, attacker);
@@ -74,7 +74,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       ctx.emittedForCurrent = undefined;
       return;
     }
-    const random = new SeededRandom(state.randomSeed + state.turnNumber + state.phase + attacker.id);
+    const random = new SeededRandom(state.randomSeed + state.turnNumber + state.phase + attacker.templateId);
     const { targetCard: target, targetPlayer } = chooseAttackTarget(attacker, state, random);
     const totalAttack = attacker.attack + attacker.attackModifier + attacker.passiveAttackModifier;
     const defenderDamage = Math.max(0, totalAttack);
@@ -160,13 +160,13 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     if (pc.target) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'attack_declare',
-        attackerId: pc.attacker.id,
-        targetId: pc.target.id,
+        attackerId: pc.attacker.templateId,
+        targetId: pc.target.templateId,
       });
     } else if (pc.targetPlayer) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'attack_declare',
-        attackerId: pc.attacker.id,
+        attackerId: pc.attacker.templateId,
       });
     }
     pc.stageCursor = 1;
@@ -181,38 +181,38 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
   const actualDamage = Math.max(0, before - after);
       addTriggerEventAction(state, currentPlayerId, {
         triggerType: 'on_damage_taken',
-        sourceCardId: pc.attacker.id,
-        targetCardId: pc.target.id,
+        sourceCardId: pc.attacker.templateId,
+        targetCardId: pc.target.templateId,
       });
       processEffectTrigger(state, 'on_damage_taken', pc.target, opponentId, pc.attacker);
       addCombatStageAction(state, currentPlayerId, {
         stage: 'damage_defender',
-        attackerId: pc.attacker.id,
-        targetId: pc.target.id,
+        attackerId: pc.attacker.templateId,
+        targetId: pc.target.templateId,
         values: { damage: pc.defenderDamage }
       });
       addCardAttackAction(state, currentPlayerId, {
-        attackerCardId: pc.attacker.id,
-        targetId: pc.target.id,
+        attackerCardId: pc.attacker.templateId,
+        targetId: pc.target.templateId,
         damage: pc.defenderDamage || 0,
         targetHealth: { before, after },
       });
     applyOffensiveKeywords(pc, currentPlayerId, opponentId, before, actualDamage);
       // 防御側ダメージ反映後チェーン効果で第三者死亡した可能性を回収
-      evaluatePendingDeaths(state, 'system', pc.attacker.id);
+      evaluatePendingDeaths(state, 'system', pc.attacker.templateId);
     } else if (pc.targetPlayer) {
       const playerLifeBefore = opponent.life;
       opponent.life = Math.max(0, opponent.life - (pc.defenderDamage || 0));
       const playerLifeAfter = opponent.life;
       addCardAttackAction(state, currentPlayerId, {
-        attackerCardId: pc.attacker.id,
+        attackerCardId: pc.attacker.templateId,
         targetId: opponent.id,
         damage: pc.defenderDamage || 0,
         targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
       });
       const actualPlayerDamage = Math.max(0, playerLifeBefore - playerLifeAfter);
       applyDirectAttackKeywords(pc, currentPlayerId, opponentId, opponent.id, actualPlayerDamage);
-      evaluatePendingDeaths(state, 'system', pc.attacker.id);
+      evaluatePendingDeaths(state, 'system', pc.attacker.templateId);
     }
     pc.stageCursor = 2;
     captureNewActions();
@@ -224,8 +224,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       owner.life += actualDamage;
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'lifesteal',
-        sourceCardId: pc.attacker.id,
-        targetId: pc.target!.id,
+        sourceCardId: pc.attacker.templateId,
+        targetId: pc.target!.templateId,
         value: actualDamage,
       });
     }
@@ -233,8 +233,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       pc.target!.statusEffects.push({ type: 'poison', duration: 2, damage: 1 });
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'poison',
-        sourceCardId: pc.attacker.id,
-        targetId: pc.target!.id,
+        sourceCardId: pc.attacker.templateId,
+        targetId: pc.target!.templateId,
         value: 1,
       });
     }
@@ -245,7 +245,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         opp.life = Math.max(0, opp.life - excess);
         addKeywordTriggerAction(state, currentPlayerId, {
           keyword: 'trample',
-          sourceCardId: pc.attacker.id,
+          sourceCardId: pc.attacker.templateId,
           targetId: opp.id,
           value: excess,
         });
@@ -259,7 +259,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       owner.life += actualPlayerDamage;
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'lifesteal',
-        sourceCardId: pc.attacker.id,
+        sourceCardId: pc.attacker.templateId,
         targetId: opponentEntityId,
         value: actualPlayerDamage,
       });
@@ -271,8 +271,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       if (pc.retaliatePortion && pc.retaliatePortion > 0) {
         addKeywordTriggerAction(state, opponentId, {
           keyword: 'retaliate',
-          sourceCardId: pc.target.id,
-          targetId: pc.attacker.id,
+          sourceCardId: pc.target.templateId,
+          targetId: pc.attacker.templateId,
           value: pc.retaliatePortion,
         });
       }
@@ -281,23 +281,23 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       const after = pc.attacker.currentHealth;
       addTriggerEventAction(state, opponentId, {
         triggerType: 'on_damage_taken',
-        sourceCardId: pc.target.id,
-        targetCardId: pc.attacker.id,
+        sourceCardId: pc.target.templateId,
+        targetCardId: pc.attacker.templateId,
       });
       processEffectTrigger(state, 'on_damage_taken', pc.attacker, currentPlayerId, pc.target);
       addCombatStageAction(state, opponentId, {
         stage: 'damage_attacker',
-        attackerId: pc.target.id,
-        targetId: pc.attacker.id,
+        attackerId: pc.target.templateId,
+        targetId: pc.attacker.templateId,
         values: { damage: pc.attackerRetaliationDamage, retaliate: pc.retaliatePortion },
       });
       addCardAttackAction(state, opponentId, {
-        attackerCardId: pc.target.id,
-        targetId: pc.attacker.id,
+        attackerCardId: pc.target.templateId,
+        targetId: pc.attacker.templateId,
         damage: pc.attackerRetaliationDamage,
         attackerHealth: { before, after },
       });
-      evaluatePendingDeaths(state, 'system', pc.target.id);
+      evaluatePendingDeaths(state, 'system', pc.target.templateId);
     }
     pc.stageCursor = 3;
     captureNewActions();
@@ -305,17 +305,17 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
 
   function handleStageDeaths(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId): void {
     const destroyed: string[] = [];
-    if (pc.target && pc.target.currentHealth <= 0) destroyed.push(pc.target.id);
-    if (pc.attacker.currentHealth <= 0) destroyed.push(pc.attacker.id);
+    if (pc.target && pc.target.currentHealth <= 0) destroyed.push(pc.target.templateId);
+    if (pc.attacker.currentHealth <= 0) destroyed.push(pc.attacker.templateId);
     if (destroyed.length > 0) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'deaths',
-        attackerId: pc.attacker.id,
+        attackerId: pc.attacker.templateId,
         values: { destroyed },
       });
       for (const id of destroyed) {
-        const card = id === pc.attacker.id ? pc.attacker : (pc.target && id === pc.target.id ? pc.target : undefined);
-        if (card) handleCreatureDeath(state, card, 'combat', pc.attacker.id);
+        const card = id === pc.attacker.templateId ? pc.attacker : (pc.target && id === pc.target.templateId ? pc.target : undefined);
+        if (card) handleCreatureDeath(state, card, 'combat', pc.attacker.templateId);
       }
     }
     pc.stageCursor = 4;
