@@ -142,11 +142,39 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     }
   };
 
+  /**
+   * デッキの各カードに一意IDを付与してCardオブジェクト配列を生成
+   * 同じマスターカードIDでも異なる一意IDが付与される
+   */
+  const createUniqueCardDeck = (cardIds: string[]): Card[] => {
+    const cardObjects: Card[] = [];
+    const cardCounters: Record<string, number> = {};
+    
+    for (const cardId of cardIds) {
+      const masterCard = getCardById(cardId);
+      if (masterCard) {
+        // 同一マスターIDのカウンター管理
+        cardCounters[cardId] = (cardCounters[cardId] || 0) + 1;
+        
+        // 一意ID付与
+        const uniqueCard: Card = {
+          ...masterCard,
+          id: `${cardId}-deck-${cardCounters[cardId]}`
+        };
+        
+        cardObjects.push(uniqueCard);
+      }
+    }
+    
+    return cardObjects;
+  };
+
   const handleStart = (onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void) => {
     if (selectedFaction && selectedTactics) {
       const activeDeck = deckCollection.decks.find(d => d.id === activeDeckId);
       if (activeDeck && validateDeck(activeDeck).isValid) {
-        const cardObjects = activeDeck.cards.map(id => getCardById(id)).filter((c): c is Card => c !== undefined);
+        // 一意ID付与システムを使用
+        const cardObjects = createUniqueCardDeck(activeDeck.cards);
         onGameStart(selectedFaction, selectedTactics, cardObjects);
       } else {
         alert('有効なカスタムデッキを選択してください。');

@@ -234,8 +234,7 @@ function processCardPlayAction(
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
   
-  // インスタンスIDを優先使用、なければマスターカードIDを使用
-  const targetId = action.data.instanceId || action.data.cardId;
+  const targetId = action.data.cardId;
   
   // カードプレイ演出（召喚・スペル共通）
   tasks.push(createAnimationTask({

@@ -12,7 +12,6 @@ import type {
   PlayerId,
   FieldCard,
 } from "@/types/game";
-import { generateFieldCardInstanceId } from "./instance-id";
 import { GAME_CONSTANTS } from "@/types/game";
 import { advancePhase } from "./game-state";
 import {
@@ -82,17 +81,9 @@ function playCardToField(
   player.hand.splice(cardIndex, 1);
 
   if (card.type === "creature") {
-    // 一意インスタンスIDを生成
-    const instanceId = generateFieldCardInstanceId(
-      card.id,
-      playerId,
-      state.turnNumber,
-      position
-    );
 
     const fieldCard: FieldCard = {
       ...card,
-      instanceId,
       owner: playerId,
       currentHealth: card.health,
       attackModifier: 0,
@@ -111,7 +102,6 @@ function playCardToField(
     player.field.forEach((c, i) => (c.position = i));
     addCardPlayAction(state, playerId, {
       cardId: card.id,
-      instanceId,
       position,
       initialStats: { attack: card.attack, health: card.health },
       playerEnergy: { before: energyBefore, after: energyAfter },
