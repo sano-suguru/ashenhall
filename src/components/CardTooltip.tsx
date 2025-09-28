@@ -70,7 +70,7 @@ const TooltipHeader = ({ card }: { card: Card }) => {
         size={16} 
         className={`${FACTION_COLORS[card.faction].accent} drop-shadow-sm`} 
       />
-      <div className="text-base font-bold text-white flex-1">{card.name}</div>
+      <div className="text-base font-bold text-white flex-1">《{card.name}》</div>
       <div className="flex items-center gap-1">
         <Zap size={16} className="text-blue-400 drop-shadow-sm" />
         <span className="text-blue-400 font-bold">{card.cost}</span>
