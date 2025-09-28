@@ -4,9 +4,9 @@ import React from 'react';
 import type { Card, FieldCard } from '@/types/game';
 // 旧useCreatureStatsData.tsから統合
 import { useMemo } from 'react';
-import { FACTION_COLORS } from '@/lib/card-constants';
+import { FACTION_COLORS, FACTION_ICONS } from '@/lib/card-constants';
 import { getEffectText } from '@/lib/card-text-utils';
-import { Sword, Heart } from 'lucide-react';
+import { Sword, Heart, Zap } from 'lucide-react';
 
 interface TooltipProps {
   card: Card;
@@ -41,9 +41,7 @@ function useCreatureStatsData(
       ? card.attack + fieldCard.attackModifier 
       : card.attack;
       
-    const healthValue = hasFieldModifiers 
-      ? `${fieldCard.currentHealth}/${card.health + fieldCard.healthModifier}` 
-      : card.health;
+    const healthValue = card.health + (hasFieldModifiers ? fieldCard.healthModifier : 0);
       
     const attackModifier = hasFieldModifiers ? fieldCard.attackModifier : 0;
     const healthModifier = hasFieldModifiers ? fieldCard.healthModifier : 0;
@@ -63,15 +61,23 @@ function useCreatureStatsData(
 
 // === 統合されたTooltip実装（tooltip-parts統合版） ===
 
-const TooltipHeader = ({ card }: { card: Card }) => (
-  <div className="flex items-center gap-2 mb-3 border-b border-gray-600 pb-2">
-    <div className={`text-sm font-bold ${FACTION_COLORS[card.faction]}`}>
-      [{card.faction.toUpperCase()}]
+const TooltipHeader = ({ card }: { card: Card }) => {
+  const FactionIcon = FACTION_ICONS[card.faction];
+  
+  return (
+    <div className="flex items-center gap-2 mb-3 border-b border-gray-600 pb-2">
+      <FactionIcon 
+        size={16} 
+        className={`${FACTION_COLORS[card.faction].accent} drop-shadow-sm`} 
+      />
+      <div className="text-base font-bold text-white flex-1">{card.name}</div>
+      <div className="flex items-center gap-1">
+        <Zap size={16} className="text-blue-400 drop-shadow-sm" />
+        <span className="text-blue-400 font-bold">{card.cost}</span>
+      </div>
     </div>
-    <div className="text-base font-bold text-white">{card.name}</div>
-    <div className="ml-auto text-yellow-400 font-bold">[{card.cost}]</div>
-  </div>
-);
+  );
+};
 
 const TooltipCreatureStats = ({ card, isFieldCard, fieldCard }: { card: Card; isFieldCard: boolean; fieldCard: FieldCard | null }) => {
   const statsData = useCreatureStatsData(card, isFieldCard, fieldCard);
@@ -79,16 +85,16 @@ const TooltipCreatureStats = ({ card, isFieldCard, fieldCard }: { card: Card; is
   if (card.type !== 'creature' || !statsData) return null;
 
   return (
-    <div className="flex items-center gap-4 mb-3">
-      <div className="flex items-center gap-1">
-        <Sword size={14} className="text-red-400" />
-        <span className={statsData.hasModifiers ? 'text-yellow-300' : 'text-white'}>
+    <div className="flex items-center gap-6 mb-3">
+      <div className="flex items-center gap-1.5">
+        <Sword size={16} className="text-red-400 drop-shadow-sm" />
+        <span className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}>
           {statsData.attackValue}
         </span>
       </div>
-      <div className="flex items-center gap-1">
-        <Heart size={14} className="text-green-400" />
-        <span className={statsData.hasModifiers ? 'text-yellow-300' : 'text-white'}>
+      <div className="flex items-center gap-1.5">
+        <Heart size={16} className="text-green-400 drop-shadow-sm" />
+        <span className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}>
           {statsData.healthValue}
         </span>
       </div>
@@ -144,14 +150,14 @@ const TooltipFlavor = ({ card }: { card: Card }) => {
 
 export const CardTooltip = ({ card, isFieldCard, fieldCard, tooltipStyle }: TooltipProps) => {
   return (
-    <div style={tooltipStyle} className="fixed transition-opacity duration-300 pointer-events-none z-50">
-      <div className="px-3 py-2 bg-black bg-opacity-95 text-white text-xs rounded-lg shadow-xl w-96 text-left leading-relaxed border border-gray-600">
+    <div style={tooltipStyle} className="fixed transition-all duration-300 pointer-events-none z-50">
+      <div className="px-4 py-3 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white text-xs rounded-xl shadow-2xl w-96 text-left leading-relaxed border border-gray-500/50 backdrop-blur-sm">
         <TooltipHeader card={card} />
         <TooltipCreatureStats card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} />
         <TooltipKeywords card={card} />
         <TooltipEffects card={card} />
         <TooltipFlavor card={card} />
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
       </div>
     </div>
   );
