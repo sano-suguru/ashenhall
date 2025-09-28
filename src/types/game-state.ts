@@ -69,6 +69,8 @@ export interface CardPlayActionData {
   position: number;
   initialStats?: { attack: number; health: number };
   playerEnergy?: { before: number; after: number };
+  /** インスタンス一意ID（FieldCard生成時に設定） */
+  instanceId?: string;
 }
 
 /** カード攻撃アクションデータ */

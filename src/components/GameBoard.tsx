@@ -353,7 +353,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
             const animationState = getCardAttackState(card.id);
             return (
               <CardComponent
-                key={`${player.id}-field-${card.id}-${index}`}
+                key={`${player.id}-field-${card.instanceId || card.id}-${index}`}
                 card={card}
                 isFieldCard={true}
                 isOpponent={isOpponent}

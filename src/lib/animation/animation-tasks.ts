@@ -234,12 +234,15 @@ function processCardPlayAction(
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
   
+  // インスタンスIDを優先使用、なければマスターカードIDを使用
+  const targetId = action.data.instanceId || action.data.cardId;
+  
   // カードプレイ演出（召喚・スペル共通）
   tasks.push(createAnimationTask({
     id: context.nextId('summon', action.sequence),
     sequence: action.sequence,
     kind: 'summon',
-    targetId: action.data.cardId,
+    targetId: targetId,
     duration: 800, // AnimationDurations.SUMMON相当
     batchId: context.batchId,
     origin: 'other'

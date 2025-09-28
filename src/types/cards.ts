@@ -113,6 +113,8 @@ export type Card = CreatureCard | SpellCard;
 export interface FieldCard extends CreatureCard {
   /** カードの所有者 */
   owner: PlayerId;
+  /** インスタンス一意ID（同じマスターカードの複数体を区別） */
+  instanceId?: string;
   /** 現在の体力 */
   currentHealth: number;
   /** 攻撃力バフ・デバフ（永続効果） */
