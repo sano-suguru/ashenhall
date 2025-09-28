@@ -64,7 +64,7 @@ export const AnimationDurations = {
   ATTACK: 300,
   DAMAGE: 1000,
   DESTROY: 1000,
-  SUMMON: 800,
+  SUMMON: 600,
   DRAW: 600,
   SPELL_CAST: 500,
   HEAL: 400,

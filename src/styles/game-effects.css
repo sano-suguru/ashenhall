@@ -71,28 +71,6 @@
   }
 }
 
-/* 召喚演出用アニメーション */
-.card-summoning {
-  border: 2px solid #22d3ee !important;
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.8) !important;
-  animation: summonAppear 800ms ease-out forwards;
-}
-
-@keyframes summonAppear {
-  0% {
-    opacity: 0;
-    transform: scale(0.8) translateY(-20px);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.1) translateY(-5px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.0) translateY(0);
-  }
-}
-
 /* ドロー演出用アニメーション */
 .card-drawing {
   border: 2px solid #8b5cf6 !important;
@@ -183,5 +161,234 @@
     opacity: 0;
     transform: translateY(-25px) scale(1.0);
     color: #047857;
+  }
+}
+
+/* 召喚演出用アニメーション - サラサラ粒子版 */
+.card-summoning {
+  position: relative;
+  border: 2px solid #ffffff !important;
+  animation: summonPremium var(--ah-summon-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: transform, opacity, filter, box-shadow;
+  backface-visibility: hidden;
+  overflow: visible;
+}
+
+/* 第一層: 細かい粒子パーティクル（サラサラ感・存在感強化） */
+.card-summoning::before {
+  content: '· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  width: 120%;
+  height: 60px;
+  transform: translateX(-50%);
+  text-align: center;
+  line-height: 0.8;
+  color: rgba(255, 255, 255, 1.0);
+  font-size: 12px;
+  word-spacing: 2px;
+  letter-spacing: 1px;
+  animation: gentleFlow1 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 第二層: 中間粒子（時間差0.15s・存在感強化） */
+.card-summoning::after {
+  content: '◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦ ◦';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 115%;
+  height: 50px;
+  transform: translateX(-50%);
+  text-align: center;
+  line-height: 1.0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  word-spacing: 3px;
+  letter-spacing: 2px;
+  animation: gentleFlow2 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  animation-delay: 0.15s;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* メインカード演出: サラサラ感に合わせた穏やかなアニメーション */
+@keyframes summonPremium {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(-25px);
+    filter: blur(10px) brightness(0.4) saturate(0.8);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  20% {
+    opacity: 0.3;
+    transform: scale(0.8) translateY(-18px);
+    filter: blur(6px) brightness(1.1) saturate(1.0);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  }
+  40% {
+    opacity: 0.6;
+    transform: scale(1.0) translateY(-10px);
+    filter: blur(3px) brightness(1.2) saturate(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1.08) translateY(-3px);
+    filter: blur(1px) brightness(1.15) saturate(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1.03) translateY(0px);
+    filter: blur(0px) brightness(1.08) saturate(1.02);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.0) translateY(0);
+    filter: blur(0px) brightness(1) saturate(1);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* 第一層粒子: サラサラとした細かい流れ（存在感強化版） */
+@keyframes gentleFlow1 {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(25px) scale(0.8);
+    color: rgba(255, 255, 255, 0);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  15% {
+    opacity: 0.7;
+    transform: translateX(-50%) translateY(20px) scale(0.9);
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translateX(-50%) translateY(15px) scale(1.0);
+    color: rgba(255, 255, 255, 1.0);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  }
+  45% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(5px) scale(1.05);
+    color: rgba(255, 255, 255, 1.0);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-5px) scale(1.1);
+    color: rgba(255, 255, 255, 1.0);
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translateX(-50%) translateY(-18px) scale(1.15);
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  }
+  90% {
+    opacity: 0.6;
+    transform: translateX(-50%) translateY(-35px) scale(1.2);
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-50px) scale(1.25);
+    color: rgba(255, 255, 255, 0);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+/* 第二層粒子: 時間差でより滑らかな流れ（存在感強化版） */
+@keyframes gentleFlow2 {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px) scale(0.7);
+    color: rgba(255, 255, 255, 0);
+    text-shadow: 0 0 0 rgba(230, 230, 255, 0);
+  }
+  20% {
+    opacity: 0.6;
+    transform: translateX(-50%) translateY(15px) scale(0.8);
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 6px rgba(230, 230, 255, 0.5);
+  }
+  35% {
+    opacity: 0.8;
+    transform: translateX(-50%) translateY(8px) scale(0.9);
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 8px rgba(230, 230, 255, 0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0px) scale(1.0);
+    color: rgba(255, 255, 255, 1.0);
+    text-shadow: 0 0 10px rgba(230, 230, 255, 0.7);
+  }
+  65% {
+    opacity: 0.9;
+    transform: translateX(-50%) translateY(-8px) scale(1.05);
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 8px rgba(230, 230, 255, 0.6);
+  }
+  80% {
+    opacity: 0.7;
+    transform: translateX(-50%) translateY(-20px) scale(1.1);
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 6px rgba(230, 230, 255, 0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-35px) scale(1.15);
+    color: rgba(255, 255, 255, 0);
+    text-shadow: 0 0 0 rgba(230, 230, 255, 0);
+  }
+}
+
+/* Phase 3: パフォーマンス最適化とアクセシビリティ */
+
+/* GPU加速強制（全演出共通） */
+.card-summoning {
+  will-change: transform, opacity, filter, box-shadow;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* アクセシビリティ: motion-reduce対応 */
+@media (prefers-reduced-motion: reduce) {
+  .card-summoning,
+  .card-attacking,
+  .card-being-attacked,
+  .card-dying,
+  .card-drawing,
+  .card-spell-casting,
+  .card-healing,
+  .animate-damage-popup,
+  .animate-heal-popup {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  
+  /* パーティクル効果も無効化 */
+  .card-summoning::before,
+  .card-summoning::after {
+    display: none !important;
+  }
+  
+  /* 基本的な視覚フィードバックは維持 */
+  .card-summoning {
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
   }
 }
