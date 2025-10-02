@@ -1,11 +1,11 @@
 import { createInitialGameState } from '@/lib/game-engine/core';
-import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 import type { FieldCard, GameState, GameAction } from '@/types/game';
 import { CompletionAwareProcessor } from '@/lib/game-engine/completion-aware-processor';
 
 function makeFieldCard(templateId: string, atk: number, hp: number, owner: 'player1' | 'player2'): FieldCard {
   return {
     templateId,
+    instanceId: templateId, // テスト用にtemplateIdをinstanceIdとして使用
     name: templateId,
     faction: 'mage',
     cost: 1,
@@ -34,12 +34,14 @@ describe('BattleIterator basic emission', () => {
   test('emits expected attack + death sequence (lethal)', () => {
     const gs: GameState = createInitialGameState('g1', [], [], 'mage', 'knight', 'balanced', 'balanced', 'seed');
     gs.phase = 'battle_attack';
+    gs.currentPlayer = 'player1';
     gs.turnNumber = 2;
 
     const attacker = makeFieldCard('A', 5, 5, 'player1');
     const defender = makeFieldCard('D', 2, 2, 'player2');
-    placeCreatureOnField(gs, 'player1', attacker);
-    placeCreatureOnField(gs, 'player2', defender);
+    // placeCreatureOnFieldを使わず直接追加（instanceIdを保持するため）
+    gs.players.player1.field.push(attacker);
+    gs.players.player2.field.push(defender);
 
     const processor = new CompletionAwareProcessor();
     processor.updateAutonomousConfig({

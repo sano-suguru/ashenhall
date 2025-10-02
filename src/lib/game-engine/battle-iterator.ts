@@ -63,7 +63,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
   function initPendingCombat(): void {
     attacker = snapshot.shift();
     if (!attacker) return;
-    ctx.currentAttackerId = attacker.templateId;
+    ctx.currentAttackerId = attacker.instanceId; // instanceIdを使用
     ctx.emittedForCurrent = 0;
     attacker.hasAttacked = true;
     processEffectTrigger(state, 'on_attack', attacker, attacker.owner, attacker);
@@ -74,7 +74,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       ctx.emittedForCurrent = undefined;
       return;
     }
-    const random = new SeededRandom(state.randomSeed + state.turnNumber + state.phase + attacker.templateId);
+    const random = new SeededRandom(state.randomSeed + state.turnNumber + state.phase + attacker.instanceId);
     const { targetCard: target, targetPlayer } = chooseAttackTarget(attacker, state, random);
     const totalAttack = attacker.attack + attacker.attackModifier + attacker.passiveAttackModifier;
     const defenderDamage = Math.max(0, totalAttack);
@@ -160,13 +160,13 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     if (pc.target) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'attack_declare',
-        attackerId: pc.attacker.templateId,
-        targetId: pc.target.templateId,
+        attackerId: pc.attacker.instanceId, // instanceIdを使用
+        targetId: pc.target.instanceId, // instanceIdを使用
       });
     } else if (pc.targetPlayer) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'attack_declare',
-        attackerId: pc.attacker.templateId,
+        attackerId: pc.attacker.instanceId, // instanceIdを使用
       });
     }
     pc.stageCursor = 1;
@@ -181,38 +181,38 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
   const actualDamage = Math.max(0, before - after);
       addTriggerEventAction(state, currentPlayerId, {
         triggerType: 'on_damage_taken',
-        sourceCardId: pc.attacker.templateId,
-        targetCardId: pc.target.templateId,
+        sourceCardId: pc.attacker.instanceId, // instanceIdを使用
+        targetCardId: pc.target.instanceId, // instanceIdを使用
       });
       processEffectTrigger(state, 'on_damage_taken', pc.target, opponentId, pc.attacker);
       addCombatStageAction(state, currentPlayerId, {
         stage: 'damage_defender',
-        attackerId: pc.attacker.templateId,
-        targetId: pc.target.templateId,
+        attackerId: pc.attacker.instanceId, // instanceIdを使用
+        targetId: pc.target.instanceId, // instanceIdを使用
         values: { damage: pc.defenderDamage }
       });
       addCardAttackAction(state, currentPlayerId, {
-        attackerCardId: pc.attacker.templateId,
-        targetId: pc.target.templateId,
+        attackerCardId: pc.attacker.instanceId, // instanceIdを使用
+        targetId: pc.target.instanceId, // instanceIdを使用
         damage: pc.defenderDamage || 0,
         targetHealth: { before, after },
       });
     applyOffensiveKeywords(pc, currentPlayerId, opponentId, before, actualDamage);
       // 防御側ダメージ反映後チェーン効果で第三者死亡した可能性を回収
-      evaluatePendingDeaths(state, 'system', pc.attacker.templateId);
+      evaluatePendingDeaths(state, 'system', pc.attacker.instanceId); // instanceIdを使用
     } else if (pc.targetPlayer) {
       const playerLifeBefore = opponent.life;
       opponent.life = Math.max(0, opponent.life - (pc.defenderDamage || 0));
       const playerLifeAfter = opponent.life;
       addCardAttackAction(state, currentPlayerId, {
-        attackerCardId: pc.attacker.templateId,
+        attackerCardId: pc.attacker.instanceId, // instanceIdを使用
         targetId: opponent.id,
         damage: pc.defenderDamage || 0,
         targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
       });
       const actualPlayerDamage = Math.max(0, playerLifeBefore - playerLifeAfter);
       applyDirectAttackKeywords(pc, currentPlayerId, opponentId, opponent.id, actualPlayerDamage);
-      evaluatePendingDeaths(state, 'system', pc.attacker.templateId);
+      evaluatePendingDeaths(state, 'system', pc.attacker.instanceId); // instanceIdを使用
     }
     pc.stageCursor = 2;
     captureNewActions();
@@ -224,8 +224,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       owner.life += actualDamage;
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'lifesteal',
-        sourceCardId: pc.attacker.templateId,
-        targetId: pc.target!.templateId,
+        sourceCardId: pc.attacker.instanceId, // instanceIdを使用
+        targetId: pc.target!.instanceId, // instanceIdを使用
         value: actualDamage,
       });
     }
@@ -233,8 +233,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       pc.target!.statusEffects.push({ type: 'poison', duration: 2, damage: 1 });
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'poison',
-        sourceCardId: pc.attacker.templateId,
-        targetId: pc.target!.templateId,
+        sourceCardId: pc.attacker.instanceId, // instanceIdを使用
+        targetId: pc.target!.instanceId, // instanceIdを使用
         value: 1,
       });
     }
@@ -245,7 +245,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         opp.life = Math.max(0, opp.life - excess);
         addKeywordTriggerAction(state, currentPlayerId, {
           keyword: 'trample',
-          sourceCardId: pc.attacker.templateId,
+          sourceCardId: pc.attacker.instanceId, // instanceIdを使用
           targetId: opp.id,
           value: excess,
         });
@@ -259,7 +259,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       owner.life += actualPlayerDamage;
       addKeywordTriggerAction(state, currentPlayerId, {
         keyword: 'lifesteal',
-        sourceCardId: pc.attacker.templateId,
+        sourceCardId: pc.attacker.instanceId, // instanceIdを使用
         targetId: opponentEntityId,
         value: actualPlayerDamage,
       });
@@ -271,8 +271,8 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       if (pc.retaliatePortion && pc.retaliatePortion > 0) {
         addKeywordTriggerAction(state, opponentId, {
           keyword: 'retaliate',
-          sourceCardId: pc.target.templateId,
-          targetId: pc.attacker.templateId,
+          sourceCardId: pc.target.instanceId, // instanceIdを使用
+          targetId: pc.attacker.instanceId, // instanceIdを使用
           value: pc.retaliatePortion,
         });
       }
@@ -281,23 +281,23 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       const after = pc.attacker.currentHealth;
       addTriggerEventAction(state, opponentId, {
         triggerType: 'on_damage_taken',
-        sourceCardId: pc.target.templateId,
-        targetCardId: pc.attacker.templateId,
+        sourceCardId: pc.target.instanceId, // instanceIdを使用
+        targetCardId: pc.attacker.instanceId, // instanceIdを使用
       });
       processEffectTrigger(state, 'on_damage_taken', pc.attacker, currentPlayerId, pc.target);
       addCombatStageAction(state, opponentId, {
         stage: 'damage_attacker',
-        attackerId: pc.target.templateId,
-        targetId: pc.attacker.templateId,
+        attackerId: pc.target.instanceId, // instanceIdを使用
+        targetId: pc.attacker.instanceId, // instanceIdを使用
         values: { damage: pc.attackerRetaliationDamage, retaliate: pc.retaliatePortion },
       });
       addCardAttackAction(state, opponentId, {
-        attackerCardId: pc.target.templateId,
-        targetId: pc.attacker.templateId,
+        attackerCardId: pc.target.instanceId, // instanceIdを使用
+        targetId: pc.attacker.instanceId, // instanceIdを使用
         damage: pc.attackerRetaliationDamage,
         attackerHealth: { before, after },
       });
-      evaluatePendingDeaths(state, 'system', pc.target.templateId);
+      evaluatePendingDeaths(state, 'system', pc.target.instanceId); // instanceIdを使用
     }
     pc.stageCursor = 3;
     captureNewActions();
@@ -305,17 +305,17 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
 
   function handleStageDeaths(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId): void {
     const destroyed: string[] = [];
-    if (pc.target && pc.target.currentHealth <= 0) destroyed.push(pc.target.templateId);
-    if (pc.attacker.currentHealth <= 0) destroyed.push(pc.attacker.templateId);
+    if (pc.target && pc.target.currentHealth <= 0) destroyed.push(pc.target.instanceId); // instanceIdを使用
+    if (pc.attacker.currentHealth <= 0) destroyed.push(pc.attacker.instanceId); // instanceIdを使用
     if (destroyed.length > 0) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'deaths',
-        attackerId: pc.attacker.templateId,
+        attackerId: pc.attacker.instanceId, // instanceIdを使用
         values: { destroyed },
       });
       for (const id of destroyed) {
-        const card = id === pc.attacker.templateId ? pc.attacker : (pc.target && id === pc.target.templateId ? pc.target : undefined);
-        if (card) handleCreatureDeath(state, card, 'combat', pc.attacker.templateId);
+        const card = id === pc.attacker.instanceId ? pc.attacker : (pc.target && id === pc.target.instanceId ? pc.target : undefined);
+        if (card) handleCreatureDeath(state, card, 'combat', pc.attacker.instanceId); // instanceIdを使用
       }
     }
     pc.stageCursor = 4;

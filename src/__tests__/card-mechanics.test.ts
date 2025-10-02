@@ -2,6 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { createInitialGameState, processGameStep } from '@/lib/game-engine/core';
 import { getCardById, necromancerCards, berserkerCards, mageCards, knightCards, inquisitorCards } from '@/data/cards/base-cards';
 import type { GameState, Card, FieldCard, CreatureCard } from '@/types/game';
+import { findAndCreateCreature, findAndCreateCard } from '@/test-helpers/card-test-helpers';
 
 describe('Card Mechanics Tests', () => {
   const p1 = 'player1';
@@ -9,7 +10,12 @@ describe('Card Mechanics Tests', () => {
   let baseState: GameState;
 
   beforeEach(() => {
-    const allCards = [...necromancerCards, ...berserkerCards, ...mageCards, ...knightCards, ...inquisitorCards];
+    const allCardTemplates = [...necromancerCards, ...berserkerCards, ...mageCards, ...knightCards, ...inquisitorCards];
+    // CardTemplateからCardインスタンスを生成
+    const allCards = allCardTemplates.map((template, index) => ({
+      ...template,
+      instanceId: `${template.templateId}-${index}`
+    }));
     baseState = createInitialGameState(
       'test-game',
       allCards,
@@ -30,9 +36,10 @@ describe('Card Mechanics Tests', () => {
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
     let gameState = createInitialGameState('lifesteal-test', [bloodCraver], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed');
     
+    gameState.turnNumber = 5;
     gameState.players[p1].life = 10;
-    gameState.players[p1].field.push({ ...bloodCraver, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
-    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p1].field.push({ ...bloodCraver, templateId: bloodCraver.templateId, instanceId: 'bloodcraver-1', owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...skeleton, templateId: skeleton.templateId, instanceId: 'skeleton-1', owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -43,7 +50,7 @@ describe('Card Mechanics Tests', () => {
     }
 
   // Lifesteal は宣言ダメージではなく『実際に減少させた体力量』分のみ回復する仕様
-  const expectedHeal = 1; // skeleton currentHealth (1) が実際の与ダメージ
+  const expectedHeal = 1; // blood craver攻撃力3、skeleton currentHealth 1なので実ダメージは1（相手の残り体力まで）
   expect(gameState.players[p1].life).toBe(10 + expectedHeal);
   });
 
@@ -52,8 +59,9 @@ describe('Card Mechanics Tests', () => {
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
     let gameState = createInitialGameState('poison-test', [venomtongue], [skeleton], 'inquisitor', 'necromancer', 'aggressive', 'aggressive', 'seed');
 
-    gameState.players[p1].field.push({ ...venomtongue, owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
-    gameState.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.turnNumber = 5;
+    gameState.players[p1].field.push({ ...venomtongue, templateId: venomtongue.templateId, instanceId: 'venomtongue-1', owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...skeleton, templateId: skeleton.templateId, instanceId: 'skeleton-2', owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -81,8 +89,9 @@ describe('Card Mechanics Tests', () => {
     let gameState = createInitialGameState('retaliate-test', [skeleton], [vindicator], 'necromancer', 'knight', 'aggressive', 'aggressive', 'seed');
 
     const initialHealth = 4;
-    gameState.players[p1].field.push({ ...skeleton, owner: p1, currentHealth: initialHealth, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
-    gameState.players[p2].field.push({ ...vindicator, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.turnNumber = 5; // 攻撃可能条件を満たすためにターン数を設定
+    gameState.players[p1].field.push({ ...skeleton, templateId: skeleton.templateId, instanceId: 'skeleton-retaliate', owner: p1, currentHealth: initialHealth, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...vindicator, templateId: vindicator.templateId, instanceId: 'vindicator-retaliate', owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -106,6 +115,7 @@ describe('Card Mechanics Tests', () => {
     let state = createInitialGameState('lifesteal-overkill', [boosted], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed2');
     const p1 = 'player1';
     const p2 = 'player2';
+    state.turnNumber = 5;
     state.players[p1].life = 5;
     state.players[p1].field.push({ ...boosted, owner: p1, currentHealth: 3, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     state.players[p2].field.push({ ...skeleton, owner: p2, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
@@ -122,8 +132,8 @@ describe('Card Mechanics Tests', () => {
   // === Advanced Mechanics Tests (from advanced-card-mechanics.test.ts) ===
 
   test('墓所の支配者 should resurrect a creature from the graveyard', () => {
-    const graveMaster = necromancerCards.find(c => c.templateId === 'necro_grave_master')! as CreatureCard;
-    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
+    const graveMaster = findAndCreateCreature(necromancerCards, 'necro_grave_master', 'Grave Master');
+    const skeleton = findAndCreateCreature(necromancerCards, 'necro_skeleton', 'Skeleton');
 
     baseState.players[p1].hand = [graveMaster];
     baseState.players[p1].graveyard = [skeleton];
@@ -142,8 +152,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('最後の抵抗 should only deal damage to creatures when player life is low', () => {
-    const lastStand = berserkerCards.find(c => c.templateId === 'ber_last_stand')!;
-    const enemyCreature = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
+    const lastStand = findAndCreateCard(berserkerCards, 'ber_last_stand', 'Last Stand');
+    const enemyCreature = findAndCreateCreature(necromancerCards, 'necro_skeleton', 'Skeleton');
 
     baseState.players[p2].field = [{ ...enemyCreature, owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     
@@ -170,10 +180,10 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('魔力循環の学者 should gain attack when a spell is played', () => {
-    const scholar = mageCards.find(c => c.templateId === 'mag_scholar')! as CreatureCard;
+    const scholar = findAndCreateCreature(mageCards, 'mag_scholar', 'Scholar');
     // プレイ条件のないスペル「理の崩壊」を使用
-    const spell = mageCards.find(c => c.templateId === 'mag_reality_collapse')!;
-    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard;
+    const spell = findAndCreateCard(mageCards, 'mag_reality_collapse', 'Reality Collapse');
+    const skeleton = findAndCreateCreature(necromancerCards, 'necro_skeleton', 'Skeleton');
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [{ ...scholar, owner: p1, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 1, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
@@ -191,8 +201,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('団結の旗手 should passively buff other knights', () => {
-    const banneret = knightCards.find(c => c.templateId === 'kni_banneret')! as CreatureCard;
-    const squire = knightCards.find(c => c.templateId === 'kni_squire')! as CreatureCard;
+    const banneret = findAndCreateCreature(knightCards, 'kni_banneret', 'Banneret');
+    const squire = findAndCreateCreature(knightCards, 'kni_squire', 'Squire');
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [
@@ -209,8 +219,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('沈黙の令状 should silence an enemy creature', () => {
-    const writ = inquisitorCards.find(c => c.templateId === 'inq_writ_of_silence')!;
-    const zombie = necromancerCards.find(c => c.templateId === 'necro_zombie')! as CreatureCard;
+    const writ = findAndCreateCard(inquisitorCards, 'inq_writ_of_silence', 'Writ of Silence');
+    const zombie = findAndCreateCreature(necromancerCards, 'necro_zombie', 'Zombie');
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [writ];
@@ -238,7 +248,8 @@ describe('Card Mechanics Tests', () => {
   // === New Mechanics Tests for Expansion ===
 
   test('Rush keyword should allow attacking on the same turn', () => {
-    const rushCreature = { ...necromancerCards.find(c => c.templateId === 'necro_skeleton')! as CreatureCard, keywords: ['rush'] };
+    const skeletonBase = findAndCreateCreature(necromancerCards, 'necro_skeleton', 'Skeleton');
+    const rushCreature = { ...skeletonBase, keywords: ['rush'] };
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].field = [{ ...rushCreature, owner: p1, currentHealth: rushCreature.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: state.turnNumber, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false }];
     state.players[p2].life = 10;
@@ -255,8 +266,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Echo mechanic should trigger effects based on graveyard size', () => {
-    const librarian = necromancerCards.find(c => c.templateId === 'necro_librarian')!;
-    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
+    const librarian = findAndCreateCard(necromancerCards, 'necro_librarian', 'Librarian');
+    const skeleton = findAndCreateCard(necromancerCards, 'necro_skeleton', 'Skeleton');
     
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [librarian];
@@ -285,8 +296,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Formation mechanic should trigger effects based on ally count', () => {
-    const vowOfUnity = knightCards.find(c => c.templateId === 'kni_vow_of_unity')!;
-    const squire = knightCards.find(c => c.templateId === 'kni_squire')! as CreatureCard;
+    const vowOfUnity = findAndCreateCard(knightCards, 'kni_vow_of_unity', 'Vow of Unity');
+    const squire = findAndCreateCreature(knightCards, 'kni_squire', 'Squire');
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [vowOfUnity];
@@ -317,8 +328,8 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('魂の渦 should summon a token with stats equal to graveyard size and exile graveyard', () => {
-    const soulVortex = necromancerCards.find(c => c.templateId === 'necro_soul_vortex')!;
-    const skeleton = necromancerCards.find(c => c.templateId === 'necro_skeleton')!;
+    const soulVortex = findAndCreateCard(necromancerCards, 'necro_soul_vortex', 'Soul Vortex');
+    const skeleton = findAndCreateCard(necromancerCards, 'necro_skeleton', 'Skeleton');
     
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [soulVortex];
@@ -337,9 +348,9 @@ describe('Card Mechanics Tests', () => {
   });
 
   test('Attack debuff should reduce creature attack power', () => {
-    const sinBurden = inquisitorCards.find(c => c.templateId === 'inq_sin_burden')!;
-    const bloodWarrior = berserkerCards.find(c => c.templateId === 'ber_berserker')! as CreatureCard;
-    const bomber = berserkerCards.find(c => c.templateId === 'ber_bomber')! as CreatureCard;
+    const sinBurden = findAndCreateCard(inquisitorCards, 'inq_sin_burden', 'Sin Burden');
+    const bloodWarrior = findAndCreateCreature(berserkerCards, 'ber_berserker', 'Blood Warrior');
+    const bomber = findAndCreateCreature(berserkerCards, 'ber_bomber', 'Bomber');
 
     let state = JSON.parse(JSON.stringify(baseState));
     state.players[p1].hand = [sinBurden];

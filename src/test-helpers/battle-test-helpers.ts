@@ -207,28 +207,33 @@ export function runMultipleGuardSelectionTest(
 
   for (let attempt = 0; attempt < testRounds; attempt++) {
     const setup = setupMultipleGuardBattleScenario(config, attempt);
-    
+
     // 攻撃者を配置
     placeCreatureOnField(setup.gameState, 'player1', setup.attackerCard);
-    
-    // 複数の守護を配置
+
+    // 複数の守護を配置し、実際のinstanceIdを記録
+    const actualGuardIds: string[] = [];
     setup.guardCards.forEach((guardCard, index) => {
       placeCreatureOnField(setup.gameState, 'player2', guardCard, {
         id: `guard_${index + 1}_${attempt}`,
         position: index,
         addGuardKeyword: true
       });
+      // placeCreatureOnField後に実際のinstanceIdを取得
+      const placedCard = setup.gameState.players.player2.field[index];
+      if (placedCard) {
+        actualGuardIds.push(placedCard.instanceId);
+      }
     });
 
     // 戦闘実行
     const finalState = executeBattlePhaseCompletely(setup.gameState);
-    
-    // 攻撃対象を記録
+
+    // 攻撃対象を記録（実際のinstanceIdを使用）
     const attackTargets = extractAttackTargets(finalState);
-    const guardIds = setup.guardCards.map((_, index) => `guard_${index + 1}_${attempt}`);
-    
+
     attackTargets.forEach(targetId => {
-      if (guardIds.includes(targetId)) {
+      if (actualGuardIds.includes(targetId)) {
         targetCounts.set(targetId, (targetCounts.get(targetId) || 0) + 1);
       }
     });

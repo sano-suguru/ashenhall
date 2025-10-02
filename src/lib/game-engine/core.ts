@@ -49,27 +49,6 @@ function processBattlePhase(state: GameState): void {
   state.phase = 'battle_attack';
 }
 
-/**
- * 攻撃フェーズの処理（動的攻撃者チェック）
- */
-function processAttackPhase(state: GameState): void {
-  // BattleIterator 主体に移行後はここでフェーズ終了条件のみ判定
-  if (state.players.player1.life <= 0 || state.players.player2.life <= 0) {
-    advancePhase(state);
-    return;
-  }
-  const currentPlayer = state.players[state.currentPlayer];
-  const hasAttacker = currentPlayer.field.some(card =>
-    card.currentHealth > 0 &&
-    ((!card.isSilenced && card.keywords.includes("rush")) || card.summonTurn < state.turnNumber) &&
-    !card.hasAttacked &&
-    !card.statusEffects.some(e => e.type === 'stun')
-  );
-  if (!hasAttacker) {
-    advancePhase(state);
-  }
-}
-
 // === メインコア関数 ===
 
 /**
@@ -81,11 +60,13 @@ export function processGameStep(state: GameState): GameState {
   // 高性能検索キャッシュ更新（Phase B最適化）
   updateOptimizedLookups(newState);
 
-  // ゲーム終了チェック
-  const gameResult = checkGameEnd(newState);
-  if (gameResult) {
-    newState.result = gameResult;
-    return newState;
+  // ゲーム終了チェック（battle_attackフェーズ中はスキップして全攻撃者を処理）
+  if (newState.phase !== 'battle_attack') {
+    const gameResult = checkGameEnd(newState);
+    if (gameResult) {
+      newState.result = gameResult;
+      return newState;
+    }
   }
 
   // フェーズ処理
@@ -103,7 +84,6 @@ export function processGameStep(state: GameState): GameState {
       processBattlePhase(newState);
       break;
     case "battle_attack":
-      processAttackPhase(newState);
       consumeOneAttackerCombat(newState);
       break;
     case "end":
@@ -121,21 +101,43 @@ export function processGameStep(state: GameState): GameState {
 function consumeOneAttackerCombat(state: GameState): void {
   if (state.phase !== 'battle_attack') return;
   const it = createBattleIterator(state);
-  if (!it) return; // 攻撃者なし
+  if (!it) {
+    // 攻撃者なし → フェーズ終了
+    advancePhase(state);
+    return;
+  }
   let firstAttacker: string | undefined;
+  let processingAttacker = false;
   // 1 攻撃者のサブステージ(attack_declare -> damage_defender -> damage_attacker -> deaths) をまとめて処理
   while (true) {
     const r = it.next();
-    if (r.done) break;
+    if (r.done) {
+      // Iterator 終了 → まだ攻撃者がいるかチェック
+      const currentPlayer = state.players[state.currentPlayer];
+      const hasMoreAttackers = currentPlayer.field.some(card =>
+        card.currentHealth > 0 &&
+        ((!card.isSilenced && card.keywords.includes("rush")) || card.summonTurn < state.turnNumber) &&
+        !card.hasAttacked &&
+        !card.statusEffects.some(e => e.type === 'stun')
+      );
+      if (!hasMoreAttackers) {
+        // 攻撃者がいない → フェーズ終了
+        advancePhase(state);
+      }
+      break;
+    }
     const current = it.context.currentAttackerId;
-    if (!firstAttacker) {
-      firstAttacker = current;
-    } else if (current && firstAttacker !== current) {
-      // 次の攻撃者に移ろうとしたので停止（次ステップへ委譲）
-      break;
-    } else if (!current) {
-      // 攻撃者処理が完了した
-      break;
+    if (current) {
+      if (!firstAttacker) {
+        firstAttacker = current;
+        processingAttacker = true;
+      } else if (firstAttacker !== current) {
+        // 次の攻撃者に移ろうとしたので停止（次ステップへ委譲）
+        break;
+      }
+    } else if (processingAttacker) {
+      // currentAttackerIdがundefinedになった = pendingCombat完了して次のアクションを返している
+      // 全サブステージ完了まで継続
     }
   }
 }
