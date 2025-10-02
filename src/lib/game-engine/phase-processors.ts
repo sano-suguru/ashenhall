@@ -144,7 +144,7 @@ export function processDrawPhase(state: GameState): void {
     const handBefore = player.hand.length;
     player.hand.push(drawnCard);
     addCardDrawAction(state, state.currentPlayer, {
-      cardId: drawnCard.templateId,
+      cardId: drawnCard.instanceId,
       handSizeBefore: handBefore,
       handSizeAfter: player.hand.length,
       deckSizeAfter: player.deck.length,
