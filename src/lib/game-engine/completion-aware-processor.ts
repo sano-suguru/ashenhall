@@ -22,6 +22,7 @@ export interface AnimationState {
   animationType: 'attack' | 'damage' | 'destroy' | 'summon' | 'draw' | 'spell_cast' | 'heal' | 'none';
   sourceCardId: string | undefined;
   targetCardId: string | undefined;
+  value?: number; // ダメージ量・回復量など
   destroySnapshot?: {
     id: string;
     owner: string;
@@ -91,13 +92,6 @@ export class CompletionAwareProcessor {
     };
   }
 
-  /**
-   * 現在のターゲットに対するダメージ値取得（簡素化版）
-   */
-  getCurrentDamageAmount(): number {
-    // 簡素化のため常に0を返す（複雑なダメージ追跡は不要）
-    return 0;
-  }
 
 
   /**
@@ -527,6 +521,7 @@ export class CompletionAwareProcessor {
       animationType,
       sourceCardId: task.attackerId,
       targetCardId: task.targetId,
+      value: task.damage, // ダメージ量・回復量を渡す
     });
     
     // CSS演出完了を確実に待機：base duration + 余裕時間

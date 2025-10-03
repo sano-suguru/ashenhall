@@ -21,7 +21,7 @@ function determineCardAnimationFromState(
   sourceCardId: string | undefined,
   targetCardId: string | undefined,
   cardId: string,
-  processor: CompletionAwareProcessor
+  animationValue: number | undefined
 ): CardAnimationState {
   // sourceCardベースの演出
   if (sourceCardId === cardId) {
@@ -43,7 +43,7 @@ function determineCardAnimationFromState(
     const mapping = animationMap[animationType];
     if (mapping) {
       return mapping.hasValue 
-        ? { kind: mapping.kind, value: processor.getCurrentDamageAmount() }
+        ? { kind: mapping.kind, value: animationValue || 0 }
         : { kind: mapping.kind };
     }
   }
@@ -233,7 +233,7 @@ export const useSequentialGameProgress = (config: SequentialGameProgressConfig):
       currentAnimationState.sourceCardId,
       currentAnimationState.targetCardId,
       cardId,
-      processorRef.current
+      currentAnimationState.value
     );
   }, [currentAnimationState]);
 

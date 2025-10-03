@@ -17,8 +17,28 @@ import { createInitialGameState, processGameStep } from "./game-engine/core";
 import { getCardById } from "@/data/cards/base-cards";
 
 // UIコンポーネントから移植された定数とヘルパー関数
+
+/**
+ * インスタンスIDまたはテンプレートIDからテンプレートIDを抽出
+ * 
+ * @param cardId インスタンスID or テンプレートID or システムエフェクトソース
+ * @returns テンプレートID（システムソースの場合はそのまま返す）
+ * 
+ * @example
+ * extractTemplateId("ber_fury-inst-1-6-player2-field-0") // => "ber_fury"
+ * extractTemplateId("ber_fury-deck-0-5") // => "ber_fury"
+ * extractTemplateId("necro_skeleton") // => "necro_skeleton"
+ * extractTemplateId("deck_empty") // => "deck_empty"
+ */
+function extractTemplateId(cardId: string): string {
+  // インスタンスIDのパターン: {templateId}-(inst|deck|token)-...
+  const match = cardId.match(/^(.+?)-(inst|deck|token)-/);
+  return match ? match[1] : cardId;
+}
+
 export function getCardName(cardId: string): string {
-  const card = getCardById(cardId);
+  const templateId = extractTemplateId(cardId);
+  const card = getCardById(templateId);
   return card?.name || cardId;
 }
 
@@ -64,8 +84,10 @@ function formatCardAttackLog(action: GameAction, playerName: string): LogDisplay
 
   const { data } = action;
   const attackerName = getCardName(data.attackerCardId);
+  const attackerTemplateId = extractTemplateId(data.attackerCardId);
   const isPlayerTarget = data.targetId === "player1" || data.targetId === "player2";
   const targetName = isPlayerTarget ? getPlayerName(data.targetId as PlayerId) : `《${getCardName(data.targetId)}》`;
+  const targetTemplateId = isPlayerTarget ? data.targetId : extractTemplateId(data.targetId);
   
   let details = `(${data.damage}ダメージ)`;
   if (data.targetHealth) {
@@ -80,7 +102,7 @@ function formatCardAttackLog(action: GameAction, playerName: string): LogDisplay
     playerName,
     message: `《${attackerName}》 → ${targetName}`,
     details: details,
-    cardIds: [data.attackerCardId, data.targetId],
+    cardIds: [attackerTemplateId, targetTemplateId],
   };
 }
 
@@ -89,6 +111,7 @@ function formatCardPlayLog(action: GameAction, playerName: string): LogDisplayPa
 
   const { data } = action;
   const cardName = getCardName(data.cardId);
+  const templateId = extractTemplateId(data.cardId);
   const energyChange = data.playerEnergy 
     ? ` (エネルギー ${data.playerEnergy.before}→${data.playerEnergy.after})`
     : '';
@@ -99,7 +122,7 @@ function formatCardPlayLog(action: GameAction, playerName: string): LogDisplayPa
     playerName,
     message: `《${cardName}》を場に出した`,
     details: `位置:${data.position}${energyChange}`,
-    cardIds: [data.cardId],
+    cardIds: [templateId],
   };
 }
 
@@ -108,18 +131,20 @@ function formatCreatureDestroyedLog(action: GameAction, playerName: string): Log
 
   const { data } = action;
   const cardName = getCardName(data.destroyedCardId);
+  const destroyedTemplateId = extractTemplateId(data.destroyedCardId);
   const sourceText = data.source === 'combat' 
     ? '戦闘によって'
     : data.sourceCardId 
       ? `《${getCardName(data.sourceCardId)}》によって`
       : '効果によって';
+  const sourceTemplateId = data.sourceCardId ? extractTemplateId(data.sourceCardId) : undefined;
 
   return {
     type: 'creature_destroyed',
     iconName: 'Skull',
     playerName,
     message: `《${cardName}》が${sourceText}破壊された`,
-    cardIds: data.sourceCardId ? [data.destroyedCardId, data.sourceCardId] : [data.destroyedCardId],
+    cardIds: sourceTemplateId ? [destroyedTemplateId, sourceTemplateId] : [destroyedTemplateId],
   };
 }
 
@@ -135,13 +160,14 @@ function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisp
   const effectName = data.effectType === 'damage' ? 'ダメージ' 
                    : data.effectType === 'heal' ? '回復'
                    : data.effectType;
+  const sourceTemplateId = typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
 
   return {
     type: 'effect_trigger',
     iconName: 'Zap',
     playerName,
     message: `${sourceName}の効果で${targetCount}体に${effectName}(${data.effectValue})`,
-    cardIds: typeof data.sourceCardId === 'string' ? [data.sourceCardId] : [],
+    cardIds: sourceTemplateId ? [sourceTemplateId] : [],
   };
 }
 
@@ -163,16 +189,18 @@ function formatKeywordTriggerLog(action: GameAction, playerName: string): LogDis
 
   const { data } = action;
   const sourceName = getCardName(data.sourceCardId);
+  const sourceTemplateId = extractTemplateId(data.sourceCardId);
   const targetName = data.targetId.startsWith('player') 
     ? getPlayerName(data.targetId as PlayerId)
     : `《${getCardName(data.targetId)}》`;
+  const targetTemplateId = data.targetId.startsWith('player') ? data.targetId : extractTemplateId(data.targetId);
 
   return {
     type: 'keyword_trigger',
     iconName: 'Star',
     playerName,
     message: `《${sourceName}》の${data.keyword}が発動 → ${targetName} (${data.value})`,
-    cardIds: [data.sourceCardId, data.targetId],
+    cardIds: [sourceTemplateId, targetTemplateId],
   };
 }
 
@@ -207,26 +235,29 @@ function formatTriggerEventLog(action: GameAction, playerName: string): LogDispl
   const { data } = action;
   const sourceName = data.sourceCardId ? `《${getCardName(data.sourceCardId)}》` : 'システム';
   const targetText = data.targetCardId ? ` → 《${getCardName(data.targetCardId)}》` : '';
+  const sourceTemplateId = data.sourceCardId ? extractTemplateId(data.sourceCardId) : undefined;
+  const targetTemplateId = data.targetCardId ? extractTemplateId(data.targetCardId) : undefined;
 
   return {
     type: 'trigger_event',
     iconName: 'Sparkles',
     playerName,
     message: `${sourceName}の${data.triggerType}トリガー${targetText}`,
-    cardIds: [data.sourceCardId, data.targetCardId].filter(Boolean) as string[],
+    cardIds: [sourceTemplateId, targetTemplateId].filter(Boolean) as string[],
   };
 }
 
 // 仮フォーマッタ（詳細仕様未定のため簡易）
 function formatCardDrawLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'card_draw') throw new Error('invalid type');
+  const templateId = extractTemplateId(action.data.cardId);
   return {
     type: 'card_draw',
     iconName: 'FilePlus',
     playerName,
     message: `カードをドロー (${action.data.handSizeBefore}->${action.data.handSizeAfter})`,
     details: action.data.fatigue ? `疲労:${action.data.fatigue.lifeBefore}->${action.data.fatigue.lifeAfter}` : undefined,
-    cardIds: [action.data.cardId]
+    cardIds: [templateId]
   };
 }
 
@@ -258,13 +289,16 @@ function formatCombatStageLog(action: GameAction, playerName: string): LogDispla
   if (action.type !== 'combat_stage') throw new Error('Invalid action type for combat_stage formatter');
   const stage = action.data.stage;
   const attacker = action.data.attackerId;
+  const attackerTemplateId = extractTemplateId(attacker);
   const target = action.data.targetId ?? 'player';
+  const targetTemplateId = action.data.targetId ? extractTemplateId(action.data.targetId) : undefined;
+  
   return {
     type: 'combat_stage',
     iconName: 'Swords',
     playerName,
     message: `[${stage}] ${attacker} -> ${target}`,
-    cardIds: [attacker, ...(action.data.targetId ? [action.data.targetId] : [])]
+    cardIds: targetTemplateId ? [attackerTemplateId, targetTemplateId] : [attackerTemplateId]
   };
 }
 
