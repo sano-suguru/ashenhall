@@ -148,17 +148,34 @@ function processCardAttackAction(
   action: Extract<GameAction, { type: 'card_attack' }>,
   context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
 ): AnimationTask[] {
-  return [createAnimationTask({
+  const tasks: AnimationTask[] = [];
+  
+  // 1. 攻撃演出タスク（攻撃者が赤く光る）
+  tasks.push(createAnimationTask({
+    id: context.nextId('attack', action.sequence),
+    sequence: action.sequence,
+    kind: 'attack',
+    batchId: context.batchId,
+    origin: 'attack',
+    attackerId: action.data.attackerCardId,
+    targetId: action.data.targetId,
+    duration: 300, // AnimationDurations.ATTACK相当
+  }));
+  
+  // 2. ダメージ演出タスク（防御者がシェイクしダメージ表示）
+  tasks.push(createAnimationTask({
     id: context.nextId('damage', action.sequence),
     sequence: action.sequence,
     kind: 'damage',
+    batchId: context.batchId,
+    origin: 'attack',
     attackerId: action.data.attackerCardId,
     targetId: action.data.targetId,
     damage: action.data.damage,
-    duration: ensureMin(context.spec.IMPACT, context.spec),
-    batchId: context.batchId,
-    origin: 'attack'
-  })];
+    duration: 1000, // AnimationDurations.DAMAGE相当
+  }));
+  
+  return tasks;
 }
 
 /** effect_triggerアクションの処理 */
