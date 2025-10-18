@@ -6,6 +6,7 @@
 import { createInitialGameState } from '../lib/game-engine/core';
 import { processDeployPhase } from '../lib/game-engine/phase-processors';
 import { getCardById } from '../data/cards/base-cards';
+import { createCardInstance } from '../test-helpers/card-test-helpers';
 import type { GameState, Card, CreatureCard } from '../types/game';
 
 describe('プレイ条件システム', () => {
@@ -18,21 +19,21 @@ describe('プレイ条件システム', () => {
     const torrent = getCardById('mag_torrent');
     const lightning = getCardById('mag_arcane_lightning');
     const apprentice = getCardById('mag_apprentice');
-    
+
     if (!torrent || !lightning || !apprentice) {
       throw new Error('Required test cards not found');
     }
 
     // デッキに必要なカードを追加
     for (let i = 0; i < 3; i++) {
-      deck.push({ ...torrent, id: `mag_torrent_${i}` });
-      deck.push({ ...lightning, id: `mag_arcane_lightning_${i}` });
-      deck.push({ ...apprentice, id: `mag_apprentice_${i}` });
+      deck.push(createCardInstance(torrent, `mag_torrent_${i}`));
+      deck.push(createCardInstance(lightning, `mag_arcane_lightning_${i}`));
+      deck.push(createCardInstance(apprentice, `mag_apprentice_${i}`));
     }
 
     // 残りのスロットを埋める
     for (let i = deck.length; i < 20; i++) {
-      deck.push({ ...apprentice, id: `filler_${i}` });
+      deck.push(createCardInstance(apprentice, `filler_${i}`));
     }
 
     return deck;
@@ -69,7 +70,7 @@ describe('プレイ条件システム', () => {
       const torrent = getCardById('mag_torrent');
       if (!torrent) throw new Error('mag_torrent not found');
       
-      gameState.players.player1.hand = [{ ...torrent, id: 'test_torrent' }];
+      gameState.players.player1.hand = [createCardInstance(torrent, 'test_torrent')];
       
       // 相手の場を空にする
       gameState.players.player2.field = [];
@@ -88,7 +89,7 @@ describe('プレイ条件システム', () => {
       const lightning = getCardById('mag_arcane_lightning');
       if (!lightning) throw new Error('mag_arcane_lightning not found');
       
-      gameState.players.player1.hand = [{ ...lightning, id: 'test_lightning' }];
+      gameState.players.player1.hand = [createCardInstance(lightning, 'test_lightning')];
       
       // 相手の場を空にする
       gameState.players.player2.field = [];
@@ -107,7 +108,7 @@ describe('プレイ条件システム', () => {
       const apprentice = getCardById('mag_apprentice');
       if (!apprentice) throw new Error('mag_apprentice not found');
       
-      gameState.players.player1.hand = [{ ...apprentice, id: 'test_apprentice' }];
+      gameState.players.player1.hand = [createCardInstance(apprentice, 'test_apprentice')];
       
       // 相手の場を空にする
       gameState.players.player2.field = [];
@@ -151,7 +152,7 @@ describe('プレイ条件システム', () => {
       const torrent = getCardById('mag_torrent');
       if (!torrent) throw new Error('mag_torrent not found');
       
-      gameState.players.player1.hand = [{ ...torrent, id: 'test_torrent' }];
+      gameState.players.player1.hand = [createCardInstance(torrent, 'test_torrent')];
       
       // 配置フェーズを実行
       processDeployPhase(gameState);
@@ -167,7 +168,7 @@ describe('プレイ条件システム', () => {
       const lightning = getCardById('mag_arcane_lightning');
       if (!lightning) throw new Error('mag_arcane_lightning not found');
       
-      gameState.players.player1.hand = [{ ...lightning, id: 'test_lightning' }];
+      gameState.players.player1.hand = [createCardInstance(lightning, 'test_lightning')];
       
       // 配置フェーズを実行
       processDeployPhase(gameState);
@@ -189,7 +190,7 @@ describe('プレイ条件システム', () => {
       const writOfSilence = getCardById('inq_writ_of_silence');
       if (!writOfSilence) throw new Error('inq_writ_of_silence not found');
       
-      gameState.players.player1.hand = [{ ...writOfSilence, id: 'test_writ' }];
+      gameState.players.player1.hand = [createCardInstance(writOfSilence, 'test_writ')];
       gameState.players.player2.field = [];
       
       const initialHandSize = gameState.players.player1.hand.length;
@@ -224,7 +225,7 @@ describe('プレイ条件システム', () => {
         readiedThisTurn: false,
       }];
       
-      gameState.players.player1.hand = [{ ...sinBurden, id: 'test_sin_burden' }];
+      gameState.players.player1.hand = [createCardInstance(sinBurden, 'test_sin_burden')];
       
       processDeployPhase(gameState);
       
@@ -245,8 +246,8 @@ describe('プレイ条件システム', () => {
       
       // 手札に両方のカードを追加
       gameState.players.player1.hand = [
-        { ...torrent, id: 'test_torrent' },
-        { ...apprentice, id: 'test_apprentice' }
+        createCardInstance(torrent, 'test_torrent'),
+        createCardInstance(apprentice, 'test_apprentice')
       ];
       
       // 相手の場を空にする（魔力の奔流の条件を満たさない）

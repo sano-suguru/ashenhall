@@ -1,12 +1,6 @@
 import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
 
 /**
- * specialHandlerを持つカードの専用テキスト定義
- */
-const SPECIAL_HANDLER_TEXTS: Record<string, string> = {
-};
-
-/**
  * 動的効果値を持つカードの専用テキスト定義
  * カードIDをキーとして、そのカードの正しい効果テキストを定義
  */
@@ -28,17 +22,10 @@ const DYNAMIC_EFFECT_TEXTS: Record<string, string> = {
 /**
  * 特別な効果テキストを取得
  */
-function getSpecialEffectText(cardId: string, specialHandler?: string): string | null {
-  // specialHandlerがある場合は最優先
-  if (specialHandler && SPECIAL_HANDLER_TEXTS[specialHandler]) {
-    return SPECIAL_HANDLER_TEXTS[specialHandler];
-  }
-  
-  // 動的効果値テキストをチェック
+function getSpecialEffectText(cardId: string): string | null {
   if (DYNAMIC_EFFECT_TEXTS[cardId]) {
     return DYNAMIC_EFFECT_TEXTS[cardId];
   }
-  
   return null;
 }
 
@@ -286,7 +273,7 @@ export const getEffectText = (
   cardId?: string
 ): string => {
   // 特別な効果テキストがある場合はそれを優先
-  const specialText = getSpecialEffectText(cardId || '', effect.specialHandler);
+  const specialText = getSpecialEffectText(cardId || '');
   if (specialText) {
     return specialText;
   }

@@ -15,7 +15,6 @@
 
 import type {
   GameState,
-  Card,
   FieldCard,
   PlayerId,
   ValueChange,
@@ -80,34 +79,9 @@ export function executeDamageEffect(
   targets: FieldCard[],
   targetPlayerId: PlayerId | null,
   damage: number,
-  sourceCardId: string,
-  sourceCard: Card,
-  random: SeededRandom
+  sourceCardId: string
 ): void {
-  // 特殊効果: 秘術の連雷
-  if (sourceCard.templateId === "mag_arcane_lightning") {
-    const opponentId = getOpponentId(state.currentPlayer);
-    const initialTarget = random.choice(
-      state.players[opponentId].field.filter((c) => c.currentHealth > 0)
-    );
-    if (initialTarget) {
-      const initialHealth = initialTarget.currentHealth;
-      applyDamage(state, [initialTarget], null, damage, sourceCard.templateId);
-      if (initialTarget.currentHealth <= 0 && initialHealth > 0) {
-        // 死亡した場合
-        const secondaryTarget = random.choice(
-          state.players[opponentId].field.filter(
-            (c) => c.currentHealth > 0 && c.templateId !== initialTarget.templateId
-          )
-        );
-        if (secondaryTarget) {
-          applyDamage(state, [secondaryTarget], null, 2, sourceCard.templateId);
-        }
-      }
-    }
-  } else {
-    applyDamage(state, targets, targetPlayerId, damage, sourceCardId);
-  }
+  applyDamage(state, targets, targetPlayerId, damage, sourceCardId);
 }
 
 /**

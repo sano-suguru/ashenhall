@@ -188,6 +188,12 @@ export const mageCards: CardTemplate[] = [
         target: 'enemy_random',
         action: 'damage',
         value: 3,
+        chainOnKill: {
+          action: 'damage',
+          value: 2,
+          target: 'enemy_random',
+          excludeOriginalTarget: true,
+        },
       },
     ],
     flavor: '第一の雷は序曲にすぎぬ。真の嵐は、その後に訪れる。',

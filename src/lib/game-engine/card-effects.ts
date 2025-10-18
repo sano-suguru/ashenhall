@@ -24,7 +24,6 @@ import {
 } from "./action-logger";
 import {
   effectHandlers,
-  specialEffectHandlers,
   resolveDynamicEffectParameters,
 } from "./effect-registry";
 import { selectTargets, checkEffectCondition } from "./core/game-logic-utils";
@@ -151,10 +150,6 @@ function executeCardEffectWithoutConditionCheck(
     if (effect.conditionalEffect) {
       // 新しい条件分岐効果システムを実行
       executeConditionalEffect(state, effect.conditionalEffect, sourceCard, sourcePlayerId);
-    } else if (effect.specialHandler && specialEffectHandlers[effect.specialHandler]) {
-      // 特殊効果ハンドラーがある場合はそちらを実行（段階的廃止予定）
-      const specialHandler = specialEffectHandlers[effect.specialHandler];
-      specialHandler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
     } else {
       // 通常の効果ハンドラーを実行
       const handler = effectHandlers[effect.action];

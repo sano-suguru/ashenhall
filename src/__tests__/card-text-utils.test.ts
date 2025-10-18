@@ -15,8 +15,8 @@ describe('card-text-utils', () => {
     it.each(allEffects)(
       'カード「$card.name」の効果 ($effect.trigger, $effect.action) がエラーなくテキストに変換されること',
       ({ card, effect }) => {
-        const text = getEffectText(effect, card.type, card.id);
-        
+        const text = getEffectText(effect, card.type, card.templateId);
+
         // 未定義の文字列が含まれていないことを確認
         expect(text).not.toContain('[未定義トリガー');
         expect(text).not.toContain('[未定義アクション');

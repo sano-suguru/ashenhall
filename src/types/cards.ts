@@ -57,6 +57,27 @@ export interface DynamicValueDescriptor {
   baseValue?: number;
 }
 
+/**
+ * 連鎖効果定義（汎用システム）
+ * キル成功時に発動する追加効果
+ */
+export interface ChainEffect {
+  /** 連鎖アクション（全アクションタイプサポート） */
+  action: EffectAction;
+  /** 連鎖効果値 */
+  value: number;
+  /** 連鎖対象選択 */
+  target: EffectTarget;
+  /** 元の対象を除外（instanceIdベース、デフォルトtrue） */
+  excludeOriginalTarget?: boolean;
+  /** 対象フィルター */
+  selectionRules?: FilterRule[];
+  /** 連鎖発動条件 */
+  activationCondition?: EffectCondition;
+  /** さらなる連鎖（最大深度3まで再帰可能） */
+  chainOnKill?: ChainEffect;
+}
+
 /** カード効果インターフェース */
 export interface CardEffect {
   /** 発動タイミング */
@@ -73,10 +94,16 @@ export interface CardEffect {
   activationCondition?: EffectCondition;
   /** 対象選択ルール - FilterRule[]形式 */
   selectionRules?: FilterRule[];
-  /** 特殊効果ハンドラー名（拡張機能） - 段階的廃止予定 */
-  specialHandler?: string;
   /** 条件分岐効果（新機能） - specialHandlerの汎用化版 */
   conditionalEffect?: ConditionalEffect;
+  /**
+   * キル成功時の連鎖効果（汎用システム）
+   * - すべてのアクションタイプをサポート
+   * - ネスト可能（最大深度3）
+   * - 複数対象からの複数連鎖に対応
+   * - damageアクションでのみキル判定が行われる
+   */
+  chainOnKill?: ChainEffect;
 }
 
 // === カード定義 ===

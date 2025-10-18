@@ -8,13 +8,14 @@
 import { describe, test, expect } from '@jest/globals';
 import { executeFullGame } from '@/lib/game-engine/core';
 import { necromancerCards, knightCards } from '@/data/cards/base-cards';
+import { createCardInstance } from '@/test-helpers/card-test-helpers';
 
 describe('ゲームフロー統合テスト', () => {
   test('死霊術師 vs 騎士のデッキでゲームが正常に終了する', () => {
     const finalState = executeFullGame(
       'integration-test-1',
-      necromancerCards,
-      knightCards,
+      necromancerCards.map(t => createCardInstance(t)),
+      knightCards.map(t => createCardInstance(t)),
       'necromancer',
       'knight',
       'balanced',
@@ -37,11 +38,11 @@ describe('ゲームフロー統合テスト', () => {
 
   test('デッキが切れたプレイヤーはダメージを受け、最終的に敗北する', () => {
     // 非常に小さいデッキでゲームを開始
-    const smallDeck = necromancerCards.slice(0, 3);
+    const smallDeck = necromancerCards.slice(0, 3).map(t => createCardInstance(t));
     const finalState = executeFullGame(
       'integration-test-deckout',
       smallDeck,
-      knightCards,
+      knightCards.map(t => createCardInstance(t)),
       'necromancer',
       'knight',
       'balanced',

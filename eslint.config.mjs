@@ -18,6 +18,13 @@ const eslintConfig = [
     },
     rules: {
       complexity: ["warn", { max: 10 }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
     },
   },
 ];

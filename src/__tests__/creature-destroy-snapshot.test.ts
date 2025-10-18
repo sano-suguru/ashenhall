@@ -1,12 +1,15 @@
 import { executeFullGame } from '@/lib/game-engine/core';
 import type { Card, Faction, TacticsType, GameAction } from '@/types/game';
 import { necromancerCards } from '@/data/cards/base-cards';
+import { createCardInstance } from '@/test-helpers/card-test-helpers';
 
 function createTestDeck(): Card[] {
   const deck: Card[] = [];
   const subset = necromancerCards.slice(0, 2);
   subset.forEach(card => {
-    for (let i = 0; i < 10; i++) deck.push({ ...card, id: `${card.id}_d${i}` });
+    for (let i = 0; i < 10; i++) {
+      deck.push(createCardInstance(card, `d${i}`));
+    }
   });
   return deck;
 }

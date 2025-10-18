@@ -26,6 +26,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
     // テスト用Card (デッキ・手札用)
     mockCard = {
       templateId: "test-card-deck",
+      instanceId: "test-card-deck-instance",
       name: "テストカード",
       faction: "mage",
       type: "creature",
@@ -39,6 +40,7 @@ describe("UniversalFilterEngine - Card[]とFieldCard[]両対応テスト", () =>
     // テスト用FieldCard (場用)
     mockFieldCard = {
       templateId: "test-card-field",
+      instanceId: "test-card-field-instance",
       name: "テストフィールドカード",
       faction: "knight",
       type: "creature",

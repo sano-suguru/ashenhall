@@ -11,6 +11,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useSequentialGameProgress, type SequentialGameProgressConfig } from '@/hooks/useSequentialGameProgress';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
+import { createCardInstance } from '@/test-helpers/card-test-helpers';
 import type { GameState } from '@/types/game';
 
 // processGameStepのモック
@@ -26,8 +27,8 @@ describe('useSequentialGameProgress', () => {
   let consoleSpy: jest.SpyInstance;
 
   const createTestGameState = (): GameState => {
-    const deck1 = necromancerCards.slice(0, 20);
-    const deck2 = berserkerCards.slice(0, 20);
+    const deck1 = necromancerCards.slice(0, 20).map(t => createCardInstance(t));
+    const deck2 = berserkerCards.slice(0, 20).map(t => createCardInstance(t));
     
     return createInitialGameState(
       'test-game',

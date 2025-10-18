@@ -19,13 +19,16 @@ import type {
   ValueChange,
   EffectAction,
 } from "@/types/game";
-import type { FilterRule } from "@/types/cards";
+import type { FilterRule, ChainEffect } from "@/types/cards";
 import { SeededRandom } from "../seeded-random";
 import {
   addEffectTriggerAction as addEffectTriggerActionFromLogger,
 } from "../action-logger";
 import { UniversalFilterEngine } from "../core/target-filter";
 import { generateTokenInstanceId, generateFieldInstanceId } from "@/lib/instance-id-generator";
+import { selectTargets, checkEffectCondition } from "../core/game-logic-utils";
+import { TargetFilterEngine } from "../core/target-filter";
+import type { EffectHandler } from "../effect-registry";
 
 // =============================================================================
 // SHARED UTILITIES
@@ -417,6 +420,110 @@ export function executeResurrectEffect(
         sourcePlayerId,
         chosenIds,
         sourceCard.templateId
+      );
+    }
+  }
+}
+
+// =============================================================================
+// UNIVERSAL CHAIN EFFECT ENGINE (汎用連鎖システム)
+// =============================================================================
+
+/**
+ * 汎用連鎖効果エンジン
+ * キル成功時に追加効果を再帰的に実行
+ * 
+ * @param state ゲーム状態
+ * @param chainConfig 連鎖効果設定
+ * @param sourceCard 効果元カード
+ * @param sourcePlayerId 発動プレイヤー
+ * @param random 決定論的乱数
+ * @param killedTargets キルされたターゲット（除外用）
+ * @param chainDepth 現在の連鎖深度（無限ループ防止）
+ * @param effectHandlers 効果ハンドラーマップ（循環参照回避のため外部注入）
+ */
+// eslint-disable-next-line complexity
+export function executeChainEffect(
+  state: GameState,
+  chainConfig: ChainEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  random: SeededRandom,
+  killedTargets: FieldCard[],
+  chainDepth: number,
+  effectHandlers: Partial<Record<EffectAction, EffectHandler>>
+): void {
+  const MAX_CHAIN_DEPTH = 3;
+  if (chainDepth >= MAX_CHAIN_DEPTH) return;
+  
+  // 連鎖発動条件判定
+  if (chainConfig.activationCondition) {
+    if (!checkEffectCondition(state, sourcePlayerId, chainConfig.activationCondition)) {
+      return;
+    }
+  }
+  
+  // 連鎖対象選択
+  let chainTargets = selectTargets(state, sourcePlayerId, chainConfig.target, random);
+  
+  // 元の対象を除外（デフォルトtrue）
+  if (chainConfig.excludeOriginalTarget !== false) {
+    const killedIds = new Set(killedTargets.map(t => t.instanceId));
+    chainTargets = chainTargets.filter(c => !killedIds.has(c.instanceId));
+  }
+  
+  // フィルター適用
+  if (chainConfig.selectionRules) {
+    chainTargets = TargetFilterEngine.applyRules(
+      chainTargets,
+      chainConfig.selectionRules,
+      sourceCard.templateId
+    );
+  }
+  
+  if (chainTargets.length === 0) return;
+  
+  // 連鎖アクション実行
+  const handler = effectHandlers[chainConfig.action];
+  if (!handler) return;
+  
+  // 仮のCardEffect作成（ハンドラー呼び出し用）
+  const tempEffect = {
+    trigger: 'on_play' as const,
+    target: chainConfig.target,
+    action: chainConfig.action,
+    value: chainConfig.value,
+    selectionRules: chainConfig.selectionRules,
+    activationCondition: chainConfig.activationCondition,
+  };
+  
+  // ハンドラー実行前のHP記録（次の連鎖判定用）
+  const targetsHealthBefore = chainTargets.map(t => ({
+    card: t,
+    health: t.currentHealth,
+    instanceId: t.instanceId,
+  }));
+  
+  // ハンドラー実行
+  handler(state, tempEffect, sourceCard, sourcePlayerId, random, chainTargets, chainConfig.value);
+  
+  // さらなる連鎖判定
+  if (chainConfig.chainOnKill && chainConfig.action === 'damage') {
+    // 新たにキルされた対象を収集
+    const newKilled = targetsHealthBefore
+      .filter(({ card, health }) => health > 0 && card.currentHealth <= 0)
+      .map(({ card }) => card);
+    
+    if (newKilled.length > 0) {
+      executeChainEffect(
+        state,
+        chainConfig.chainOnKill,
+        sourceCard,
+        sourcePlayerId,
+        random,
+        newKilled,
+        chainDepth + 1,
+        effectHandlers
       );
     }
   }

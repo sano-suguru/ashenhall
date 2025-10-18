@@ -8,6 +8,7 @@ describe("TargetFilterEngine - FilterRule System", () => {
   beforeEach(() => {
     mockTarget = {
       templateId: "test-card",
+      instanceId: "test-card-instance",
       name: "Test Card",
       faction: "knight",
       type: "creature",
@@ -29,7 +30,7 @@ describe("TargetFilterEngine - FilterRule System", () => {
       isSilenced: false,
       statusEffects: [],
       readiedThisTurn: false,
-    } as FieldCard;
+    };
   });
 
   describe("Brand Filter", () => {

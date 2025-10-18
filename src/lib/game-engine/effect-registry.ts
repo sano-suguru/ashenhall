@@ -39,6 +39,7 @@ import {
   executeDrawCardEffect,
   executeApplyBrandEffect,
   executeDeckSearchEffect,
+  executeChainEffect,
 } from "./effects/specialized-effects";
 import {
   getBrandedCreatureCount,
@@ -68,16 +69,73 @@ export type EffectHandler = (
   value: number
 ) => void;
 
+/**
+ * 連鎖対応ダメージ処理（内部関数）
+ * 初期ダメージ実行後、キル判定を行い連鎖効果を発動
+ */
+function executeDamageWithChain(
+  state: GameState,
+  effect: CardEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  random: SeededRandom,
+  targets: FieldCard[],
+  value: number
+): void {
+  // HP記録（キル判定用）
+  const targetsHealthBefore = targets.map(t => ({
+    card: t,
+    health: t.currentHealth,
+    instanceId: t.instanceId,
+  }));
+  
+  // 初期ダメージ実行
+  const opponentId = getOpponentId(sourcePlayerId);
+  if (effect.target === "player") {
+    executeDamageEffect(state, [], opponentId, value, sourceCard.templateId);
+  } else if (effect.target === "self_player") {
+    executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.templateId);
+  } else {
+    executeDamageEffect(state, targets, null, value, sourceCard.templateId);
+  }
+  
+  // キル判定
+  const killedTargets = targetsHealthBefore
+    .filter(({ card, health }) => health > 0 && card.currentHealth <= 0)
+    .map(({ card }) => card);
+  
+  // 連鎖効果発動
+  if (killedTargets.length > 0 && effect.chainOnKill) {
+    executeChainEffect(
+      state,
+      effect.chainOnKill,
+      sourceCard,
+      sourcePlayerId,
+      random,
+      killedTargets,
+      1,  // 初回連鎖は深度1
+      effectHandlers
+    );
+  }
+}
+
 // prettier-ignore
 export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
   'damage': (state, effect, sourceCard, sourcePlayerId, random, targets, value) => {
+    // 汎用連鎖システム対応
+    if (effect.chainOnKill) {
+      executeDamageWithChain(state, effect, sourceCard, sourcePlayerId, random, targets, value);
+      return;
+    }
+    
+    // 通常のダメージ処理
     const opponentId = getOpponentId(sourcePlayerId);
     if (effect.target === "player") {
-      executeDamageEffect(state, [], opponentId, value, sourceCard.templateId, sourceCard, random);
+      executeDamageEffect(state, [], opponentId, value, sourceCard.templateId);
     } else if (effect.target === "self_player") {
-      executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.templateId, sourceCard, random);
+      executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.templateId);
     } else {
-      executeDamageEffect(state, targets, null, value, sourceCard.templateId, sourceCard, random);
+      executeDamageEffect(state, targets, null, value, sourceCard.templateId);
     }
   },
   'heal': (state, effect, sourceCard, sourcePlayerId, _random, targets, value) => {
@@ -138,12 +196,6 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     executeDeckSearchEffect(state, sourcePlayerId, sourceCard.templateId, effect.selectionRules, random);
   },
 };
-
-/**
- * 特殊効果ハンドラー - カード固有の複雑なロジック
- */
-export const specialEffectHandlers: Record<string, EffectHandler> = {};
-
 
 /**
  * 新しい動的値計算システム（推奨方式）

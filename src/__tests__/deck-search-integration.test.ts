@@ -9,7 +9,8 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { executeDeckSearchEffect } from "@/lib/game-engine/effects/specialized-effects";
 import { createInitialGameState } from "@/lib/game-engine/core";
 import { necromancerCards, mageCards, knightCards } from "@/data/cards/base-cards";
-import type { GameState, FilterRule, Keyword } from "@/types/game";
+import { createCardInstance } from "@/test-helpers/card-test-helpers";
+import type { GameState, FilterRule, Keyword, CreatureCard } from "@/types/game";
 
 describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () => {
   let gameState: GameState;
@@ -18,9 +19,9 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
   beforeEach(() => {
     // テスト用デッキを作成（多様なカードを含む）
     const testDeck = [
-      ...necromancerCards.slice(0, 3), // ネクロマンサーカード
-      ...mageCards.slice(0, 3),        // メイジカード
-      ...knightCards.slice(0, 3),      // ナイトカード
+      ...necromancerCards.slice(0, 3).map((t, i) => createCardInstance(t, `necro-${i}`)),
+      ...mageCards.slice(0, 3).map((t, i) => createCardInstance(t, `mage-${i}`)),
+      ...knightCards.slice(0, 3).map((t, i) => createCardInstance(t, `knight-${i}`)),
     ];
 
     gameState = createInitialGameState(
@@ -63,7 +64,9 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
     it("手札上限時は何もしない", () => {
       // 手札を上限まで埋める
       while (gameState.players.player1.hand.length < 7) {
-        gameState.players.player1.hand.push(necromancerCards[0]);
+        gameState.players.player1.hand.push(
+          createCardInstance(necromancerCards[0], `hand-filler-${gameState.players.player1.hand.length}`)
+        );
       }
 
       const initialHandSize = gameState.players.player1.hand.length;
@@ -186,11 +189,8 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
   describe("キーワードフィルタリング", () => {
     it("キーワードフィルターで正しくカードを検索する", () => {
       // テスト用にキーワード付きカードをデッキに追加
-      const guardCard = {
-        ...necromancerCards[0],
-        id: 'test-guard-card',
-        keywords: ['guard'] as Keyword[]
-      };
+      const guardCard = createCardInstance(necromancerCards[0], 'test-guard-card') as CreatureCard;
+      guardCard.keywords = ['guard'] as Keyword[];
       gameState.players.player1.deck.push(guardCard);
 
       const rules: FilterRule[] = [{ type: 'keyword', operator: 'has', value: 'guard' }];
@@ -211,8 +211,8 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
   describe("ランダム選択機能", () => {
     it("複数の候補から正しく選択する", () => {
       // 同じ勢力のカードを複数デッキに追加
-      const mageCard1 = { ...mageCards[0], id: 'mage-1' };
-      const mageCard2 = { ...mageCards[1], id: 'mage-2' };
+      const mageCard1 = { ...mageCards[0], instanceId: 'mage-1' };
+      const mageCard2 = { ...mageCards[1], instanceId: 'mage-2' };
       gameState.players.player1.deck = [mageCard1, mageCard2];
 
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
@@ -226,10 +226,10 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
 
       // 2番目のカードが手札に追加されることを確認
       const addedCard = gameState.players.player1.hand[gameState.players.player1.hand.length - 1];
-      expect(addedCard.id).toBe('mage-2');
+      expect(addedCard.instanceId).toBe('mage-2');
 
       // デッキから正しく除去されることを確認
-      expect(gameState.players.player1.deck.find(c => c.id === 'mage-2')).toBeUndefined();
+      expect(gameState.players.player1.deck.find(c => c.instanceId === 'mage-2')).toBeUndefined();
     });
 
     it("ランダム関数なしでもデフォルトのランダム選択が動作する", () => {

@@ -12,11 +12,12 @@ import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 
 describe('CompletionAwareProcessor sequential animation ordering', () => {
   function setupState(): GameState {
-  const emptyDeck: CreatureCard[] = []; // 空デッキ（テスト用途）
+    const emptyDeck: CreatureCard[] = []; // 空デッキ（テスト用途）
     const gs = createInitialGameState('test', emptyDeck, emptyDeck, 'necromancer', 'berserker', 'balanced', 'aggressive', 'seed');
     // 手動で attacker となるクリーチャーカードを player1 のフィールドに配置
     const mockCreature: CreatureCard = {
-      id: 'attacker',
+      templateId: 'attacker',
+      instanceId: 'attacker-instance',
       name: 'Tester',
       type: 'creature',
       faction: 'necromancer',
@@ -27,7 +28,7 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
       keywords: [],
     };
     placeCreatureOnField(gs, 'player1', mockCreature, { id: 'attacker', currentHealth: 5 });
-    const attacker = gs.players.player1.field.find(c => c.id === 'attacker');
+    const attacker = gs.players.player1.field.find(c => c.templateId === 'attacker');
     if (!attacker) throw new Error('Failed to place attacker');
     // player2 にターゲット2体を配置 (health 5)
     placeCreatureOnField(gs, 'player2', attacker as CreatureCard, { id: 't1', currentHealth: 5 });
@@ -41,25 +42,25 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
 
     // attack action
     addCardAttackAction(state, 'player1', {
-      attackerCardId: state.players.player1.field[0].id,
-      targetId: state.players.player2.field[0].id,
+      attackerCardId: state.players.player1.field[0].instanceId,
+      targetId: state.players.player2.field[0].instanceId,
       damage: 3,
     });
     // damage (multi-target) action
     addEffectTriggerAction(state, 'player1', {
-      sourceCardId: state.players.player1.field[0].id,
+      sourceCardId: state.players.player1.field[0].instanceId,
       effectType: 'damage',
       effectValue: 3,
       targets: {
-        [state.players.player2.field[0].id]: { health: { before: 5, after: 2 } },
-        [state.players.player2.field[1].id]: { health: { before: 5, after: 0 } },
+        [state.players.player2.field[0].instanceId]: { health: { before: 5, after: 2 } },
+        [state.players.player2.field[1].instanceId]: { health: { before: 5, after: 0 } },
       }
     });
     // destroy action for second target (after it hit 0)
     addCreatureDestroyedAction(state, 'player2', {
-      destroyedCardId: state.players.player2.field[1].id,
+      destroyedCardId: state.players.player2.field[1].instanceId,
       source: 'combat',
-      sourceCardId: state.players.player1.field[0].id,
+      sourceCardId: state.players.player1.field[0].instanceId,
     });
 
     processor.updateAutonomousConfig({

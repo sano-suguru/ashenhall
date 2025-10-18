@@ -4,7 +4,8 @@ import { assertNoLingeringDeadCreatures } from '@/lib/game-engine/invariants';
 
 // シンプルなダミーカード（Knight / Necromancer 等既存派閥へ依存しない最小）
 const dummyCard: Card = {
-  id: 'test_card',
+  templateId: 'test_card',
+  instanceId: 'test_card-test',
   name: 'Test Card',
   type: 'creature',
   faction: 'knight',

@@ -8,6 +8,7 @@ import {
 } from '../lib/game-engine/ai-tactics';
 import { getCardById, necromancerCards } from '../data/cards/base-cards';
 import { createInitialGameState } from '../lib/game-engine/core';
+import { createCardInstance } from '../test-helpers/card-test-helpers';
 import type { GameState, CreatureCard, Card } from '../types/game';
 
 describe('AI戦術ロジック - 対象存在チェック', () => {
@@ -19,7 +20,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     const availableCards = necromancerCards.slice(0, 4);
     availableCards.forEach(card => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}` });
+        deck.push(createCardInstance(card, `${i}`));
       }
     });
     return deck;
@@ -101,8 +102,9 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
 
     it('効果を持たないスペルは常にtrueを返すこと', () => {
       // 効果なしのテスト用スペル（該当するカードがない場合は、テスト用に作成）
-      const testSpell = {
+      const testSpell: Card = {
         templateId: 'test_spell',
+        instanceId: 'test_spell-test',
         name: 'テスト呪文',
         type: 'spell' as const,
         faction: 'mage' as const,
