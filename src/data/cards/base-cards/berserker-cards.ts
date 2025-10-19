@@ -17,7 +17,7 @@ export const berserkerCards: CardTemplate[] = [
     type: 'creature',
     faction: 'berserker',
     cost: 2,
-    attack: 3, // 2.5 → 3 (整数化、効果補正-1考慮で適正値)
+    attack: 2, // バランス調整: 3 → 2 (死亡時効果があるため)
     health: 1,
     keywords: [],
     effects: [
@@ -55,7 +55,7 @@ export const berserkerCards: CardTemplate[] = [
     type: 'creature',
     faction: 'berserker',
     cost: 3,
-    attack: 4,
+    attack: 3, // バランス調整: 4 → 3 (攻撃偏重を修正)
     health: 3, // 2.5 → 3 (整数化、効果なしで総合値7)
     keywords: [],
     effects: [],
@@ -142,7 +142,7 @@ export const berserkerCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'enemy_all',
         action: 'damage',
-        value: 3,
+        value: 2, // バランス調整: 3 → 2 (1コストで全体3は強すぎるため)
         activationCondition: { subject: 'playerLife', operator: 'lte', value: 7 },
       },
     ],
@@ -173,7 +173,7 @@ export const berserkerCards: CardTemplate[] = [
     type: 'creature',
     faction: 'berserker',
     cost: 4,
-    attack: 7,
+    attack: 5, // バランス調整: 7 → 5 (蹂躙付きで過剰だったため)
     health: 2,
     keywords: ['trample'],
     effects: [
@@ -211,7 +211,7 @@ export const berserkerCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'player',
         action: 'damage',
-        value: 3,
+        value: 4, // バランス調整: 3 → 4 (リスクを増やしてハイリスク・ハイリターンに)
       },
     ],
     flavor: '痛みこそが力を研ぎ澄ます。傷なき戦士に栄光はない。',

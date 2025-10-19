@@ -18,7 +18,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 1,
     attack: 1,
-    health: 1, // バランス調整: 1/2 → 1/1
+    health: 2, // Phase 1調整: 1 → 2 (過去の弱体化を戻す、序盤の盤面確保)
     keywords: [],
     effects: [
       {
@@ -29,25 +29,6 @@ export const mageCards: CardTemplate[] = [
       },
     ],
     flavor: '星々が囁く古き秘密を、若き瞳は求め続ける',
-  },
-  {
-    templateId: 'mag_elementalist',
-    name: '元素使い',
-    type: 'creature',
-    faction: 'mage',
-    cost: 2,
-    attack: 2, // 1.5 → 2 (整数化、効果補正-1考慮で適正値)
-    health: 2,
-    keywords: [],
-    effects: [
-      {
-        trigger: 'on_play',
-        target: 'enemy_random',
-        action: 'damage',
-        value: 2,
-      },
-    ],
-    flavor: '火と氷の調べに、天地の律動を重ねて',
   },
   {
     templateId: 'mag_arcane',
@@ -74,8 +55,8 @@ export const mageCards: CardTemplate[] = [
     type: 'creature',
     faction: 'mage',
     cost: 1,
-    attack: 1,
-    health: 1, // 効果補正-0.5考慮で適正値維持
+    attack: 2, // Phase 1調整: 1 → 2 (死亡時効果を活かす攻撃性)
+    health: 1,
     keywords: [],
     effects: [
       {
@@ -105,6 +86,25 @@ export const mageCards: CardTemplate[] = [
       },
     ],
     flavor: '古代の意志を宿せし、石と鋼の忠実な僕',
+  },
+  {
+    templateId: 'mag_elementalist',
+    name: '元素使い',
+    type: 'creature',
+    faction: 'mage',
+    cost: 2,
+    attack: 2,
+    health: 2,
+    keywords: [],
+    effects: [
+      {
+        trigger: 'on_play',
+        target: 'enemy_random',
+        action: 'damage',
+        value: 3, // Phase 1調整: 2 → 3 (序盤の除去性能強化)
+      },
+    ],
+    flavor: '火と氷の調べに、天地の律動を重ねて',
   },
   {
     templateId: 'mag_storm',

@@ -23,7 +23,7 @@ import path from 'path';
 const getSimulationCount = (): number => {
   if (process.env.CI) return 1;                    // CI環境：最小限（高速フィードバック重視）
   if (process.env.NODE_ENV === 'test' && process.env.QUICK_TEST) return 2; // 開発中：高速
-  if (process.env.FULL_SIMULATION) return 30;      // 詳細分析：完全実行（手動指定時）
+  if (process.env.FULL_SIMULATION) return 50;      // 詳細分析：完全実行（手動指定時）※30→50回に増加
   return 3;                                        // デフォルト：バランス重視（開発継続性重視）
 };
 

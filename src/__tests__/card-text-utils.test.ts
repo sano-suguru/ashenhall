@@ -69,7 +69,8 @@ describe('card-text-utils', () => {
         expect(card).toBeDefined();
         const effect = card!.effects[0];
         const text = getEffectText(effect, card!.type);
-        expect(text).toBe('あなたのライフが7以下の場合、使用時: 敵全体に3ダメージを与える。');
+        // バランス調整: ダメージが3→2に変更されました
+        expect(text).toBe('あなたのライフが7以下の場合、使用時: 敵全体に2ダメージを与える。');
       });
 
       it('《背水の狂戦士》のライフ比較条件が正しく表示されること', () => {
