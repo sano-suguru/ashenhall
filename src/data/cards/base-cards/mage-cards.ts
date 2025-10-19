@@ -156,7 +156,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 2,
     attack: 1,
-    health: 3, // バランス調整: 4 → 3 (生存力を下げる)
+    health: 2, // バランス調整R7: 3 → 2 (コアカードの生存力をさらに下げる)
     keywords: [],
     effects: [
       {
