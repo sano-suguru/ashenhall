@@ -18,7 +18,7 @@ export const knightCards: CardTemplate[] = [
     faction: 'knight',
     cost: 1,
     attack: 1,
-    health: 1, // バランス調整: 1/2 → 1/1
+    health: 2, // 騎士強化: 1 → 2 (過去の弱体化を戻す、序盤の生存率向上)
     keywords: [],
     effects: [
       {
@@ -56,7 +56,7 @@ export const knightCards: CardTemplate[] = [
     faction: 'knight',
     cost: 3,
     attack: 2,
-    health: 3, // バランス調整: 2/4 → 2/3, on_play効果を削除
+    health: 4, // 騎士強化: 3 → 4 (守護役として機能させる、部分復元)
     keywords: ['guard'],
     effects: [],
     flavor: '神聖なる誓いに宿る、不屈の守護',
@@ -68,7 +68,7 @@ export const knightCards: CardTemplate[] = [
     faction: 'knight',
     cost: 2,
     attack: 1,
-    health: 2, // バランス調整: 1/4 → 1/2, on_death効果を削除
+    health: 3, // 騎士強化: 2 → 3 (守護役として最低限の耐久力)
     keywords: ['guard'],
     effects: [],
     flavor: '我が盾に込めし祈りよ、永遠に仲間を護れ',

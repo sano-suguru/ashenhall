@@ -285,7 +285,7 @@ export const inquisitorCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'self_player',
         action: 'damage',
-        value: 1,
+        value: 2, // 審問官微調整: 1 → 2 (自傷増加でリスク増、60.5%→55%目標)
       },
       {
         trigger: 'on_play',

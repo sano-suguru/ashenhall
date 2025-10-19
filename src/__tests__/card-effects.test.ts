@@ -1380,7 +1380,7 @@ describe('Repentant Succubus System', () => {
     });
     
     // 自傷ダメージが適用されていることを確認
-    expect(gameState.players.player1.life).toBe(14); // 15 - 1 = 14
+    expect(gameState.players.player1.life).toBe(13); // 15 - 2 = 13 (審問官微調整で自傷2に変更)
     
     // 敵に烙印が付与されていることを確認
     expect(enemy.statusEffects.some(e => e.type === 'branded')).toBe(true);
@@ -1405,7 +1405,7 @@ describe('Repentant Succubus System', () => {
     });
     
     // 自傷ダメージのみ適用されていることを確認
-    expect(gameState.players.player1.life).toBe(14); // 15 - 1 = 14
+    expect(gameState.players.player1.life).toBe(13); // 15 - 2 = 13 (審問官微調整で自傷2に変更)
     
     // 敵がいないので烙印・デバフ効果は何も起こらない（エラーも発生しない）
     expect(gameState.players.player2.field.length).toBe(0);
