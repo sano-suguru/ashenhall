@@ -130,7 +130,7 @@ export const mageCards: CardTemplate[] = [
     name: '魔力の奔流',
     type: 'spell',
     faction: 'mage',
-    cost: 3,
+    cost: 2, // Phase 2調整: 3 → 2 (マナ効率改善、戦狂い「最後の抵抗」との比較で適正化)
     keywords: [],
     playConditions: [
       {
@@ -156,7 +156,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 2,
     attack: 1,
-    health: 3,
+    health: 4, // Phase 3調整: 3 → 4 (スペル少ない環境でも価値を持つ耐久力)
     keywords: [],
     effects: [
       {
@@ -173,7 +173,7 @@ export const mageCards: CardTemplate[] = [
     name: '秘術の連雷',
     type: 'spell',
     faction: 'mage',
-    cost: 4,
+    cost: 3, // Phase 2調整: 4 → 3 (中盤で使える強力除去へ)
     keywords: [],
     playConditions: [
       {
@@ -204,8 +204,8 @@ export const mageCards: CardTemplate[] = [
     type: 'creature',
     faction: 'mage',
     cost: 2,
-    attack: 0,
-    health: 4,
+    attack: 2, // Phase 3調整: 0 → 2 (盤面貢献度の向上)
+    health: 3, // Phase 3調整: 4 → 3 (攻撃力付与のバランス調整)
     keywords: [],
     effects: [
       {
@@ -247,7 +247,7 @@ export const mageCards: CardTemplate[] = [
     name: '理の崩壊',
     type: 'spell',
     faction: 'mage',
-    cost: 3,
+    cost: 2, // Phase 3調整: 3 → 2 (不安定な効果を低コストで許容)
     keywords: [],
     effects: [
       {
