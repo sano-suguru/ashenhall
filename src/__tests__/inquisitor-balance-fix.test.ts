@@ -333,9 +333,9 @@ describe('審問官バランス修正テスト', () => {
       expect(purifyingFlame.effects[0].value).toBe(5);
     });
 
-    test('コストは7のまま変更されていない', () => {
+    test('コストが5に調整されている', () => {
       const purifyingFlame = inquisitorCards.find(c => c.templateId === 'inq_purifying_flame')!;
-      expect(purifyingFlame.cost).toBe(7);
+      expect(purifyingFlame.cost).toBe(5);
     });
   });
 

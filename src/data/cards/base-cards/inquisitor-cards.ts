@@ -17,8 +17,8 @@ export const inquisitorCards: CardTemplate[] = [
     type: 'creature',
     faction: 'inquisitor',
     cost: 1,
-    attack: 1,
-    health: 1,
+    attack: 2, // バランス調整R5: 1 → 2 (序盤の攻撃力向上)
+    health: 2,
     keywords: ['poison'],
     effects: [],
     flavor: '一度刺されし真実は、魂の芯まで蝕む。',
@@ -28,7 +28,7 @@ export const inquisitorCards: CardTemplate[] = [
     name: '沈黙の令状',
     type: 'spell',
     faction: 'inquisitor',
-    cost: 2,
+    cost: 1, // バランス調整: 2 → 1 (序盤から使いやすく)
     keywords: [],
     playConditions: [
       {
@@ -58,7 +58,7 @@ export const inquisitorCards: CardTemplate[] = [
     name: '断罪の宣告',
     type: 'spell',
     faction: 'inquisitor',
-    cost: 2,
+    cost: 1, // バランス調整R2: 2 → 1 (烙印付与を高速化)
     keywords: [],
     playConditions: [
       {
@@ -109,7 +109,7 @@ export const inquisitorCards: CardTemplate[] = [
     faction: 'inquisitor',
     cost: 3,
     attack: 2,
-    health: 2,
+    health: 3, // バランス調整R3: 2 → 3 (生存力向上)
     keywords: [],
     effects: [
       {
@@ -127,7 +127,7 @@ export const inquisitorCards: CardTemplate[] = [
     name: '浄罪の天火',
     type: 'spell',
     faction: 'inquisitor',
-    cost: 7,
+    cost: 5, // バランス調整: 7 → 5 (切り札を実戦で使える重さに)
     keywords: [],
     effects: [
       {
@@ -174,7 +174,7 @@ export const inquisitorCards: CardTemplate[] = [
     name: '集団懺悔',
     type: 'spell',
     faction: 'inquisitor',
-    cost: 2,
+    cost: 1, // バランス調整R3: 2 → 1 (回復手段を使いやすく)
     keywords: [],
     effects: [
       {
@@ -216,9 +216,9 @@ export const inquisitorCards: CardTemplate[] = [
     name: '神罰の執行者',
     type: 'creature',
     faction: 'inquisitor',
-    cost: 3,
+    cost: 2, // バランス調整R2: 3 → 2 (中核カードを使いやすく)
     attack: 2,
-    health: 3,
+    health: 4,
     keywords: [],
     effects: [
       {
@@ -285,7 +285,7 @@ export const inquisitorCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'self_player',
         action: 'damage',
-        value: 2, // 審問官微調整: 1 → 2 (自傷増加でリスク増、60.5%→55%目標)
+        value: 1, // バランス調整: 2 → 1 (自傷リスクを軽減)
       },
       {
         trigger: 'on_play',
@@ -307,7 +307,7 @@ export const inquisitorCards: CardTemplate[] = [
     name: '審判の天使',
     type: 'creature',
     faction: 'inquisitor',
-    cost: 5,
+    cost: 4, // バランス調整: 5 → 4 (切り札を実戦で使える重さに)
     attack: 4,
     health: 5,
     keywords: [],

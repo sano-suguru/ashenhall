@@ -18,14 +18,14 @@ export const knightCards: CardTemplate[] = [
     faction: 'knight',
     cost: 1,
     attack: 1,
-    health: 2, // 騎士強化: 1 → 2 (過去の弱体化を戻す、序盤の生存率向上)
+    health: 2,
     keywords: [],
     effects: [
       {
         trigger: 'on_play',
         target: 'ally_all',
         action: 'heal',
-        value: 1,
+        value: 2, // バランス調整R4: 1 → 2 (回復力向上)
       },
     ],
     flavor: '小さき光も、共に在れば闇を払う',
@@ -99,14 +99,14 @@ export const knightCards: CardTemplate[] = [
     faction: 'knight',
     cost: 1,
     attack: 1,
-    health: 1, // 効果補正-1考慮で適正値維持
+    health: 1,
     keywords: [],
     effects: [
       {
         trigger: 'on_death',
         target: 'ally_all',
         action: 'heal',
-        value: 2,
+        value: 3, // バランス調整R6: 2 → 3 (死亡時回復を強化)
       },
     ],
     flavor: '最後の祈りに込める、永遠なる加護',
@@ -226,14 +226,14 @@ export const knightCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'ally_all',
         action: 'buff_attack',
-        value: 1,
+        value: 1, // バランス調整R5: 2 → 1 (R4で強化しすぎたため戻す)
         activationCondition: { subject: 'allyCount', operator: 'lt', value: 3 },
       },
       {
         trigger: 'on_play',
         target: 'ally_all',
         action: 'buff_health',
-        value: 1,
+        value: 1, // バランス調整R5: 2 → 1 (R4で強化しすぎたため戻す)
         activationCondition: { subject: 'allyCount', operator: 'lt', value: 3 },
       },
     ],

@@ -314,7 +314,7 @@ describe('Card Mechanics Tests', () => {
 
     state = processGameStep(state);
     
-    // Should get +1/+1
+    // R5調整: 味方3体未満は+1/+1に戻す
     expect(state.players[p1].field[0].attackModifier).toBe(1);
     expect(state.players[p1].field[0].healthModifier).toBe(1);
 
@@ -325,7 +325,7 @@ describe('Card Mechanics Tests', () => {
     
     state = processGameStep(state);
     
-    // Should get +2/+2
+    // 味方3体以上は+2/+2
     expect(state.players[p1].field[0].attackModifier).toBe(1 + 2);
     expect(state.players[p1].field[0].healthModifier).toBe(1 + 2);
   });

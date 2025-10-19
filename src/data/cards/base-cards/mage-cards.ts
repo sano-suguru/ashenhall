@@ -18,7 +18,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 1,
     attack: 1,
-    health: 2, // Phase 1調整: 1 → 2 (過去の弱体化を戻す、序盤の盤面確保)
+    health: 1, // バランス調整R3: 2 → 1 (序盤の展開速度を抑制)
     keywords: [],
     effects: [
       {
@@ -55,7 +55,7 @@ export const mageCards: CardTemplate[] = [
     type: 'creature',
     faction: 'mage',
     cost: 1,
-    attack: 2, // Phase 1調整: 1 → 2 (死亡時効果を活かす攻撃性)
+    attack: 1, // バランス調整R3: 2 → 1 (攻撃性を抑制)
     health: 1,
     keywords: [],
     effects: [
@@ -75,7 +75,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 3,
     attack: 2,
-    health: 3, // バランス調整: 2/4 → 2/3
+    health: 2, // バランス調整R6: 3 → 2 (パッシブバフ持ちの生存力を下げる)
     keywords: [],
     effects: [
       {
@@ -101,7 +101,7 @@ export const mageCards: CardTemplate[] = [
         trigger: 'on_play',
         target: 'enemy_random',
         action: 'damage',
-        value: 3, // Phase 1調整: 2 → 3 (序盤の除去性能強化)
+        value: 2, // バランス調整: 3 → 2 (除去性能を標準化)
       },
     ],
     flavor: '火と氷の調べに、天地の律動を重ねて',
@@ -112,7 +112,7 @@ export const mageCards: CardTemplate[] = [
     type: 'creature',
     faction: 'mage',
     cost: 2,
-    attack: 3, // 2.5 → 3 (整数化、効果補正-1考慮で適正値)
+    attack: 2, // バランス調整R2: 3 → 2 (全体デバフ持ちの攻撃力を下げる)
     health: 1,
     keywords: [],
     effects: [
@@ -130,7 +130,7 @@ export const mageCards: CardTemplate[] = [
     name: '魔力の奔流',
     type: 'spell',
     faction: 'mage',
-    cost: 2, // Phase 2調整: 3 → 2 (マナ効率改善、戦狂い「最後の抵抗」との比較で適正化)
+    cost: 3, // バランス調整: 2 → 3 (範囲攻撃のコスト適正化)
     keywords: [],
     playConditions: [
       {
@@ -156,7 +156,7 @@ export const mageCards: CardTemplate[] = [
     faction: 'mage',
     cost: 2,
     attack: 1,
-    health: 4, // Phase 3調整: 3 → 4 (スペル少ない環境でも価値を持つ耐久力)
+    health: 3, // バランス調整: 4 → 3 (生存力を下げる)
     keywords: [],
     effects: [
       {
@@ -173,7 +173,7 @@ export const mageCards: CardTemplate[] = [
     name: '秘術の連雷',
     type: 'spell',
     faction: 'mage',
-    cost: 3, // Phase 2調整: 4 → 3 (中盤で使える強力除去へ)
+    cost: 4, // バランス調整: 3 → 4 (連鎖除去のコスト適正化)
     keywords: [],
     playConditions: [
       {
@@ -203,9 +203,9 @@ export const mageCards: CardTemplate[] = [
     name: '詠唱の化身',
     type: 'creature',
     faction: 'mage',
-    cost: 2,
-    attack: 2, // Phase 3調整: 0 → 2 (盤面貢献度の向上)
-    health: 3, // Phase 3調整: 4 → 3 (攻撃力付与のバランス調整)
+    cost: 3, // バランス調整R2: 2 → 3 (スペルシナジーのコスト適正化)
+    attack: 2,
+    health: 3,
     keywords: [],
     effects: [
       {
@@ -222,7 +222,7 @@ export const mageCards: CardTemplate[] = [
     name: '星見の賢者',
     type: 'creature',
     faction: 'mage',
-    cost: 3,
+    cost: 4, // バランス調整R2: 3 → 4 (スペルシナジー中核カードを重く)
     attack: 2,
     health: 3,
     keywords: [],
@@ -247,7 +247,7 @@ export const mageCards: CardTemplate[] = [
     name: '理の崩壊',
     type: 'spell',
     faction: 'mage',
-    cost: 2, // Phase 3調整: 3 → 2 (不安定な効果を低コストで許容)
+    cost: 3, // バランス調整R4: 2 → 3 (ドロー付き除去を重く)
     keywords: [],
     effects: [
       {

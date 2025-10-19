@@ -57,7 +57,7 @@ export const sampleDecks: SampleDeck[] = [
       'mag_elementalist', 'mag_elementalist',
       'mag_storm', 'mag_storm',
       'mag_torrent', 'mag_torrent',
-      'mag_reality_collapse',
+      'mag_golem', // R6調整: reality_collapse → golem (パッシブバフ体力2への弱体化を活かす)
       'mag_arcane_lightning',
       'mag_chant_avatar', 'mag_chant_avatar',
     ],

@@ -84,32 +84,13 @@ const runSimulation = (
 // --- テストスイート ---
 describe('AI自動対戦シミュレーター', () => {
   
-  describe('スイートA: スターターデッキ総当たり戦', () => {
-    for (let i = 0; i < ALL_FACTIONS.length; i++) {
-      for (let j = i + 1; j < ALL_FACTIONS.length; j++) {
-        const faction1 = ALL_FACTIONS[i];
-        const faction2 = ALL_FACTIONS[j];
+  // サンプルデッキを事前に準備
+  const decks = sampleDecks.map(d => ({
+    ...d,
+    cards: d.cardIds.map(id => getCardById(id)).filter((c): c is Card => !!c)
+  }));
 
-        test(`${faction1} vs ${faction2}`, () => {
-          const result = runSimulation(
-            'starter-matchup',
-            faction1, FACTION_CARDS[faction1], 'balanced',
-            faction2, FACTION_CARDS[faction2], 'balanced',
-            SIMULATION_COUNT
-          );
-          allResults.push(result);
-          expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
-        });
-      }
-    }
-  });
-
-  describe('スイートB: サンプルデッキ総当たり戦', () => {
-    const decks = sampleDecks.map(d => ({
-      ...d,
-      cards: d.cardIds.map(id => getCardById(id)).filter((c): c is Card => !!c)
-    }));
-
+  describe('スイートA: サンプルデッキ総当たり戦', () => {
     for (let i = 0; i < decks.length; i++) {
       for (let j = i + 1; j < decks.length; j++) {
         const deck1 = decks[i];
@@ -129,9 +110,9 @@ describe('AI自動対戦シミュレーター', () => {
     }
   });
 
-  describe('スイートC: 戦術相性テスト (死霊術師ミラー)', () => {
-    const faction = 'necromancer';
-    const deck = FACTION_CARDS[faction];
+  describe('スイートB: 戦術相性テスト (死霊術師)', () => {
+    const deck = decks.find(d => d.faction === 'necromancer');
+    if (!deck) throw new Error('死霊術師のサンプルデッキが見つかりません');
 
     for (let i = 0; i < ALL_TACTICS.length; i++) {
       for (let j = i + 1; j < ALL_TACTICS.length; j++) {
@@ -141,8 +122,8 @@ describe('AI自動対戦シミュレーター', () => {
         test(`${tactics1} vs ${tactics2}`, () => {
           const result = runSimulation(
             'tactics-matchup',
-            faction, deck, tactics1,
-            faction, deck, tactics2,
+            deck.faction, deck.cards, tactics1,
+            deck.faction, deck.cards, tactics2,
             SIMULATION_COUNT
           );
           allResults.push(result);

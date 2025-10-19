@@ -17,8 +17,8 @@ export const necromancerCards: CardTemplate[] = [
     type: 'creature',
     faction: 'necromancer',
     cost: 1,
-    attack: 2,
-    health: 1, // 0.5 → 1 (整数化、基本値2.5維持)
+    attack: 3, // バランス調整R5: 2 → 3 (序盤の攻撃力向上)
+    health: 1,
     keywords: [],
     effects: [],
     flavor: '朽ちた骨に宿るは、永遠なる戦への誓い',
