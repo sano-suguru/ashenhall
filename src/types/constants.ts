@@ -108,8 +108,12 @@ export const AI_EVALUATION_WEIGHTS = {
       HAND_ADVANTAGE: 2,      // 手札アドバンテージボーナス
       CARD_DRAW_VALUE: 8,     // カードドロー効果価値
       SPELL_SYNERGY: 5,       // on_spell_playクリーチャー存在時のスペルボーナス
-      AOE_TARGET_RICH: 4      // 敵が多い時の範囲攻撃ボーナス
+      AOE_TARGET_RICH: 4,     // 敵が多い時の範囲攻撃ボーナス
     },
-    INQUISITOR: { DEBUFF_PER_ENEMY: 3, SILENCE_STUN: 8 },
+    INQUISITOR: { 
+      DEBUFF_PER_ENEMY: 3, 
+      SILENCE_STUN: 8,
+      BRAND_SYNERGY_PER_TARGET: 3.0,  // 烙印シナジーボーナス
+    },
   },
 } as const;

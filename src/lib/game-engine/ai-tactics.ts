@@ -8,8 +8,9 @@
  */
 
 import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from '@/types/game';
-import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS } from '@/types/game';
+import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS, TACTICS_ATTACK_PROBABILITIES } from '@/types/game';
 import { SeededRandom } from './seeded-random';
+import { hasBrandedStatus } from './brand-utils';
 
 const { BASE_SCORE, TACTICS_MODIFIERS, FACTION_BONUSES } = AI_EVALUATION_WEIGHTS;
 
@@ -46,8 +47,26 @@ export const calculateBaseScore = (card: Card, gameState: GameState, playerId: P
 // --- 勢力別ボーナス計算 ---
 const getNecromancerBonus = (card: Card, player: GameState['players'][PlayerId]) => {
   let bonus = 0;
-  if (card.keywords.includes('echo')) bonus += player.graveyard.length * FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD;
-  if (card.effects.some(e => e.trigger === 'on_death')) bonus += FACTION_BONUSES.NECROMANCER.ON_DEATH;
+  const graveCardCount = player.graveyard.length;
+  
+  if (card.keywords.includes('echo')) {
+    bonus += graveCardCount * FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD;
+  }
+  if (card.effects.some(e => e.trigger === 'on_death')) {
+    bonus += FACTION_BONUSES.NECROMANCER.ON_DEATH;
+  }
+
+  // 墓地が空なら蘇生系カードに大幅ペナルティ（無駄撃ち防止）
+  if (graveCardCount === 0) {
+    const hasResurrectEffect = card.effects.some(e =>
+      e.action === 'resurrect' ||
+      (e.trigger === 'on_death' && e.target === 'self')
+    );
+    if (hasResurrectEffect) {
+      bonus -= 10; // 無駄撃ち防止
+    }
+  }
+
   return bonus;
 };
 
@@ -105,10 +124,28 @@ const getMageBonus = (card: Card, player: GameState['players'][PlayerId], oppone
 
 const getInquisitorBonus = (card: Card, _player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => {
   let bonus = 0;
+  
+  // 既存のボーナス
   if (card.effects.some(e => e.action.includes('debuff') || e.action.includes('destroy'))) {
     bonus += opponent.field.length * FACTION_BONUSES.INQUISITOR.DEBUFF_PER_ENEMY;
   }
-  if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) bonus += FACTION_BONUSES.INQUISITOR.SILENCE_STUN;
+  if (card.effects.some(e => e.action === 'silence' || e.action === 'stun')) {
+    bonus += FACTION_BONUSES.INQUISITOR.SILENCE_STUN;
+  }
+
+  // 烙印シナジーボーナス
+  const brandedEnemies = opponent.field.filter(hasBrandedStatus);
+  if (brandedEnemies.length > 0) {
+    // 烙印対象を条件とする効果
+    const hasBrandCondition = card.effects.some(e =>
+      e.selectionRules?.some(r => r.type === 'brand') ||
+      e.activationCondition?.subject === 'hasBrandedEnemy'
+    );
+    if (hasBrandCondition) {
+      bonus += brandedEnemies.length * FACTION_BONUSES.INQUISITOR.BRAND_SYNERGY_PER_TARGET;
+    }
+  }
+
   return bonus;
 };
 
@@ -222,7 +259,7 @@ export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: 
 }
 
 /**
- * 攻撃対象の選択（高度化版）
+ * 攻撃対象の選択（勢力別カスタマイズ版）
  */
 export function chooseAttackTarget(
   attacker: FieldCard,
@@ -230,26 +267,55 @@ export function chooseAttackTarget(
   random: SeededRandom
 ): { targetCard: FieldCard | null; targetPlayer: boolean } {
   const currentPlayerId = attacker.owner;
-  const opponentId = currentPlayerId === 'player1' ? 'player2' : 'player1';
+  const currentPlayer = gameState.players[currentPlayerId];
+  const opponentId: PlayerId = currentPlayerId === 'player1' ? 'player2' : 'player1';
   const opponent = gameState.players[opponentId];
+  const faction = currentPlayer.faction;
 
   const potentialTargets = opponent.field.filter(card => card.currentHealth > 0 && !card.isStealthed);
   const guardCreatures = potentialTargets.filter(c => c.keywords.includes('guard') && !c.isSilenced);
 
-  // 1. 守護持ちがいれば、その中からランダムに選択
+  // 1. 守護持ちがいれば優先攻撃
   if (guardCreatures.length > 0) {
     return { targetCard: random.choice(guardCreatures) || null, targetPlayer: false };
   }
 
-  // 2. 守護持ちがいない場合、脅威度を計算してターゲットを決定
+  // 2. 勢力別の特殊ロジック
   if (potentialTargets.length > 0) {
-    // プレイヤーを攻撃する確率（仮）
-    const playerAttackProbability = 0.3; 
+    // 2-1. 審問官：烙印持ちを優先攻撃
+    if (faction === 'inquisitor') {
+      const brandedTargets = potentialTargets.filter(hasBrandedStatus);
+      if (brandedTargets.length > 0) {
+        return { targetCard: brandedTargets[0], targetPlayer: false };
+      }
+    }
+
+    // 2-2. 死霊術師：on_death効果持ちを優先破壊（墓地リソース化）
+    if (faction === 'necromancer') {
+      const deathTriggerTargets = potentialTargets.filter(t =>
+        t.effects.some(e => e.trigger === 'on_death')
+      );
+      if (deathTriggerTargets.length > 0) {
+        return { targetCard: deathTriggerTargets[0], targetPlayer: false };
+      }
+    }
+
+    // 2-3. プレイヤー攻撃確率の計算
+    let playerAttackProbability = TACTICS_ATTACK_PROBABILITIES[currentPlayer.tacticsType];
+    
+    // 戦狂い：低ライフ時はプレイヤー攻撃を優先
+    if (faction === 'berserker') {
+      const lifeRatio = currentPlayer.life / GAME_CONSTANTS.INITIAL_LIFE;
+      if (lifeRatio < 0.4) {
+        playerAttackProbability = 0.8; // 通常0.3-0.6 → 0.8
+      }
+    }
+
     if (random.next() < playerAttackProbability) {
       return { targetCard: null, targetPlayer: true };
     }
 
-    // 各ターゲットの脅威度を評価（仮のロジック）
+    // 2-4. 脅威度評価によるターゲット選択
     const scoredTargets = potentialTargets.map(target => {
       let score = target.attack + target.currentHealth;
       if (target.keywords.length > 0) score += 5; // キーワード持ちは脅威
@@ -259,6 +325,6 @@ export function chooseAttackTarget(
     return { targetCard: scoredTargets[0]?.target || null, targetPlayer: false };
   }
 
-  // 3. 攻撃対象クリーチャーがいない場合はプレイヤーを攻撃
+  // 3. 攻撃対象がいない場合はプレイヤー攻撃
   return { targetCard: null, targetPlayer: true };
 }

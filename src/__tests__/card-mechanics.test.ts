@@ -60,8 +60,8 @@ describe('Card Mechanics Tests', () => {
     let gameState = createInitialGameState('poison-test', [venomtongue], [skeleton], 'inquisitor', 'necromancer', 'aggressive', 'aggressive', 'seed');
 
     gameState.turnNumber = 5;
-    gameState.players[p1].field.push({ ...venomtongue, templateId: venomtongue.templateId, instanceId: 'venomtongue-1', owner: p1, currentHealth: 1, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
-    gameState.players[p2].field.push({ ...skeleton, templateId: skeleton.templateId, instanceId: 'skeleton-2', owner: p2, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p1].field.push({ ...venomtongue, templateId: venomtongue.templateId, instanceId: 'venomtongue-1', owner: p1, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
+    gameState.players[p2].field.push({ ...skeleton, templateId: skeleton.templateId, instanceId: 'skeleton-2', owner: p2, currentHealth: 3, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false });
     gameState.phase = 'battle';
     gameState.currentPlayer = p1;
 
@@ -73,7 +73,7 @@ describe('Card Mechanics Tests', () => {
     
     const targetOnField = gameState.players[p2].field[0];
     expect(targetOnField.statusEffects.some(e => e.type === 'poison')).toBe(true);
-    expect(targetOnField.currentHealth).toBe(2 - venomtongue.attack);
+    expect(targetOnField.currentHealth).toBe(3 - venomtongue.attack);
 
     gameState.phase = 'end';
     gameState = processGameStep(gameState);
