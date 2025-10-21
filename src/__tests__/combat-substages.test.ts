@@ -50,6 +50,8 @@ describe('Combat substages iterator', () => {
 
   test('sequence: declare -> defender -> attacker -> deaths (both die)', () => {
     const state = setup({ attack: 5, health: 3 }, { attack: 4, health: 5 }, true); // attacker 5 dmg, defender retaliate (4 + ceil(4/2)=2 => 6)
+    // 守護キーワードを付与して確実にクリーチャーを攻撃するようにする
+    state.players.player2.field[0].keywords.push('guard');
     const attackerInstanceId = state.players.player1.field[0]?.instanceId;
     const defenderInstanceId = state.players.player2.field[0]?.instanceId;
     const actions = collectActions(state);
@@ -67,6 +69,8 @@ describe('Combat substages iterator', () => {
 
   test('sequence: declare -> defender -> deaths (only defender dies)', () => {
     const state = setup({ attack: 5, health: 10 }, { attack: 1, health: 5 }, false); // defender takes 5 and dies, attacker survives (takes 1)
+    // 守護キーワードを付与して確実にクリーチャーを攻撃するようにする
+    state.players.player2.field[0].keywords.push('guard');
     const defenderInstanceId = state.players.player2.field[0]?.instanceId;
     const actions = collectActions(state);
   const combatStages = actions.filter((a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage');
@@ -82,9 +86,14 @@ describe('Combat substages iterator', () => {
 
   test('sequence: declare -> defender -> (optional attacker) (no deaths)', () => {
     const state = setup({ attack: 3, health: 10 }, { attack: 0, health: 4 }, false); // defender to 1 HP, no retaliation/attack back
+    // 守護キーワードを付与して確実にクリーチャーを攻撃するようにする
+    state.players.player2.field[0].keywords.push('guard');
+    
     const actions = collectActions(state);
+    
   const combatStages = actions.filter((a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage');
   const stages = combatStages.map(a => a.data.stage);
+    
     // attacker side damage_attacker ステージは defender 攻撃力が0でも生成され得る実装（将来最適化余地）
     expect(stages[0]).toBe('attack_declare');
     expect(stages[1]).toBe('damage_defender');
