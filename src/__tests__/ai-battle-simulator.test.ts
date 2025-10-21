@@ -28,7 +28,6 @@ const getSimulationCount = (): number => {
 };
 
 const SIMULATION_COUNT = getSimulationCount();
-const ALL_FACTIONS: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
 const ALL_TACTICS: TacticsType[] = ['aggressive', 'defensive', 'tempo', 'balanced'];
 
 // --- 型定義 ---

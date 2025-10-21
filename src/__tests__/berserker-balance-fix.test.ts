@@ -67,7 +67,7 @@ describe('戦狂いバランス修正', () => {
       expect(card.keywords).toContain('trample');
     });
 
-    test('条件付き再攻撃効果を持つ', () => {
+    test('条件付き再攻撃効果の基本プロパティを持つ', () => {
       const card = getCardById('ber_desperate_berserker') as CreatureCard;
       const effect = card.effects.find(e => e.action === 'ready');
       
@@ -75,8 +75,12 @@ describe('戦狂いバランス修正', () => {
       expect(effect?.trigger).toBe('on_attack');
       expect(effect?.target).toBe('self');
       expect(effect?.value).toBe(1);
+    });
+
+    test('ライフ条件による発動制限を持つ', () => {
+      const card = getCardById('ber_desperate_berserker') as CreatureCard;
+      const effect = card.effects.find(e => e.action === 'ready');
       
-      // ライフ条件の検証
       expect(effect?.activationCondition).toBeDefined();
       expect(effect?.activationCondition?.subject).toBe('playerLife');
       expect(effect?.activationCondition?.operator).toBe('lt');
