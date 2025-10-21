@@ -259,6 +259,70 @@ export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: 
 }
 
 /**
+ * 守護持ちのターゲットを選択
+ */
+function selectGuardTarget(
+  potentialTargets: FieldCard[],
+  random: SeededRandom
+): FieldCard | null {
+  const guardCreatures = potentialTargets.filter(
+    c => c.keywords.includes('guard') && !c.isSilenced
+  );
+  return guardCreatures.length > 0 ? random.choice(guardCreatures) || null : null;
+}
+
+/**
+ * 勢力別の優先ターゲットフィルタ
+ */
+const FACTION_PRIORITY_FILTERS: Record<Faction, (target: FieldCard) => boolean> = {
+  inquisitor: hasBrandedStatus,
+  necromancer: (target) => target.effects.some(e => e.trigger === 'on_death'),
+  berserker: () => false,
+  knight: () => false,
+  mage: () => false,
+};
+
+/**
+ * 勢力別の優先ターゲットを選択
+ */
+function selectFactionPriorityTarget(
+  faction: Faction,
+  potentialTargets: FieldCard[]
+): FieldCard | null {
+  const filter = FACTION_PRIORITY_FILTERS[faction];
+  const priorityTargets = potentialTargets.filter(filter);
+  return priorityTargets.length > 0 ? priorityTargets[0] : null;
+}
+
+/**
+ * プレイヤー攻撃確率を計算
+ */
+function calculatePlayerAttackProbability(
+  faction: Faction,
+  tacticsType: TacticsType,
+  lifeRatio: number
+): number {
+  // 戦狂い：低ライフ時はプレイヤー攻撃を優先
+  if (faction === 'berserker' && lifeRatio < 0.4) {
+    return 0.8;
+  }
+  return TACTICS_ATTACK_PROBABILITIES[tacticsType];
+}
+
+/**
+ * 脅威度評価によるターゲット選択
+ */
+function selectTargetByThreat(potentialTargets: FieldCard[]): FieldCard | null {
+  const scoredTargets = potentialTargets.map(target => {
+    let score = target.attack + target.currentHealth;
+    if (target.keywords.length > 0) score += 5; // キーワード持ちは脅威
+    return { target, score };
+  }).sort((a, b) => b.score - a.score);
+
+  return scoredTargets[0]?.target || null;
+}
+
+/**
  * 攻撃対象の選択（勢力別カスタマイズ版）
  */
 export function chooseAttackTarget(
@@ -270,61 +334,41 @@ export function chooseAttackTarget(
   const currentPlayer = gameState.players[currentPlayerId];
   const opponentId: PlayerId = currentPlayerId === 'player1' ? 'player2' : 'player1';
   const opponent = gameState.players[opponentId];
-  const faction = currentPlayer.faction;
 
-  const potentialTargets = opponent.field.filter(card => card.currentHealth > 0 && !card.isStealthed);
-  const guardCreatures = potentialTargets.filter(c => c.keywords.includes('guard') && !c.isSilenced);
+  const potentialTargets = opponent.field.filter(
+    card => card.currentHealth > 0 && !card.isStealthed
+  );
 
-  // 1. 守護持ちがいれば優先攻撃
-  if (guardCreatures.length > 0) {
-    return { targetCard: random.choice(guardCreatures) || null, targetPlayer: false };
+  // 1. 守護持ちがいれば優先攻撃（普遍的ルール）
+  const guardTarget = selectGuardTarget(potentialTargets, random);
+  if (guardTarget) {
+    return { targetCard: guardTarget, targetPlayer: false };
   }
 
-  // 2. 勢力別の特殊ロジック
-  if (potentialTargets.length > 0) {
-    // 2-1. 審問官：烙印持ちを優先攻撃
-    if (faction === 'inquisitor') {
-      const brandedTargets = potentialTargets.filter(hasBrandedStatus);
-      if (brandedTargets.length > 0) {
-        return { targetCard: brandedTargets[0], targetPlayer: false };
-      }
-    }
-
-    // 2-2. 死霊術師：on_death効果持ちを優先破壊（墓地リソース化）
-    if (faction === 'necromancer') {
-      const deathTriggerTargets = potentialTargets.filter(t =>
-        t.effects.some(e => e.trigger === 'on_death')
-      );
-      if (deathTriggerTargets.length > 0) {
-        return { targetCard: deathTriggerTargets[0], targetPlayer: false };
-      }
-    }
-
-    // 2-3. プレイヤー攻撃確率の計算
-    let playerAttackProbability = TACTICS_ATTACK_PROBABILITIES[currentPlayer.tacticsType];
-    
-    // 戦狂い：低ライフ時はプレイヤー攻撃を優先
-    if (faction === 'berserker') {
-      const lifeRatio = currentPlayer.life / GAME_CONSTANTS.INITIAL_LIFE;
-      if (lifeRatio < 0.4) {
-        playerAttackProbability = 0.8; // 通常0.3-0.6 → 0.8
-      }
-    }
-
-    if (random.next() < playerAttackProbability) {
-      return { targetCard: null, targetPlayer: true };
-    }
-
-    // 2-4. 脅威度評価によるターゲット選択
-    const scoredTargets = potentialTargets.map(target => {
-      let score = target.attack + target.currentHealth;
-      if (target.keywords.length > 0) score += 5; // キーワード持ちは脅威
-      return { target, score };
-    }).sort((a, b) => b.score - a.score);
-
-    return { targetCard: scoredTargets[0]?.target || null, targetPlayer: false };
+  // 攻撃可能なクリーチャーがいない場合はプレイヤー攻撃
+  if (potentialTargets.length === 0) {
+    return { targetCard: null, targetPlayer: true };
   }
 
-  // 3. 攻撃対象がいない場合はプレイヤー攻撃
-  return { targetCard: null, targetPlayer: true };
+  // 2. 勢力別の優先ターゲット
+  const priorityTarget = selectFactionPriorityTarget(currentPlayer.faction, potentialTargets);
+  if (priorityTarget) {
+    return { targetCard: priorityTarget, targetPlayer: false };
+  }
+
+  // 3. プレイヤー攻撃の確率判定
+  const lifeRatio = currentPlayer.life / GAME_CONSTANTS.INITIAL_LIFE;
+  const playerAttackProbability = calculatePlayerAttackProbability(
+    currentPlayer.faction,
+    currentPlayer.tacticsType,
+    lifeRatio
+  );
+  
+  if (random.next() < playerAttackProbability) {
+    return { targetCard: null, targetPlayer: true };
+  }
+
+  // 4. 脅威度評価によるターゲット選択
+  const threatTarget = selectTargetByThreat(potentialTargets);
+  return { targetCard: threatTarget, targetPlayer: false };
 }
