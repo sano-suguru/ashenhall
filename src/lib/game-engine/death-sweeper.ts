@@ -35,5 +35,3 @@ export function evaluatePendingDeaths(
     handleCreatureDeath(state, card, 'effect', sourceCardId || origin);
   }
 }
-
-export const __deathSweepTestHooks = { evaluatePendingDeaths };

@@ -42,15 +42,6 @@ export function getCardName(cardId: string): string {
   return card?.name || cardId;
 }
 
-const SPECIAL_SOURCE_NAMES: Record<string, string> = {
-  poison_effect: "毒",
-  deck_empty: "デッキ切れ",
-};
-
-export function getSourceDisplayName(sourceId: string): string {
-  return SPECIAL_SOURCE_NAMES[sourceId] || `《${getCardName(sourceId)}》`;
-}
-
 export function getPlayerName(playerId: PlayerId): string {
   return playerId === "player1" ? "あなた" : "相手";
 }

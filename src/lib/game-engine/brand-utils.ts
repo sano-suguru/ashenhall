@@ -33,14 +33,6 @@ export function getBrandedEnemies(state: GameState, playerId: PlayerId): FieldCa
 }
 
 /**
- * 烙印を持つ味方クリーチャーの配列を取得
- */
-export function getBrandedAllies(state: GameState, playerId: PlayerId): FieldCard[] {
-  const player = state.players[playerId];
-  return player.field.filter(hasBrandedStatus);
-}
-
-/**
  * 指定プレイヤーの敵に烙印を持つクリーチャーが存在するかチェック
  */
 export function hasAnyBrandedEnemy(state: GameState, playerId: PlayerId): boolean {

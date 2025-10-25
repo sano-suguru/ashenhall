@@ -178,19 +178,6 @@ export function extractAttackTargets(gameState: GameState): string[] {
 }
 
 /**
- * 守護攻撃の結果を検証
- */
-export function verifyGuardAttackResult(
-  gameState: GameState, 
-  expectedGuardIds: string[]
-): boolean {
-  const attackTargets = extractAttackTargets(gameState);
-  
-  // 守護のいずれかが攻撃されているかチェック
-  return attackTargets.some(targetId => expectedGuardIds.includes(targetId));
-}
-
-/**
  * 複数回の守護選択テストを実行
  */
 export function runMultipleGuardSelectionTest(

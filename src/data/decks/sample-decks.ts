@@ -100,6 +100,3 @@ export const sampleDecks: SampleDeck[] = [
   },
 ];
 
-export function getSampleDeck(faction: Faction): SampleDeck | undefined {
-  return sampleDecks.find(deck => deck.faction === faction);
-}

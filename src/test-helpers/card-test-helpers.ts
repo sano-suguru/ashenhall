@@ -7,7 +7,7 @@
  * - テストコードの可読性と保守性の向上
  */
 
-import type { Card, CreatureCard, SpellCard, CardTemplate, CreatureCardTemplate } from '@/types/game';
+import type { Card, CreatureCard, SpellCard, CardTemplate } from '@/types/game';
 
 /**
  * CardTemplateからテスト用Cardインスタンスを生成
@@ -87,24 +87,4 @@ export function findAndCreateCard(
   }
   
   return createCardInstance(template, instanceIdSuffix);
-}
-
-/**
- * CreatureCardTemplateからテスト用CreatureCardインスタンスを生成
- * 既にテンプレートが特定されている場合に使用
- * 
- * @param template - クリーチャーカードテンプレート
- * @param instanceIdSuffix - instanceIdの接尾辞（オプション）
- * @returns instanceId付きのCreatureCardインスタンス
- */
-export function createCreatureInstance(
-  template: CreatureCardTemplate,
-  instanceIdSuffix?: string
-): CreatureCard {
-  const instanceId = `${template.templateId}${instanceIdSuffix ? `-${instanceIdSuffix}` : '-test'}`;
-  
-  return {
-    ...template,
-    instanceId,
-  } as CreatureCard;
 }

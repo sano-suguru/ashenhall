@@ -111,23 +111,3 @@ export const FACTION_CARDS: Record<Faction, Card[]> = {
   knight: knightCards.map(t => createCardFromTemplate(t)),
   inquisitor: inquisitorCards.map(t => createCardFromTemplate(t)),
 };
-
-/**
- * カード数の統計情報（動的計算）
- */
-export const CARD_STATISTICS = {
-  totalCards: ALL_CARD_TEMPLATES.length,
-  cardsPerFaction: {
-    necromancer: necromancerCards.length,
-    berserker: berserkerCards.length,
-    mage: mageCards.length,
-    knight: knightCards.length,
-    inquisitor: inquisitorCards.length,
-  },
-  costRange: { 
-    min: Math.min(...ALL_CARD_TEMPLATES.map((card: CardTemplate) => card.cost)), 
-    max: Math.max(...ALL_CARD_TEMPLATES.map((card: CardTemplate) => card.cost)) 
-  },
-  averageCost: ALL_CARD_TEMPLATES.reduce((sum: number, card: CardTemplate) => sum + card.cost, 0) / ALL_CARD_TEMPLATES.length,
-  cardsWithEffects: ALL_CARD_TEMPLATES.filter((card: CardTemplate) => card.effects.length > 0).length,
-} as const;

@@ -18,5 +18,4 @@ export {
   ALL_CARDS,
   getCardById,
   getCardsByFaction,
-  CARD_STATISTICS,
 } from './card-registry';
