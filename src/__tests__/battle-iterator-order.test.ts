@@ -32,7 +32,14 @@ function makeFieldCard(templateId: string, atk: number, hp: number, owner: 'play
 
 describe('BattleIterator basic emission', () => {
   test('emits expected attack + death sequence (lethal)', () => {
-    const gs: GameState = createInitialGameState('g1', [], [], 'mage', 'knight', 'balanced', 'balanced', 'seed');
+    const gs: GameState = createInitialGameState(
+      'g1',
+      [],
+      [],
+      'mage',
+      'knight',
+      'seed'
+    );
     gs.phase = 'battle_attack';
     gs.currentPlayer = 'player1';
     gs.turnNumber = 2;

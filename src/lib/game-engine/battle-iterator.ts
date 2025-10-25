@@ -211,7 +211,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
       });
       const actualPlayerDamage = Math.max(0, playerLifeBefore - playerLifeAfter);
-      applyDirectAttackKeywords(pc, currentPlayerId, opponentId, opponent.id, actualPlayerDamage);
+  applyDirectAttackKeywords(pc, currentPlayerId, opponent.id, actualPlayerDamage);
       evaluatePendingDeaths(state, 'system', pc.attacker.instanceId); // instanceIdを使用
     }
     pc.stageCursor = 2;
@@ -253,7 +253,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     }
   }
 
-  function applyDirectAttackKeywords(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentId: PlayerId, opponentEntityId: string, actualPlayerDamage: number): void {
+  function applyDirectAttackKeywords(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentEntityId: string, actualPlayerDamage: number): void {
     if (actualPlayerDamage > 0 && !pc.attacker.isSilenced && pc.attacker.keywords.includes('lifesteal')) {
       const owner = state.players[currentPlayerId];
       owner.life += actualPlayerDamage;

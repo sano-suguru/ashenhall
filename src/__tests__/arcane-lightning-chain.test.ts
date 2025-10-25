@@ -36,8 +36,6 @@ describe('秘術の連雷 - 連鎖ダメージシステム', () => {
       testDeck,
       'mage',
       'mage',
-      'balanced',
-      'balanced',
       'fixed-seed-arcane-123'
     );
   };
@@ -224,13 +222,11 @@ describe('秘術の連雷 - 連鎖ダメージシステム', () => {
     const createTestWithSeed = () => {
       const testDeck = mageCards.slice(0, 6).map((card, i) => ({ ...card, instanceId: `det-deck-${i}` }));
       const state = createInitialGameState(
-        'test-det', 
-        testDeck, 
+        'test-det',
         testDeck,
-        'mage', 
-        'mage', 
-        'balanced', 
-        'balanced', 
+        testDeck,
+        'mage',
+        'mage',
         seed
       );
       

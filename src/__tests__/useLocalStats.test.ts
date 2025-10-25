@@ -95,9 +95,7 @@ describe('useLocalStats', () => {
       deck1,
       deck2,
       'necromancer',
-      'berserker', 
-      'balanced',
-      'aggressive',
+      'berserker',
       'test-seed'
     );
     

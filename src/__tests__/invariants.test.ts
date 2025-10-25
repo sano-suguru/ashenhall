@@ -18,7 +18,7 @@ const dummyCard: Card = {
 };
 
 function baseState(): GameState {
-  const st = createInitialGameState('g1', [dummyCard], [dummyCard], 'knight', 'knight', 'balanced', 'balanced', 'seed');
+  const st = createInitialGameState('g1', [dummyCard], [dummyCard], 'knight', 'knight', 'seed');
   return st;
 }
 

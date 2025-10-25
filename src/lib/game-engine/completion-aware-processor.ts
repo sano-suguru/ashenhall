@@ -423,53 +423,6 @@ export class CompletionAwareProcessor {
     this.finalizeAnimationProcessing(nextState, config);
   }
 
-  private processSingleActionInstant(config: NonNullable<typeof this.autonomousConfig>): void {
-    const action = this.pendingActionQueue.shift();
-    if (!action) return;
-    
-    // 簡素化：基本的なアニメーション状態変更のみ実行
-    const { type } = action;
-    let animationType: AnimationState['animationType'] = 'none';
-    let source: string | undefined;
-    let target: string | undefined;
-    
-    if (type === 'card_attack') {
-      animationType = 'attack';
-      source = action.data.attackerCardId;
-      target = action.data.targetId.startsWith('player') ? undefined : action.data.targetId;
-    } else if (type === 'effect_trigger' && action.data.effectType === 'damage') {
-      animationType = 'damage';
-      const first = Object.keys(action.data.targets)[0];
-      target = first;
-      source = action.data.sourceCardId;
-    } else if (type === 'creature_destroyed') {
-      animationType = 'destroy';
-      target = action.data.destroyedCardId;
-    }
-    
-    if (animationType !== 'none') {
-      config.onAnimationStateChange?.({
-        isAnimating: true,
-        animationType,
-        sourceCardId: source,
-        targetCardId: target,
-      });
-      // 即リセット
-      config.onAnimationStateChange?.({
-        isAnimating: false,
-        animationType: 'none',
-        sourceCardId: undefined,
-        targetCardId: undefined,
-      });
-    }
-  }
-
-  // 旧API互換のダミー (段階的移行用)
-  private async processSingleActionWithAnimation(): Promise<void> { /* deprecated */ }
-  private async runAttackAnimation(): Promise<void> { /* deprecated */ }
-  private async runDamageAnimation(): Promise<void> { /* deprecated */ }
-  private async runDestroyAnimation(): Promise<void> { /* deprecated */ }
-
   private async executeAnimationTask(task: AnimationTask, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
     if (task.kind === 'attack') {
       await this.playSimple(task, config, 'attack');

@@ -16,11 +16,9 @@ describe('ゲームフロー統合テスト', () => {
       'integration-test-1',
       necromancerCards.map(t => createCardInstance(t)),
       knightCards.map(t => createCardInstance(t)),
-      'necromancer',
-      'knight',
-      'balanced',
-      'balanced',
-      'test-seed-flow'
+  'necromancer',
+  'knight',
+  'test-seed-flow'
     );
 
     // ゲームが終了していることを確認
@@ -43,11 +41,9 @@ describe('ゲームフロー統合テスト', () => {
       'integration-test-deckout',
       smallDeck,
       knightCards.map(t => createCardInstance(t)),
-      'necromancer',
-      'knight',
-      'balanced',
-      'balanced',
-      'test-seed-deckout'
+  'necromancer',
+  'knight',
+  'test-seed-deckout'
     );
 
     // ゲームが終了し、勝者が決まっていることを確認

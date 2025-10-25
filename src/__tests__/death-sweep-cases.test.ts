@@ -5,7 +5,7 @@ import { evaluatePendingDeaths } from '@/lib/game-engine/death-sweeper';
 // テスト補助: 簡易フィールド配置
 function setupState(partial?: Partial<GameState>): GameState {
   const deckStub: Card[] = [];
-  const state = createInitialGameState('g', deckStub, deckStub, 'knight', 'knight', 'balanced', 'balanced', 'seed');
+  const state = createInitialGameState('g', deckStub, deckStub, 'knight', 'knight', 'seed');
   // デッキ空で問題ない（フィールド直接差し込み）
   Object.assign(state, partial);
   return state;

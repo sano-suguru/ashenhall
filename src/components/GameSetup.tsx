@@ -22,10 +22,6 @@ import {
   Sparkles, 
   Shield, 
   Eye,
-  Sword,
-  ShieldCheck,
-  Gauge,
-  Scale,
   PlusCircle,
   Edit
 } from 'lucide-react';

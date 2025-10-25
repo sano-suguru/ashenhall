@@ -69,9 +69,8 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     if (deckCode) {
       const decodedData = decodeDeck(deckCode);
       if (decodedData) {
-        const baseCollection = loadDeckCollection();
         const importedDeck = normalizeDeckCoreCards({
-          ...createNewDeck(baseCollection, `インポートされたデッキ`, decodedData.faction),
+          ...createNewDeck(`インポートされたデッキ`, decodedData.faction),
           cards: decodedData.cards,
           coreCardIds: decodedData.coreCardIds,
         });
@@ -86,7 +85,7 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     if (collection.decks.length === 0) {
       sampleDecks.forEach(sampleDeck => {
         const newDeck = normalizeDeckCoreCards({
-          ...createNewDeck(collection, sampleDeck.name, sampleDeck.faction),
+          ...createNewDeck(sampleDeck.name, sampleDeck.faction),
           cards: [...sampleDeck.cardIds],
           coreCardIds: sampleDeck.coreCardIds ? [...sampleDeck.coreCardIds] : [],
         });
@@ -130,7 +129,7 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
   const handleCreateNewDeck = () => {
     if (selectedFaction) {
       const newDeck = normalizeDeckCoreCards(
-        createNewDeck(deckCollection, `新しい ${FACTION_DATA[selectedFaction].name} デッキ`, selectedFaction)
+        createNewDeck(`新しい ${FACTION_DATA[selectedFaction].name} デッキ`, selectedFaction)
       );
       setEditingDeck(newDeck);
     }

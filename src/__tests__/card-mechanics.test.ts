@@ -22,8 +22,6 @@ describe('Card Mechanics Tests', () => {
       allCards,
       'necromancer',
       'berserker',
-      'balanced',
-      'balanced',
       'test-seed'
     );
     baseState.turnNumber = 5; // Ensure enough energy
@@ -34,7 +32,14 @@ describe('Card Mechanics Tests', () => {
   test('Lifesteal keyword should heal the player upon dealing damage', () => {
     const bloodCraver = getCardById('ber_craver') as CreatureCard;
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
-    let gameState = createInitialGameState('lifesteal-test', [bloodCraver], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed');
+    let gameState = createInitialGameState(
+      'lifesteal-test',
+      [bloodCraver],
+      [skeleton],
+      'berserker',
+      'necromancer',
+      'seed'
+    );
     
     gameState.turnNumber = 5;
     gameState.players[p1].life = 10;
@@ -57,7 +62,14 @@ describe('Card Mechanics Tests', () => {
   test('Poison keyword should apply a status effect and move card to graveyard on death', () => {
     const venomtongue = getCardById('inq_venomtongue') as CreatureCard;
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
-    let gameState = createInitialGameState('poison-test', [venomtongue], [skeleton], 'inquisitor', 'necromancer', 'aggressive', 'aggressive', 'seed');
+    let gameState = createInitialGameState(
+      'poison-test',
+      [venomtongue],
+      [skeleton],
+      'inquisitor',
+      'necromancer',
+      'seed'
+    );
 
     gameState.turnNumber = 5;
     gameState.players[p1].field.push({ ...venomtongue, templateId: venomtongue.templateId, instanceId: 'venomtongue-1', owner: p1, currentHealth: 2, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false, keywords: venomtongue.keywords });
@@ -87,7 +99,14 @@ describe('Card Mechanics Tests', () => {
   test('Retaliate keyword should deal damage back to the attacker', () => {
     const vindicator = getCardById('kni_vindicator') as CreatureCard;
     const skeleton = getCardById('necro_skeleton') as CreatureCard;
-    let gameState = createInitialGameState('retaliate-test', [skeleton], [vindicator], 'necromancer', 'knight', 'aggressive', 'aggressive', 'seed');
+    let gameState = createInitialGameState(
+      'retaliate-test',
+      [skeleton],
+      [vindicator],
+      'necromancer',
+      'knight',
+      'seed'
+    );
 
     const initialHealth = 4;
     gameState.turnNumber = 5; // 攻撃可能条件を満たすためにターン数を設定
@@ -113,7 +132,14 @@ describe('Card Mechanics Tests', () => {
     const skeleton = getCardById('necro_skeleton') as CreatureCard; // health 1
     // 攻撃力をさらに強化してオーバーキル幅を拡大
     const boosted = { ...bloodCraver, attackModifier: 4 }; // 実効攻撃力 7
-    let state = createInitialGameState('lifesteal-overkill', [boosted], [skeleton], 'berserker', 'necromancer', 'aggressive', 'aggressive', 'seed2');
+    let state = createInitialGameState(
+      'lifesteal-overkill',
+      [boosted],
+      [skeleton],
+      'berserker',
+      'necromancer',
+      'seed2'
+    );
     const p1 = 'player1';
     const p2 = 'player2';
     state.turnNumber = 5;

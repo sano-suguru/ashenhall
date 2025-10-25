@@ -146,7 +146,6 @@ export function saveDeckCollection(deckCollection: DeckCollection): void {
  * 新しいカスタムデッキを作成
  */
 export function createNewDeck(
-  collection: DeckCollection,
   name: string,
   faction: Faction
 ): CustomDeck {

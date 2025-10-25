@@ -37,8 +37,6 @@ describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () =
       testDeck,
       'necromancer',
       'necromancer',
-      'balanced',
-      'balanced',
       'test-seed-hand-discard'
     );
 

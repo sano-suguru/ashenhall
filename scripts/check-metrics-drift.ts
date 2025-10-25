@@ -67,7 +67,14 @@ function loadLatestBaseline(dir: string): BaselineFile | null {
 }
 
 async function simulateOne(seed: number, maxSteps: number) {
-  let state = createInitialGameState(`drift-${seed}`, [], [], 'mage', 'mage', 'balanced', 'balanced', String(seed));
+  let state = createInitialGameState(
+    `drift-${seed}`,
+    [],
+    [],
+    'mage',
+    'mage',
+    String(seed)
+  );
   let steps = 0;
   while(!state.result && steps < maxSteps) { state = processGameStep(state); steps++; }
   const metrics = computeGameMetrics(state);

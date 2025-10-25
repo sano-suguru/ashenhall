@@ -22,8 +22,6 @@ describe('条件チェッカー', () => {
       deck,
       'mage',
       'mage',
-      'balanced',
-      'balanced',
       'test-seed'
     );
   });

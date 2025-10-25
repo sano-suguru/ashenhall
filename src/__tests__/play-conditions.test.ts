@@ -49,8 +49,6 @@ describe('プレイ条件システム', () => {
       deck2,
       'mage',
       'mage',
-      'balanced',
-      'balanced',
       'test-seed'
     );
 

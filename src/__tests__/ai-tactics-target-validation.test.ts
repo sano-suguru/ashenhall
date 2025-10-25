@@ -34,9 +34,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
       deck1,
       deck2,
       'necromancer',
-      'necromancer', 
-      'balanced',
-      'balanced',
+      'necromancer',
       'test-seed'
     );
   });
@@ -150,8 +148,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
       
-      gameState.players.player1.faction = 'inquisitor';
-      gameState.players.player1.tacticsType = 'balanced';
+  gameState.players.player1.faction = 'inquisitor';
       gameState.players.player2.field = [];
       
       const score = evaluateCardForPlay(sinBurden!, gameState, 'player1');
@@ -162,8 +159,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
       
-      gameState.players.player1.faction = 'inquisitor';
-      gameState.players.player1.tacticsType = 'balanced';
+  gameState.players.player1.faction = 'inquisitor';
       
       // 相手場にクリーチャーを配置
       const skeleton = getCardById('necro_skeleton')! as CreatureCard;
@@ -192,8 +188,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
       const skeleton = getCardById('necro_skeleton');
       expect(skeleton).toBeDefined();
       
-      gameState.players.player1.faction = 'necromancer';
-      gameState.players.player1.tacticsType = 'balanced';
+  gameState.players.player1.faction = 'necromancer';
       gameState.players.player2.field = [];
       
       const score = evaluateCardForPlay(skeleton!, gameState, 'player1');

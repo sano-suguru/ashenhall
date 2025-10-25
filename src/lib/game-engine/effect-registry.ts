@@ -187,7 +187,7 @@ export const effectHandlers: Partial<Record<EffectAction, EffectHandler>> = {
     void _v;
     return executeApplyBrandEffect(state, targets, sourceCard.templateId);
   },
-  'banish': (state, effect, sourceCard, sourcePlayerId, random, targets, _v) => {
+  'banish': (state, _effect, sourceCard, _sourcePlayerId, _random, targets, _v) => {
     void _v;
     return executeBanishEffect(state, targets, sourceCard.templateId);
   },

@@ -13,7 +13,14 @@ import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 describe('CompletionAwareProcessor sequential animation ordering', () => {
   function setupState(): GameState {
     const emptyDeck: CreatureCard[] = []; // 空デッキ（テスト用途）
-    const gs = createInitialGameState('test', emptyDeck, emptyDeck, 'necromancer', 'berserker', 'balanced', 'aggressive', 'seed');
+    const gs = createInitialGameState(
+      'test',
+      emptyDeck,
+      emptyDeck,
+      'necromancer',
+      'berserker',
+      'seed'
+    );
     // 手動で attacker となるクリーチャーカードを player1 のフィールドに配置
     const mockCreature: CreatureCard = {
       templateId: 'attacker',

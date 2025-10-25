@@ -15,8 +15,6 @@ describe("resolveDynamicEffectParameters", () => {
       [],
       "knight",
       "mage",
-      "balanced",
-      "balanced",
       "test-seed"
     );
   });

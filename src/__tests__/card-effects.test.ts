@@ -23,8 +23,6 @@ describe('カード効果システム', () => {
       testDeck,
       'necromancer',
       'necromancer',
-      'balanced',
-      'balanced',
       'test-seed-effects'
     );
   };

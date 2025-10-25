@@ -20,8 +20,6 @@ describe('審問官バランス修正テスト', () => {
       testDeck,
       'inquisitor',
       'necromancer',
-      'balanced',
-      'balanced',
       'test-seed-fix'
     );
   };

@@ -25,7 +25,14 @@ function median(nums: number[]): number { if (!nums.length) return 0; const sort
 
 async function simulateOneGame(seed: number, maxSteps: number): Promise<GameBaselineResult> {
   const gid = `baseline-${seed}`;
-  let state = createInitialGameState(gid, [], [], 'mage', 'mage', 'balanced', 'balanced', String(seed));
+  let state = createInitialGameState(
+    gid,
+    [],
+    [],
+    'mage',
+    'mage',
+    String(seed)
+  );
   let steps = 0;
   while (!state.result && steps < maxSteps) {
     state = processGameStep(state);

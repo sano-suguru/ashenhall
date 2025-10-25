@@ -30,8 +30,6 @@ describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () =>
       testDeck,
       'necromancer',
       'necromancer',
-      'balanced',
-      'balanced',
       'test-seed-deck-search'
     );
 

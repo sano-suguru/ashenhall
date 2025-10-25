@@ -6,7 +6,14 @@ import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 describe('Combat substages iterator', () => {
   function setup(attackerCfg: Partial<CreatureCard> & { attack: number; health: number }, defenderCfg: Partial<CreatureCard> & { attack: number; health: number }, retaliate?: boolean): GameState {
     const empty: CreatureCard[] = [];
-    const gs = createInitialGameState('test', empty, empty, 'necromancer', 'berserker', 'balanced', 'aggressive', 'seed-sub');
+    const gs = createInitialGameState(
+      'test',
+      empty,
+      empty,
+      'necromancer',
+      'berserker',
+      'seed-sub'
+    );
     const attacker: CreatureCard = {
       templateId: 'A1',
       instanceId: 'A1', // テスト用にtemplateIdと同じ値を使用

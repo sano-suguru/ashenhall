@@ -333,7 +333,7 @@ function handleSingleCardTrigger(
 function handlePlayerScopedTrigger(
   state: GameState,
   trigger: EffectTrigger,
-  sourceCard?: FieldCard | Card,
+  _sourceCard?: FieldCard | Card,
   sourcePlayerId?: PlayerId
 ): void {
   if (!sourcePlayerId) return;
