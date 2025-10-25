@@ -13,6 +13,44 @@ import { logError } from './error-handling';
 
 const DECK_STORAGE_KEY = 'ashenhall_deck_collection';
 
+type CoreCardAnalysis = {
+  uniqueCoreCardIds: string[];
+  duplicateCoreCardIds: string[];
+  missingCoreCardIds: string[];
+};
+
+function analyzeCoreCardIds(coreCardIds: string[] = [], deckCards: string[]): CoreCardAnalysis {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  coreCardIds.forEach((cardId) => {
+    if (seen.has(cardId)) {
+      duplicates.add(cardId);
+      return;
+    }
+    seen.add(cardId);
+  });
+
+  const deckCardSet = new Set(deckCards);
+  const uniqueCoreCardIds = Array.from(seen);
+  const missingCoreCardIds = uniqueCoreCardIds.filter((cardId) => !deckCardSet.has(cardId));
+
+  return {
+    uniqueCoreCardIds,
+    duplicateCoreCardIds: Array.from(duplicates),
+    missingCoreCardIds,
+  };
+}
+
+export function sanitizeCoreCardIds(coreCardIds: string[] = [], deckCards: string[]): string[] {
+  const { uniqueCoreCardIds, missingCoreCardIds } = analyzeCoreCardIds(coreCardIds, deckCards);
+  if (missingCoreCardIds.length === 0) {
+    return uniqueCoreCardIds;
+  }
+
+  const missingSet = new Set(missingCoreCardIds);
+  return uniqueCoreCardIds.filter((cardId) => !missingSet.has(cardId));
+}
+
 /**
  * 乱数生成器（簡易的なUUID用）
  */
@@ -146,11 +184,25 @@ export function setActiveDeckForFaction(
  */
 export function validateDeck(deck: CustomDeck): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-  const coreCardIds = deck.coreCardIds || [];
+  const { duplicateCoreCardIds, missingCoreCardIds, uniqueCoreCardIds } = analyzeCoreCardIds(
+    deck.coreCardIds,
+    deck.cards
+  );
+
+  const effectiveCoreCardIds = sanitizeCoreCardIds(uniqueCoreCardIds, deck.cards);
+  const coreCardSet = new Set(effectiveCoreCardIds);
 
   // デッキ枚数チェック
   if (deck.cards.length !== GAME_CONSTANTS.DECK_SIZE) {
     errors.push(`デッキの枚数は${GAME_CONSTANTS.DECK_SIZE}枚である必要があります。 (現在: ${deck.cards.length}枚)`);
+  }
+
+  if (duplicateCoreCardIds.length > 0) {
+    errors.push(`コアカードの指定に重複があります: ${duplicateCoreCardIds.join(', ')}`);
+  }
+
+  if (missingCoreCardIds.length > 0) {
+    errors.push(`コアカードにデッキ外のカードが含まれています: ${missingCoreCardIds.join(', ')}`);
   }
 
   // 同名カード制限チェック
@@ -160,7 +212,7 @@ export function validateDeck(deck: CustomDeck): { isValid: boolean; errors: stri
   }, {} as Record<string, number>);
 
   Object.entries(cardCounts).forEach(([cardId, count]) => {
-    const isCore = coreCardIds.includes(cardId);
+    const isCore = coreCardSet.has(cardId);
     const limit = isCore ? 3 : GAME_CONSTANTS.CARD_COPY_LIMIT;
     if (count > limit) {
       errors.push(`カード「${cardId}」は${limit}枚までしか入れられません。 (現在: ${count}枚)`);
@@ -168,8 +220,8 @@ export function validateDeck(deck: CustomDeck): { isValid: boolean; errors: stri
   });
 
   // コアカードの数チェック
-  if (coreCardIds.length > 3) {
-    errors.push(`コアカードは3枚までしか指定できません。 (現在: ${coreCardIds.length}枚)`);
+  if (effectiveCoreCardIds.length > 3) {
+    errors.push(`コアカードは3枚までしか指定できません。 (現在: ${effectiveCoreCardIds.length}枚)`);
   }
 
   return {

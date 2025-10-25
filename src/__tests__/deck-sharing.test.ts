@@ -86,4 +86,20 @@ describe('Deck Sharing Utilities (v2)', () => {
     const decoded = decodeDeck(code);
     expect(decoded).toEqual(emptyDeck);
   });
+
+  it('should sanitize duplicate or out-of-deck core card IDs when decoding', () => {
+    const deckWithIssues: Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'> = {
+      faction: 'necromancer',
+      coreCardIds: ['necro_lich', 'necro_lich', 'necro_skeleton'],
+      cards: [
+        'necro_lich', 'necro_lich', 'necro_lich',
+        'necro_zombie', 'necro_zombie', 'necro_zombie',
+      ],
+    };
+
+    const code = encodeDeck(deckWithIssues);
+    const decoded = decodeDeck(code);
+    expect(decoded).not.toBeNull();
+    expect(decoded?.coreCardIds).toEqual(['necro_lich']);
+  });
 });

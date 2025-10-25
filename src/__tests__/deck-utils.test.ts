@@ -74,13 +74,43 @@ describe('validateDeck', () => {
   });
 
   it('should return invalid if more than 3 core cards are selected', () => {
+    const cards = fillDeck([
+      'core-1', 'core-1',
+      'core-2', 'core-2',
+      'core-3', 'core-3',
+      'core-4', 'core-4',
+    ]);
     const deck: CustomDeck = {
       ...baseDeck,
-      cards: fillDeck([]),
+      cards,
       coreCardIds: ['core-1', 'core-2', 'core-3', 'core-4'],
     };
     const { isValid, errors } = validateDeck(deck);
     expect(isValid).toBe(false);
     expect(errors.some(e => e.includes('コアカードは3枚までしか指定できません'))).toBe(true);
+  });
+
+  it('should return invalid when coreCardIds includes duplicates', () => {
+    const cards = fillDeck(['card-1']);
+    const deck: CustomDeck = {
+      ...baseDeck,
+      cards,
+      coreCardIds: ['card-1', 'card-1'],
+    };
+    const { isValid, errors } = validateDeck(deck);
+    expect(isValid).toBe(false);
+    expect(errors.some(e => e.includes('コアカードの指定に重複があります'))).toBe(true);
+  });
+
+  it('should return invalid when coreCardIds references cards not in the deck', () => {
+    const cards = fillDeck(['card-1']);
+    const deck: CustomDeck = {
+      ...baseDeck,
+      cards,
+      coreCardIds: ['card-2'],
+    };
+    const { isValid, errors } = validateDeck(deck);
+    expect(isValid).toBe(false);
+    expect(errors.some(e => e.includes('コアカードにデッキ外のカードが含まれています'))).toBe(true);
   });
 });

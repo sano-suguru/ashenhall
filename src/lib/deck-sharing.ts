@@ -14,6 +14,7 @@ import {
   factionToIntegerMap,
   integerToFactionMap
 } from './card-id-manager';
+import { sanitizeCoreCardIds } from './deck-utils';
 
 // デッキコードのバージョンと区切り文字を定義
 const DECK_CODE_VERSION = 'v2'; // バージョンを更新
@@ -178,9 +179,11 @@ export function decodeDeck(code: string): Pick<CustomDeck, 'faction' | 'coreCard
     const isValid = validateDeckIntegrity(convertedData);
     if (!isValid) return null;
     
+    const sanitizedCoreCardIds = sanitizeCoreCardIds(convertedData.coreCardIds, convertedData.cards);
+
     return {
       faction: convertedData.faction,
-      coreCardIds: convertedData.coreCardIds,
+      coreCardIds: sanitizedCoreCardIds,
       cards: convertedData.cards,
     };
   } catch (error) {
