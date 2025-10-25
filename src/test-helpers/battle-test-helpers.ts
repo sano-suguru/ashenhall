@@ -10,7 +10,7 @@ import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { createCardFromTemplate } from '@/data/cards/card-registry';
 import { findCreatureTemplateById, ensureTwoCreatureTemplates } from '@/lib/type-guards';
 import { generateFieldInstanceId } from '@/lib/instance-id-generator';
-import type { Card, Faction, TacticsType, GameState, FieldCard, CreatureCard } from '@/types/game';
+import type { Card, Faction, GameState, FieldCard, CreatureCard } from '@/types/game';
 
 /**
  * 戦闘テスト用の基本設定
@@ -20,8 +20,6 @@ export interface BattleTestConfig {
   testSeed: string;
   player1Faction: Faction;
   player2Faction: Faction;
-  player1Tactics: TacticsType;
-  player2Tactics: TacticsType;
 }
 
 /**
@@ -31,9 +29,7 @@ export const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
   testGameId: 'battle-test-001',
   testSeed: 'battle-test-seed',
   player1Faction: 'berserker',
-  player2Faction: 'necromancer',
-  player1Tactics: 'aggressive',
-  player2Tactics: 'defensive'
+  player2Faction: 'necromancer'
 };
 
 /**
@@ -83,8 +79,6 @@ export function setupMultipleGuardBattleScenario(
     deck2,
     finalConfig.player1Faction,
     finalConfig.player2Faction,
-    finalConfig.player1Tactics,
-    finalConfig.player2Tactics,
     testSeed
   );
 
@@ -267,8 +261,6 @@ export function testDirectAttackWhenFieldEmpty(
     deck2,
     finalConfig.player1Faction,
     finalConfig.player2Faction,
-    'aggressive', // 攻撃重視でカードを出やすくする
-    'defensive',
     `${finalConfig.testSeed}_direct_attack`
   );
 
@@ -351,8 +343,6 @@ export function setupNoGuardBattleScenario(
     deck2,
     finalConfig.player1Faction,
     finalConfig.player2Faction,
-    finalConfig.player1Tactics,
-    finalConfig.player2Tactics,
     `${finalConfig.testSeed}_no_guard`
   );
 

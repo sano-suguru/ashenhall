@@ -15,7 +15,7 @@ import {
 } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { GAME_CONSTANTS } from '@/types/game';
-import type { Card, Faction, TacticsType, GameState } from '@/types/game';
+import type { Card, Faction, GameState } from '@/types/game';
 import { 
   runMultipleGuardSelectionTest, 
   testDirectAttackWhenFieldEmpty,
@@ -32,8 +32,6 @@ describe('Ashenhall ゲームエンジン', () => {
   const testSeed = 'test-seed-12345';
   const player1Faction: Faction = 'necromancer';
   const player2Faction: Faction = 'necromancer';
-  const player1Tactics: TacticsType = 'balanced';
-  const player2Tactics: TacticsType = 'aggressive';
 
   // テスト用デッキ（ネクロマンサーカード20枚）
   const createTestDeck = (): Card[] => {
@@ -61,8 +59,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -85,7 +81,6 @@ describe('Ashenhall ゲームエンジン', () => {
       expect(player1.energy).toBe(GAME_CONSTANTS.INITIAL_ENERGY);
       expect(player1.maxEnergy).toBe(GAME_CONSTANTS.INITIAL_MAX_ENERGY);
       expect(player1.faction).toBe(player1Faction);
-      expect(player1.tacticsType).toBe(player1Tactics);
       expect(player1.hand).toHaveLength(3); // 初期手札3枚
       expect(player1.deck).toHaveLength(17); // 残りデッキ17枚
       expect(player1.field).toHaveLength(0);
@@ -96,7 +91,6 @@ describe('Ashenhall ゲームエンジン', () => {
       expect(player2.energy).toBe(GAME_CONSTANTS.INITIAL_ENERGY);
       expect(player2.maxEnergy).toBe(GAME_CONSTANTS.INITIAL_MAX_ENERGY);
       expect(player2.faction).toBe(player2Faction);
-      expect(player2.tacticsType).toBe(player2Tactics);
       expect(player2.hand).toHaveLength(3);
       expect(player2.deck).toHaveLength(17);
       expect(player2.field).toHaveLength(0);
@@ -118,8 +112,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
       
@@ -129,8 +121,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -154,8 +144,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -184,8 +172,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -253,8 +239,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -295,8 +279,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
       
@@ -306,8 +288,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
 
@@ -338,8 +318,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         'seed-1'
       );
       
@@ -349,8 +327,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         'seed-2'
       );
 
@@ -379,8 +355,6 @@ describe('Ashenhall ゲームエンジン', () => {
         deck2,
         'necromancer', // player1's faction (攻撃側)
         'berserker', // player2's faction (thorn_orc側)
-        player1Tactics,
-        player2Tactics,
         'trigger-log-test'
       );
 
@@ -442,8 +416,6 @@ describe('守護キーワード処理テスト', () => {
   const testSeed = 'guard-test-seed';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'knight';
-  const player1Tactics: TacticsType = 'aggressive';
-  const player2Tactics: TacticsType = 'defensive';
 
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -459,7 +431,7 @@ describe('守護キーワード処理テスト', () => {
   test('守護がいる場合、攻撃者は必ず守護を攻撃する', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed);
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed);
 
     // 攻撃者（攻撃力4）を配置
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_champion');
@@ -543,9 +515,7 @@ describe('守護キーワード処理テスト', () => {
       testGameId,
       testSeed,
       player1Faction,
-      player2Faction,
-      player1Tactics,
-      player2Tactics
+      player2Faction
     };
 
     // シナリオセットアップ
@@ -570,7 +540,7 @@ describe('守護キーワード処理テスト', () => {
   test('沈黙状態の守護は守護効果を発揮しない', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed + '_silenced');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed + '_silenced');
 
     // 攻撃者を配置
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
@@ -625,7 +595,7 @@ describe('守護キーワード処理テスト', () => {
   test('体力0の守護は守護効果を発揮しない', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed + '_dead_guard');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed + '_dead_guard');
 
     // 攻撃者を配置
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
@@ -686,9 +656,7 @@ describe('守護キーワード処理テスト', () => {
       testGameId,
       testSeed,
       player1Faction,
-      player2Faction,
-      player1Tactics,
-      player2Tactics
+      player2Faction
     };
 
     // ヘルパー関数を使用して複数回の守護選択テストを実行
@@ -707,8 +675,6 @@ describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-001';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
-  const player1Tactics: TacticsType = 'aggressive';
-  const player2Tactics: TacticsType = 'defensive';
 
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -724,7 +690,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Trample keyword should deal excess damage to the player', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
@@ -768,7 +734,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -804,7 +770,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -842,8 +808,6 @@ describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-002';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
-  const player1Tactics: TacticsType = 'aggressive';
-  const player2Tactics: TacticsType = 'defensive';
 
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -859,7 +823,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Trample keyword should deal excess damage to the player', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test-2');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test-2');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
@@ -903,7 +867,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test-2');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test-2');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -939,7 +903,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test-2');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test-2');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -977,8 +941,6 @@ describe('Card Keyword and Effect Tests', () => {
   const testGameId = 'test-game-003';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
-  const player1Tactics: TacticsType = 'aggressive';
-  const player2Tactics: TacticsType = 'defensive';
 
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -994,7 +956,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Trample keyword should deal excess damage to the player', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'trample-test-3');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test-3');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
@@ -1038,7 +1000,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-test-3');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test-3');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -1074,7 +1036,7 @@ describe('Card Keyword and Effect Tests', () => {
   test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, 'ready-no-trigger-test-3');
+    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test-3');
 
     const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
     if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
@@ -1122,8 +1084,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
       
@@ -1149,8 +1109,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        player1Tactics,
-        player2Tactics,
         testSeed
       );
       
@@ -1171,8 +1129,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive', // 攻撃重視で配置しやすくする
-        'balanced',
         'full-deploy-test-1'
       );
 
@@ -1219,8 +1175,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'defensive',
         'energy-limit-test-2'
       );
 
@@ -1254,8 +1208,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'aggressive', // 両者攻撃重視で場を埋めやすくする
         'field-limit-test-3'
       );
 
@@ -1281,8 +1233,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'tempo', // テンポ重視で効果のあるカードを優先
-        'balanced',
         'effect-chain-test-4'
       );
 
@@ -1323,8 +1273,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'defensive',
         'deterministic-multi-deploy-test'
       );
       
@@ -1334,8 +1282,6 @@ describe('Card Keyword and Effect Tests', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'defensive',
         'deterministic-multi-deploy-test' // 同じシード
       );
 
@@ -1364,8 +1310,6 @@ describe('戦闘システム - 勝利判定後の処理', () => {
   const testSeed = 'overkill-test-seed';
   const player1Faction: Faction = 'berserker';
   const player2Faction: Faction = 'necromancer';
-  const player1Tactics: TacticsType = 'aggressive';
-  const player2Tactics: TacticsType = 'defensive';
 
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -1381,7 +1325,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
   test('ライフが0になった後、過剰な攻撃が行われず、ライフがマイナスにならない', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
-    const gameState: GameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, player1Tactics, player2Tactics, testSeed);
+    const gameState: GameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed);
 
     // Arrange: 状況設定
     gameState.turnNumber = 5; // 攻撃可能条件を満たすためにターン数を設定
@@ -1448,9 +1392,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
         testGameId,
         testSeed: 'direct-attack-test-1',
         player1Faction,
-        player2Faction,
-        player1Tactics,
-        player2Tactics
+        player2Faction
       };
 
       // ヘルパー関数を使用して直接攻撃テストを実行
@@ -1476,8 +1418,6 @@ describe('戦闘システム - 勝利判定後の処理', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'defensive', // 守備重視で相手がカードを出しにくくする
         'alive-check-test-2'
       );
 
@@ -1527,8 +1467,6 @@ describe('戦闘システム - 勝利判定後の処理', () => {
         deck2,
         player1Faction,
         player2Faction,
-        'aggressive',
-        'balanced',
         'battle-progression-test-3'
       );
 

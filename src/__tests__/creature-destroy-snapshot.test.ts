@@ -1,5 +1,5 @@
 import { executeFullGame } from '@/lib/game-engine/core';
-import type { Card, Faction, TacticsType, GameAction } from '@/types/game';
+import type { Card, Faction, GameAction } from '@/types/game';
 import { necromancerCards } from '@/data/cards/base-cards';
 import { createCardInstance } from '@/test-helpers/card-test-helpers';
 
@@ -19,9 +19,7 @@ describe('creature_destroyed action snapshot', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
     const faction: Faction = 'necromancer';
-    const tactics1: TacticsType = 'balanced';
-    const tactics2: TacticsType = 'aggressive';
-    const state = executeFullGame('destroy-snapshot', deck1, deck2, faction, faction, tactics1, tactics2, 'seed-destroy');
+    const state = executeFullGame('destroy-snapshot', deck1, deck2, faction, faction, 'seed-destroy');
     const destroyActions = state.actionLog.filter(a => a.type === 'creature_destroyed');
     expect(destroyActions.length).toBeGreaterThan(0);
     const first = destroyActions[0] as Extract<GameAction,{type:'creature_destroyed'}>;

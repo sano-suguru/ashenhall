@@ -114,7 +114,7 @@ function executeCardEffectWithoutConditionCheck(
       state.randomSeed + state.turnNumber + sourceCard.templateId
     );
 
-    // 1. 初期対象を選択
+    // 1. 初期対象候補を取得
     let initialTargets = selectTargets(
       state,
       sourcePlayerId,
@@ -131,9 +131,23 @@ function executeCardEffectWithoutConditionCheck(
     }
 
     // 2. 対象選択フィルターを適用
+    // IMPORTANT: ランダム選択の「前」にフィルタを適用する必要がある場合のための特別処理
     const selectionRules = effect.selectionRules;
     
-    if (selectionRules) {
+    if (selectionRules && (effect.target === 'enemy_random' || effect.target === 'ally_random')) {
+      // ランダム選択の場合、まず全候補を取得してフィルタし、その後ランダム選択
+      const opponentId = sourcePlayerId === 'player1' ? 'player2' : 'player1';
+      const allCandidates = effect.target === 'enemy_random' 
+        ? state.players[opponentId].field.filter(c => c.currentHealth > 0 && !c.keywords.includes('untargetable'))
+        : state.players[sourcePlayerId].field.filter(c => c.currentHealth > 0);
+      
+      const filteredCandidates = TargetFilterEngine.applyRules(allCandidates, selectionRules, sourceCard.templateId);
+      
+      // フィルタ後の候補からランダム選択
+      const selectedTarget = random.choice(filteredCandidates);
+      initialTargets = selectedTarget ? [selectedTarget] : [];
+    } else if (selectionRules) {
+      // ランダム選択以外の場合は通常通りフィルタ適用
       initialTargets = TargetFilterEngine.applyRules(initialTargets, selectionRules, sourceCard.templateId);
     }
 

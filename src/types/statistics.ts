@@ -8,8 +8,7 @@
  */
 
 import type {
-  Faction,
-  TacticsType
+  Faction
 } from './core';
 
 import type {
@@ -42,8 +41,6 @@ export interface DeckAnalysis {
   costDistribution: Record<number, number>;
   /** 勢力純正度（同勢力カードの割合） */
   factionPurity: number;
-  /** 予想戦術タイプ */
-  suggestedTactics: TacticsType;
 }
 
 // === ローカル統計機能用型定義 ===
@@ -70,8 +67,6 @@ export interface BattleRequest {
   playerId: string;
   /** 使用デッキ */
   deck: Card[];
-  /** 戦術タイプ */
-  tacticsType: TacticsType;
   /** 申請時刻 */
   requestTime: number;
   /** 希望対戦相手（オプション） */

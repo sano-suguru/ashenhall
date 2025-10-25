@@ -10,7 +10,6 @@
 import type {
   PlayerId,
   Faction,
-  TacticsType,
   GamePhase
 } from './core';
 
@@ -39,8 +38,6 @@ export interface PlayerState {
   maxEnergy: number;
   /** 選択勢力 */
   faction: Faction;
-  /** 戦術タイプ */
-  tacticsType: TacticsType;
   /** デッキ（未使用のカード） */
   deck: Card[];
   /** 手札 */

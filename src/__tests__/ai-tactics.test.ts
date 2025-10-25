@@ -77,7 +77,6 @@ const createMockGameState = (overrides: Partial<GameState>): GameState => ({
       graveyard: [],
       banishedCards: [],
       faction: 'necromancer',
-      tacticsType: 'balanced',
     },
     player2: {
       id: 'player2',
@@ -90,7 +89,6 @@ const createMockGameState = (overrides: Partial<GameState>): GameState => ({
       graveyard: [],
       banishedCards: [],
       faction: 'knight',
-      tacticsType: 'balanced',
     },
   },
   actionLog: [],
@@ -111,21 +109,6 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
     expect(score).toBeCloseTo((3 + 3) / 3);
   });
 
-  it('should value attack higher for aggressive tactics', () => {
-    gameState.players.player1.tacticsType = 'aggressive';
-    const card = createMockCard({ type: 'creature', attack: 4, health: 2, cost: 3 });
-    const score = evaluateCardForPlay(card, gameState, playerId);
-    const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.AGGRESSIVE;
-    expect(score).toBe(4 * ATTACK + 2 * HEALTH - 3);
-  });
-
-  it('should value health higher for defensive tactics', () => {
-    gameState.players.player1.tacticsType = 'defensive';
-    const card = createMockCard({ type: 'creature', attack: 2, health: 4, cost: 3 });
-    const score = evaluateCardForPlay(card, gameState, playerId);
-    const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.DEFENSIVE;
-    expect(score).toBe(4 * HEALTH + 2 * ATTACK - 3);
-  });
 
   it('should give bonus to necromancer for echo card based on graveyard size', () => {
     gameState.players.player1.faction = 'necromancer';
@@ -172,14 +155,13 @@ describe('AI Tactics Scorers (After Refactoring)', () => {
   describe('calculateBaseScore', () => {
     it('calculates score for spell card', () => {
       const card = createMockCard({ type: 'spell', cost: 4 });
-      expect(calculateBaseScore(card, gameState, playerId)).toBe(4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER);
+      expect(calculateBaseScore(card)).toBe(4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER);
     });
 
-    it('uses the correct tactics scorer for creature', () => {
-      gameState.players.player1.tacticsType = 'aggressive';
+    it('calculates base score for creature using balanced logic', () => {
       const card = createMockCard({ type: 'creature', attack: 5, health: 1, cost: 3 });
-      const { ATTACK, HEALTH } = AI_EVALUATION_WEIGHTS.TACTICS_MODIFIERS.AGGRESSIVE;
-      expect(calculateBaseScore(card, gameState, playerId)).toBe(5 * ATTACK + 1 * HEALTH - 3);
+      const expectedScore = (5 + 1) / Math.max(3, 1);
+      expect(calculateBaseScore(card)).toBeCloseTo(expectedScore);
     });
   });
 

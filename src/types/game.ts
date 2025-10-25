@@ -11,9 +11,8 @@
 export type {
   PlayerId,
   Faction,
-  TacticsType,
   GamePhase,
-  CardType
+  CardType,
 } from './core';
 
 // === 効果システム型 ===
@@ -103,7 +102,6 @@ export {
 export {
   GAME_CONSTANTS,
   BALANCE_GUIDELINES,
-  TACTICS_ATTACK_PROBABILITIES,
   FACTION_DESCRIPTIONS,
-  AI_EVALUATION_WEIGHTS
+  AI_EVALUATION_WEIGHTS,
 } from './constants';

@@ -300,7 +300,7 @@ const PlayerInfo = ({ player, isOpponent }: { player: PlayerState; isOpponent: b
       <div>
         <div className="font-bold">{isOpponent ? 'AI対戦相手' : 'あなた'}</div>
         <div className="text-sm text-gray-400">
-          {player.faction} × {player.tacticsType}
+          {player.faction}
         </div>
       </div>
     </div>

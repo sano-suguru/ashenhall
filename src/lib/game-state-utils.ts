@@ -384,8 +384,6 @@ function reconstructInitialState(originalState: GameState): GameState {
     player2Cards,
     originalState.players.player1.faction,
     originalState.players.player2.faction,
-    originalState.players.player1.tacticsType,
-    originalState.players.player2.tacticsType,
     originalState.randomSeed
   );
 }
@@ -430,11 +428,7 @@ export function generateBattleReport(gameState: GameState): string {
 
   // 基本情報
   const header = `⚔️ Ashenhall戦闘記録\n`;
-  const matchup = `${getFactionName(player1.faction)}(${getTacticsName(
-    player1.tacticsType
-  )}) vs ${getFactionName(player2.faction)}(${getTacticsName(
-    player2.tacticsType
-  )})\n`;
+  const matchup = `${getFactionName(player1.faction)} vs ${getFactionName(player2.faction)}\n`;
 
   // 勝敗
   let winnerText = "";

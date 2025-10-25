@@ -7,41 +7,20 @@
  * - テスト容易な純粋関数として実装
  */
 
-import type { GameState, Card, FieldCard, PlayerId, Faction, TacticsType } from '@/types/game';
-import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS, TACTICS_ATTACK_PROBABILITIES } from '@/types/game';
+import type { GameState, Card, FieldCard, PlayerId, Faction } from '@/types/game';
+import { GAME_CONSTANTS, AI_EVALUATION_WEIGHTS } from '@/types/game';
 import { SeededRandom } from './seeded-random';
 import { hasBrandedStatus } from './brand-utils';
 
-const { BASE_SCORE, TACTICS_MODIFIERS, FACTION_BONUSES } = AI_EVALUATION_WEIGHTS;
-
-// --- 戦術別スコア計算 ---
-const getAggressiveScore = (card: Card) => (card.type === 'creature' ? card.attack * TACTICS_MODIFIERS.AGGRESSIVE.ATTACK + card.health * TACTICS_MODIFIERS.AGGRESSIVE.HEALTH - card.cost : 0);
-const getDefensiveScore = (card: Card) => (card.type === 'creature' ? card.health * TACTICS_MODIFIERS.DEFENSIVE.HEALTH + card.attack * TACTICS_MODIFIERS.DEFENSIVE.ATTACK - card.cost : 0);
-const getTempoScore = (card: Card) => {
-  if (card.type !== 'creature') return 0;
-  const costEfficiency = (card.attack + card.health) / Math.max(card.cost, 1);
-  return costEfficiency * TACTICS_MODIFIERS.TEMPO.EFFICIENCY - card.cost * TACTICS_MODIFIERS.TEMPO.COST_PENALTY;
-};
-const getBalancedScore = (card: Card) => {
-  if (card.type !== 'creature') return 0;
-  return (card.attack + card.health) / Math.max(card.cost, 1);
-};
-
-const tacticsScorers: Record<TacticsType, (card: Card) => number> = {
-  aggressive: getAggressiveScore,
-  defensive: getDefensiveScore,
-  tempo: getTempoScore,
-  balanced: getBalancedScore,
-};
+const { BASE_SCORE, FACTION_BONUSES } = AI_EVALUATION_WEIGHTS;
 
 // NOTE:以降の関数はテストのためにエクスポートされています
-export const calculateBaseScore = (card: Card, gameState: GameState, playerId: PlayerId): number => {
+export const calculateBaseScore = (card: Card): number => {
   if (card.type === 'spell') {
     return card.cost * BASE_SCORE.SPELL_COST_MULTIPLIER;
   }
-  const tactics = gameState.players[playerId].tacticsType;
-  const scorer = tacticsScorers[tactics] || getBalancedScore;
-  return scorer(card);
+  // balanced戦術相当のロジックに統一
+  return (card.attack + card.health) / Math.max(card.cost, 1);
 };
 
 // --- 勢力別ボーナス計算 ---
@@ -125,6 +104,25 @@ const getMageBonus = (card: Card, player: GameState['players'][PlayerId], oppone
 const getInquisitorBonus = (card: Card, _player: GameState['players'][PlayerId], opponent: GameState['players'][PlayerId]) => {
   let bonus = 0;
   
+  const brandedEnemies = opponent.field.filter(hasBrandedStatus);
+  const brandedCount = brandedEnemies.length;
+  const unbrandedCount = opponent.field.length - brandedCount;
+  
+  // 新規：烙印付与カードの動的評価
+  const hasBrandEffect = card.effects.some(e => e.action === 'apply_brand');
+  if (hasBrandEffect) {
+    if (unbrandedCount >= 2 && brandedCount === 0) {
+      // 敵が複数いて、烙印がない → 最優先
+      bonus += FACTION_BONUSES.INQUISITOR.BRAND_APPLICATION;
+    } else if (unbrandedCount >= 1) {
+      // まだ烙印を付けるべき敵がいる → 高評価
+      bonus += FACTION_BONUSES.INQUISITOR.BRAND_APPLICATION * 0.7;
+    } else if (opponent.field.length > 0) {
+      // 全員に烙印済み → ペナルティ
+      bonus -= 5;
+    }
+  }
+  
   // 既存のボーナス
   if (card.effects.some(e => e.action.includes('debuff') || e.action.includes('destroy'))) {
     bonus += opponent.field.length * FACTION_BONUSES.INQUISITOR.DEBUFF_PER_ENEMY;
@@ -134,15 +132,14 @@ const getInquisitorBonus = (card: Card, _player: GameState['players'][PlayerId],
   }
 
   // 烙印シナジーボーナス
-  const brandedEnemies = opponent.field.filter(hasBrandedStatus);
-  if (brandedEnemies.length > 0) {
+  if (brandedCount > 0) {
     // 烙印対象を条件とする効果
     const hasBrandCondition = card.effects.some(e =>
       e.selectionRules?.some(r => r.type === 'brand') ||
       e.activationCondition?.subject === 'hasBrandedEnemy'
     );
     if (hasBrandCondition) {
-      bonus += brandedEnemies.length * FACTION_BONUSES.INQUISITOR.BRAND_SYNERGY_PER_TARGET;
+      bonus += brandedCount * FACTION_BONUSES.INQUISITOR.BRAND_SYNERGY_PER_TARGET;
     }
   }
 
@@ -165,6 +162,15 @@ export const calculateFactionBonus = (card: Card, gameState: GameState, playerId
   const scorer = factionScorers[player.faction];
   return scorer ? scorer(card, player, opponent) : 0;
 };
+
+/**
+ * カード配置の評価スコアを計算
+ */
+function evaluateCardScore(card: Card, gameState: GameState, playerId: PlayerId): number {
+  const baseScore = calculateBaseScore(card);
+  const factionBonus = calculateFactionBonus(card, gameState, playerId);
+  return baseScore + factionBonus;
+}
 
 /**
  * 味方フィールドから有効な対象を抽出
@@ -253,9 +259,7 @@ export function evaluateCardForPlay(card: Card, gameState: GameState, playerId: 
     return -1000; // 大幅なペナルティを適用
   }
 
-  const baseScore = calculateBaseScore(card, gameState, playerId);
-  const factionBonus = calculateFactionBonus(card, gameState, playerId);
-  return baseScore + factionBonus;
+  return evaluateCardScore(card, gameState, playerId);
 }
 
 /**
@@ -299,14 +303,14 @@ function selectFactionPriorityTarget(
  */
 function calculatePlayerAttackProbability(
   faction: Faction,
-  tacticsType: TacticsType,
   lifeRatio: number
 ): number {
-  // 戦狂い：低ライフ時はプレイヤー攻撃を優先
+  // 戦狂い：低ライフ時はプレイヤー攻撃を優先（勢力の個性として保持）
   if (faction === 'berserker' && lifeRatio < 0.4) {
     return 0.8;
   }
-  return TACTICS_ATTACK_PROBABILITIES[tacticsType];
+  // balanced戦術相当の固定値（40%）
+  return 0.4;
 }
 
 /**
@@ -360,7 +364,6 @@ export function chooseAttackTarget(
   const lifeRatio = currentPlayer.life / GAME_CONSTANTS.INITIAL_LIFE;
   const playerAttackProbability = calculatePlayerAttackProbability(
     currentPlayer.faction,
-    currentPlayer.tacticsType,
     lifeRatio
   );
   

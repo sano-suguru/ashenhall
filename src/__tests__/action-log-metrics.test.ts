@@ -1,6 +1,6 @@
 import { executeFullGame } from '@/lib/game-engine/core';
 import { computeGameMetrics, formatMetrics } from '@/lib/metrics/action-log-metrics';
-import type { Card, Faction, TacticsType } from '@/types/game';
+import type { Card, Faction } from '@/types/game';
 import { necromancerCards } from '@/data/cards/base-cards';
 import { createCardInstance } from '@/test-helpers/card-test-helpers';
 
@@ -20,9 +20,7 @@ describe('action-log metrics', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
   const faction: Faction = 'necromancer';
-  const tactics1: TacticsType = 'balanced';
-  const tactics2: TacticsType = 'aggressive';
-  const state = executeFullGame('metrics-game', deck1, deck2, faction, faction, tactics1, tactics2, 'seed-metrics');
+  const state = executeFullGame('metrics-game', deck1, deck2, faction, faction, 'seed-metrics');
     const metrics = computeGameMetrics(state);
     expect(metrics.aggregate.total).toBeGreaterThan(0);
     // combat_stage が 1 度は出現している前提 (最低1回は攻撃する想定)

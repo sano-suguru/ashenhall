@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, createContext, useContext } from 'react';
-import type { Faction, TacticsType, DeckCollection, CustomDeck, Card } from '@/types/game';
+import type { Faction, DeckCollection, CustomDeck, Card } from '@/types/game';
 import { 
   loadDeckCollection, 
   saveDeckCollection, 
@@ -26,7 +26,6 @@ import { FACTION_DATA } from '../GameSetup';
 interface GameSetupContextType {
   // State
   selectedFaction: Faction | null;
-  selectedTactics: TacticsType | null;
   deckCollection: DeckCollection;
   editingDeck: CustomDeck | null;
   activeDeckId?: string;
@@ -34,13 +33,12 @@ interface GameSetupContextType {
   
   // Actions
   setSelectedFaction: (faction: Faction) => void;
-  setSelectedTactics: (tactics: TacticsType) => void;
   handleCreateNewDeck: () => void;
   handleSaveDeck: (deckToSave: CustomDeck) => void;
   handleDeleteDeck: (deckId: string) => void;
   handleSetActiveDeck: (deckId: string) => void;
   setEditingDeck: (deck: CustomDeck | null) => void;
-  handleStart: (onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void) => void;
+  handleStart: (onGameStart: (faction: Faction, deck: Card[]) => void) => void;
 }
 
 const GameSetupContext = createContext<GameSetupContextType | null>(null);
@@ -59,7 +57,6 @@ interface GameSetupProviderProps {
 
 export function GameSetupProvider({ children }: GameSetupProviderProps) {
   const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
-  const [selectedTactics, setSelectedTactics] = useState<TacticsType | null>(null);
   const [deckCollection, setDeckCollection] = useState<DeckCollection>({ decks: [], activeDeckIds: {} });
   const [editingDeck, setEditingDeck] = useState<CustomDeck | null>(null);
 
@@ -174,13 +171,13 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     return cardObjects;
   };
 
-  const handleStart = (onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void) => {
-    if (selectedFaction && selectedTactics) {
+  const handleStart = (onGameStart: (faction: Faction, deck: Card[]) => void) => {
+    if (selectedFaction) {
       const activeDeck = deckCollection.decks.find(d => d.id === activeDeckId);
       if (activeDeck && validateDeck(activeDeck).isValid) {
         // 一意ID付与システムを使用
         const cardObjects = createUniqueCardDeck(activeDeck.cards);
-        onGameStart(selectedFaction, selectedTactics, cardObjects);
+        onGameStart(selectedFaction, cardObjects);
       } else {
         alert('有効なカスタムデッキを選択してください。');
       }
@@ -190,7 +187,6 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
   const contextValue: GameSetupContextType = {
     // State
     selectedFaction,
-    selectedTactics,
     deckCollection,
     editingDeck,
     activeDeckId,
@@ -198,7 +194,6 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     
     // Actions
     setSelectedFaction,
-    setSelectedTactics,
     handleCreateNewDeck,
     handleSaveDeck,
     handleDeleteDeck,

@@ -106,7 +106,7 @@ export const necromancerCards: CardTemplate[] = [
     faction: 'necromancer',
     cost: 1,
     attack: 1,
-    health: 1, // バランス調整: 1/2 → 1/1
+    health: 2, // バランス調整R8: 1 → 2 (エネルギーレシオ基準値達成) // バランス調整: 1/2 → 1/1
     keywords: [],
     effects: [
       {

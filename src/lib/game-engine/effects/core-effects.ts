@@ -486,7 +486,7 @@ export function executeBanishEffect(
     const player = state.players[ownerId];
     
     // 場から除去（handleCreatureDeathは使わない - 死亡時効果を発動させない）
-    const cardIndex = player.field.findIndex(c => c.templateId === target.templateId);
+    const cardIndex = player.field.findIndex(c => c.instanceId === target.instanceId);
     if (cardIndex !== -1) {
       const [removedCard] = player.field.splice(cardIndex, 1);
       // 墓地でなく消滅領域へ送る

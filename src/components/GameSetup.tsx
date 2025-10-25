@@ -9,7 +9,7 @@
 
 'use client';
 
-import type { Faction, TacticsType, LocalStats, Card } from '@/types/game';
+import type { Faction, LocalStats, Card } from '@/types/game';
 import NoSSR from '@/components/NoSSR';
 import DeckBuilder from './DeckBuilder';
 import GameStatsDisplay from './GameStatsDisplay';
@@ -69,29 +69,6 @@ export const FACTION_DATA = {
   },
 } as const;
 
-// 戦術タイプの説明
-export const TACTICS_DATA = {
-  aggressive: {
-    name: '攻撃重視',
-    description: '攻撃力の高いカードを優先配置。短期決戦で敵を圧倒する戦術。',
-    icon: Sword,
-  },
-  defensive: {
-    name: '守備重視',
-    description: '体力・防御効果の高いカードを優先。持久戦に持ち込む安定戦術。',
-    icon: ShieldCheck,
-  },
-  tempo: {
-    name: '速攻重視',
-    description: '低コストカードで早期展開。素早い攻勢で優位に立つ戦術。',
-    icon: Gauge,
-  },
-  balanced: {
-    name: 'バランス',
-    description: 'コスト効率を重視したバランス型。状況に応じて柔軟に対応する戦術。',
-    icon: Scale,
-  },
-} as const;
 
 // 選択カードの共通スタイル
 export const getSelectionCardStyle = (isSelected: boolean) => `
@@ -103,7 +80,7 @@ export const getSelectionCardStyle = (isSelected: boolean) => `
 `;
 
 interface GameSetupProps {
-  onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void;
+  onGameStart: (faction: Faction, deck: Card[]) => void;
   stats: LocalStats | null;
 }
 
@@ -244,51 +221,6 @@ function DeckManagement({
   );
 }
 
-// 戦術選択コンポーネント（旧TacticsSelection.tsxから統合）
-function TacticsSelection({ 
-  selectedTactics, 
-  onTacticsSelect 
-}: {
-  selectedTactics: TacticsType | null;
-  onTacticsSelect: (tactics: TacticsType) => void;
-}) {
-  return (
-    <section className="animate-fade-in">
-      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
-        戦術選択
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Object.entries(TACTICS_DATA).map(([tactics, data]) => (
-          <div
-            key={tactics}
-            className={getSelectionCardStyle(selectedTactics === tactics)}
-            onClick={() => onTacticsSelect(tactics as TacticsType)}
-          >
-            <div className="text-center">
-              <div className="mb-4 text-amber-400 flex justify-center group-hover:scale-110 transition-transform">
-                <data.icon size={40} strokeWidth={1.5} />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-white font-serif">
-                {data.name}
-              </h3>
-              <p className="text-sm text-gray-400 font-serif leading-relaxed">
-                {data.description}
-              </p>
-            </div>
-            
-            {selectedTactics === tactics && (
-              <div className="absolute -top-2 -right-2">
-                <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-black text-sm font-bold">✓</span>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ゲームルール表示コンポーネント（旧GameRules.tsxから統合）
 function GameRules() {
@@ -368,15 +300,14 @@ function GameRules() {
 }
 
 // ゲーム開始確認セクション
-function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, tactics: TacticsType, deck: Card[]) => void }) {
+function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, deck: Card[]) => void }) {
   const { 
     selectedFaction, 
-    selectedTactics, 
     activeDeckId, 
     handleStart 
   } = useGameSetup();
 
-  if (!selectedFaction || !selectedTactics || !activeDeckId) {
+  if (!selectedFaction || !activeDeckId) {
     return null;
   }
 
@@ -384,14 +315,10 @@ function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, tac
     <section className="text-center animate-fade-in relative z-10">
       <div className="mb-10 p-6 bg-gradient-to-br from-amber-500/15 via-amber-400/10 to-transparent rounded-2xl border border-amber-400/40 max-w-md mx-auto backdrop-blur-sm shadow-2xl shadow-amber-400/20">
         <div className="text-amber-200 font-serif font-bold text-lg mb-2">
-          選択された組み合わせ
+          選択された勢力
         </div>
-        <div className="text-amber-300 font-serif font-bold text-xl">
+        <div className="text-amber-300 font-serif font-bold text-2xl">
           {FACTION_DATA[selectedFaction].name}
-        </div>
-        <div className="text-amber-400/80 font-serif text-lg mb-1">×</div>
-        <div className="text-amber-300 font-serif font-bold text-xl">
-          {TACTICS_DATA[selectedTactics].name}
         </div>
       </div>
       
@@ -411,12 +338,10 @@ function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, tac
 function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
   const {
     selectedFaction,
-    selectedTactics,
     deckCollection,
     editingDeck,
     activeDeckId,
     setSelectedFaction,
-    setSelectedTactics,
     handleCreateNewDeck,
     handleSaveDeck,
     handleDeleteDeck,
@@ -480,14 +405,6 @@ function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
               onCreateNewDeck={handleCreateNewDeck}
               onEditDeck={setEditingDeck}
               onSetActiveDeck={handleSetActiveDeck}
-            />
-          )}
-
-          {/* 戦術選択 */}
-          {selectedFaction && activeDeckId && (
-            <TacticsSelection
-              selectedTactics={selectedTactics}
-              onTacticsSelect={setSelectedTactics}
             />
           )}
 

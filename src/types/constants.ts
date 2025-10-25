@@ -7,7 +7,7 @@
  * - 勢力の特色を表現する説明文
  */
 
-import type { Faction, TacticsType } from './game';
+import type { Faction } from './game';
 
 // === ゲーム定数 ===
 
@@ -68,14 +68,6 @@ export const BALANCE_GUIDELINES = {
   },
 } as const;
 
-/** 戦術別攻撃確率（プレイヤーへの直接攻撃確率）*/
-export const TACTICS_ATTACK_PROBABILITIES: Record<TacticsType, number> = {
-  aggressive: 0.6,  // 60% - 積極的にプレイヤーを狙う
-  defensive: 0.2,   // 20% - 守護重視、クリーチャー優先
-  balanced: 0.4,    // 40% - バランス型
-  tempo: 0.5,       // 50% - 中庸
-} as const;
-
 /** 勢力の特色説明 */
 export const FACTION_DESCRIPTIONS: Record<Faction, string> = {
   necromancer: '死こそが真の始まり。戦場の屍を糧とし、死者の軍勢で敵を圧倒する暗黒の軍団',
@@ -90,12 +82,6 @@ export const AI_EVALUATION_WEIGHTS = {
   // 基本スコア計算用
   BASE_SCORE: {
     SPELL_COST_MULTIPLIER: 1.5,
-  },
-  // 戦術別モディファイア
-  TACTICS_MODIFIERS: {
-    AGGRESSIVE: { ATTACK: 2, HEALTH: 1 },
-    DEFENSIVE: { ATTACK: 1, HEALTH: 2 },
-    TEMPO: { EFFICIENCY: 3, COST_PENALTY: 2 },
   },
   // 勢力別ボーナス
   FACTION_BONUSES: {
@@ -112,8 +98,9 @@ export const AI_EVALUATION_WEIGHTS = {
     },
     INQUISITOR: { 
       DEBUFF_PER_ENEMY: 3, 
-      SILENCE_STUN: 8,
+      SILENCE_STUN: 5,  // 8 → 5: 妨害スペルの過剰評価を是正
       BRAND_SYNERGY_PER_TARGET: 3.0,  // 烙印シナジーボーナス
+      BRAND_APPLICATION: 6,  // 烙印付与カードのボーナス
     },
   },
 } as const;

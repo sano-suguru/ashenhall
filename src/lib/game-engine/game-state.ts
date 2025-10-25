@@ -15,7 +15,6 @@ import type {
   Card,
   GameResult,
   Faction,
-  TacticsType,
 } from "@/types/game";
 import { GAME_CONSTANTS } from "@/types/game";
 import { SeededRandom } from "./seeded-random";
@@ -30,8 +29,6 @@ export function createInitialGameState(
   player2Deck: Card[],
   player1Faction: Faction,
   player2Faction: Faction,
-  player1Tactics: TacticsType,
-  player2Tactics: TacticsType,
   randomSeed: string
 ): GameState {
   const random = new SeededRandom(randomSeed);
@@ -39,8 +36,7 @@ export function createInitialGameState(
   const createPlayerState = (
     id: PlayerId,
     deck: Card[],
-    faction: Faction,
-    tactics: TacticsType
+    faction: Faction
   ): PlayerState => {
     const shuffledDeck = random.shuffle(deck);
     const initialHand = shuffledDeck.slice(0, GAME_CONSTANTS.INITIAL_HAND_SIZE); // 初期手札4枚
@@ -52,7 +48,6 @@ export function createInitialGameState(
       energy: GAME_CONSTANTS.INITIAL_ENERGY,
       maxEnergy: GAME_CONSTANTS.INITIAL_MAX_ENERGY,
       faction,
-      tacticsType: tactics,
       deck: remainingDeck,
       hand: initialHand,
       field: [],
@@ -75,14 +70,12 @@ export function createInitialGameState(
       player1: createPlayerState(
         "player1",
         player1Deck,
-        player1Faction,
-        player1Tactics
+        player1Faction
       ),
       player2: createPlayerState(
         "player2",
         player2Deck,
-        player2Faction,
-        player2Tactics
+        player2Faction
       ),
     },
     actionLog: [
@@ -138,7 +131,6 @@ function clonePlayerState(player: PlayerState): PlayerState {
     energy: player.energy,
     maxEnergy: player.maxEnergy,
     faction: player.faction,
-    tacticsType: player.tacticsType,
     
     // カード配列の新しいインスタンス作成（内容は浅いコピー）
     deck: [...player.deck],

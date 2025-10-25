@@ -34,8 +34,6 @@ describe('GameBoard Component', () => {
     player2Deck,
     'necromancer',
     'berserker',
-    'balanced',
-    'aggressive',
     'test-seed'
   );
 
@@ -55,7 +53,9 @@ describe('GameBoard Component', () => {
 
     // 統合後は実際のDOM要素の存在をチェック
     expect(screen.getByText('ASHENHALL')).toBeInTheDocument();
-    expect(screen.getByText('あなた')).toBeInTheDocument();
+    // 「あなた」は複数箇所に表示される可能性があるため、getAllByTextを使用
+    const playerLabels = screen.getAllByText('あなた');
+    expect(playerLabels.length).toBeGreaterThan(0);
     expect(screen.getByText('AI対戦相手')).toBeInTheDocument();
   });
 

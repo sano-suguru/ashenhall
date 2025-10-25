@@ -9,7 +9,7 @@ import { describe, test, expect, afterAll } from '@jest/globals';
 import { executeFullGame } from '@/lib/game-engine/core';
 import { FACTION_CARDS, getCardById } from '@/data/cards/base-cards';
 import { sampleDecks } from '@/data/decks/sample-decks';
-import type { Faction, TacticsType, Card } from '@/types/game';
+import type { Faction, Card } from '@/types/game';
 import fs from 'fs';
 import path from 'path';
 
@@ -23,12 +23,11 @@ import path from 'path';
 const getSimulationCount = (): number => {
   if (process.env.CI) return 1;                    // CI環境：最小限（高速フィードバック重視）
   if (process.env.NODE_ENV === 'test' && process.env.QUICK_TEST) return 2; // 開発中：高速
-  if (process.env.FULL_SIMULATION) return 50;      // 詳細分析：完全実行（手動指定時）※30→50回に増加
+  if (process.env.FULL_SIMULATION) return 100;     // 詳細分析：完全実行（手動指定時）※50→100回に増加
   return 3;                                        // デフォルト：バランス重視（開発継続性重視）
 };
 
 const SIMULATION_COUNT = getSimulationCount();
-const ALL_TACTICS: TacticsType[] = ['aggressive', 'defensive', 'tempo', 'balanced'];
 
 // --- 型定義 ---
 interface SimulationResult {
@@ -37,8 +36,6 @@ interface SimulationResult {
   faction2: Faction;
   deck1Name: string;
   deck2Name: string;
-  tactics1: TacticsType;
-  tactics2: TacticsType;
   wins1: number;
   wins2: number;
   draws: number;
@@ -50,8 +47,8 @@ const allResults: SimulationResult[] = [];
 // --- ヘルパー関数 ---
 const runSimulation = (
   scenario: string,
-  faction1: Faction, deck1: Card[], tactics1: TacticsType,
-  faction2: Faction, deck2: Card[], tactics2: TacticsType,
+  faction1: Faction, deck1: Card[],
+  faction2: Faction, deck2: Card[],
   count: number
 ): SimulationResult => {
   const results = { wins1: 0, wins2: 0, draws: 0, totalTurns: 0 };
@@ -61,7 +58,6 @@ const runSimulation = (
       `sim-${scenario}-${i}`,
       deck1, deck2,
       faction1, faction2,
-      tactics1, tactics2,
       `seed-${scenario}-${i}`
     );
     if (finalState.result?.winner === 'player1') results.wins1++;
@@ -74,7 +70,6 @@ const runSimulation = (
     scenario, faction1, faction2,
     deck1Name: deck1.length === FACTION_CARDS[faction1].length ? 'スターター' : 'サンプル',
     deck2Name: deck2.length === FACTION_CARDS[faction2].length ? 'スターター' : 'サンプル',
-    tactics1, tactics2,
     ...results,
     averageTurns: results.totalTurns / count,
   };
@@ -98,8 +93,8 @@ describe('AI自動対戦シミュレーター', () => {
         test(`${deck1.name} vs ${deck2.name}`, () => {
           const result = runSimulation(
             'sample-deck-matchup',
-            deck1.faction, deck1.cards, 'balanced',
-            deck2.faction, deck2.cards, 'balanced',
+            deck1.faction, deck1.cards,
+            deck2.faction, deck2.cards,
             SIMULATION_COUNT
           );
           allResults.push(result);
@@ -109,28 +104,6 @@ describe('AI自動対戦シミュレーター', () => {
     }
   });
 
-  describe('スイートB: 戦術相性テスト (死霊術師)', () => {
-    const deck = decks.find(d => d.faction === 'necromancer');
-    if (!deck) throw new Error('死霊術師のサンプルデッキが見つかりません');
-
-    for (let i = 0; i < ALL_TACTICS.length; i++) {
-      for (let j = i + 1; j < ALL_TACTICS.length; j++) {
-        const tactics1 = ALL_TACTICS[i];
-        const tactics2 = ALL_TACTICS[j];
-
-        test(`${tactics1} vs ${tactics2}`, () => {
-          const result = runSimulation(
-            'tactics-matchup',
-            deck.faction, deck.cards, tactics1,
-            deck.faction, deck.cards, tactics2,
-            SIMULATION_COUNT
-          );
-          allResults.push(result);
-          expect(result.wins1 + result.wins2 + result.draws).toBe(SIMULATION_COUNT);
-        });
-      }
-    }
-  });
 });
 
 // --- レポート生成 ---

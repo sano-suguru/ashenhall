@@ -11,7 +11,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { Faction, TacticsType, GameState, Card } from '@/types/game';
+import type { Faction, GameState, Card } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
 import { createInitialGameState } from '@/lib/game-engine/core';
@@ -66,13 +66,10 @@ export default function Home() {
   };
 
   // ゲーム開始処理
-  const handleGameStart = (playerFaction: Faction, playerTactics: TacticsType, playerDeck: Card[]) => {
-    // AI対戦相手の勢力と戦術をランダム選択
+  const handleGameStart = (playerFaction: Faction, playerDeck: Card[]) => {
+    // AI対戦相手の勢力をランダム選択
     const factions: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
-    const tactics: TacticsType[] = ['aggressive', 'defensive', 'tempo', 'balanced'];
-    
     const aiFaction = factions[Math.floor(Math.random() * factions.length)];
-    const aiTactics = tactics[Math.floor(Math.random() * tactics.length)];
     
     // AIデッキ生成
     const aiDeck = generateAIDeck(aiFaction);
@@ -85,8 +82,6 @@ export default function Home() {
       aiDeck,
       playerFaction,
       aiFaction,
-      playerTactics,
-      aiTactics,
       randomSeed
     );
     

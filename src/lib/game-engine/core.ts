@@ -12,7 +12,6 @@ import type {
   GameState,
   Card,
   Faction,
-  TacticsType,
 } from "@/types/game";
 import {
   createInitialGameState as createInitialGameStateImpl,
@@ -151,8 +150,6 @@ export function executeFullGame(
   player2Deck: Card[],
   player1Faction: Faction,
   player2Faction: Faction,
-  player1Tactics: TacticsType,
-  player2Tactics: TacticsType,
   randomSeed: string
 ): GameState {
   let gameState = createInitialGameState(
@@ -161,8 +158,6 @@ export function executeFullGame(
     player2Deck,
     player1Faction,
     player2Faction,
-    player1Tactics,
-    player2Tactics,
     randomSeed
   );
 

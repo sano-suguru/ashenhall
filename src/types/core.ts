@@ -24,13 +24,6 @@ export type Faction =
 
 // === ゲーム進行関連型 ===
 
-/** 戦術タイプ - AI戦闘での判断基準 */
-export type TacticsType = 
-  | 'aggressive'   // 攻撃重視: 攻撃力の高いカードを優先
-  | 'defensive'    // 守備重視: 体力の高いカードを優先
-  | 'balanced'     // バランス: コスト効率を重視
-  | 'tempo';       // テンポ重視: 低コストカードを優先
-
 /** ゲームフェーズ - ターン進行の各段階 */
 export type GamePhase = 
   | 'draw'         // ドロー段階: カードドロー、手札上限チェック

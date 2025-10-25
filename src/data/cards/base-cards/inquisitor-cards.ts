@@ -278,7 +278,7 @@ export const inquisitorCards: CardTemplate[] = [
     faction: 'inquisitor',
     cost: 1,
     attack: 2,
-    health: 1,
+    health: 2, // バランス調整R8: 1 → 2 (序盤の盤面制圧力向上)
     keywords: [],
     effects: [
       {
