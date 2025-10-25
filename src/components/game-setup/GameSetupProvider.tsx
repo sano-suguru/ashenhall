@@ -15,7 +15,8 @@ import {
   updateDeckInCollection,
   deleteDeckFromCollection,
   setActiveDeckForFaction,
-  validateDeck
+  validateDeck,
+  normalizeDeckCoreCards
 } from '@/lib/deck-utils';
 import { decodeDeck } from '@/lib/deck-sharing';
 import { getCardTemplateById, createCardFromTemplate } from '@/data/cards/card-registry';
@@ -68,14 +69,13 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     if (deckCode) {
       const decodedData = decodeDeck(deckCode);
       if (decodedData) {
-        const newDeck = createNewDeck(
-          loadDeckCollection(), // 一時的なコレクション
-          `インポートされたデッキ`,
-          decodedData.faction
-        );
-        newDeck.cards = decodedData.cards;
-        newDeck.coreCardIds = decodedData.coreCardIds;
-        setEditingDeck(newDeck);
+        const baseCollection = loadDeckCollection();
+        const importedDeck = normalizeDeckCoreCards({
+          ...createNewDeck(baseCollection, `インポートされたデッキ`, decodedData.faction),
+          cards: decodedData.cards,
+          coreCardIds: decodedData.coreCardIds,
+        });
+        setEditingDeck(importedDeck);
         // URLからクエリパラメータを削除してリロードを防ぐ
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -85,9 +85,11 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     // サンプルデッキが無い場合は初期化
     if (collection.decks.length === 0) {
       sampleDecks.forEach(sampleDeck => {
-        const newDeck = createNewDeck(collection, sampleDeck.name, sampleDeck.faction);
-        newDeck.cards = [...sampleDeck.cardIds];
-        newDeck.coreCardIds = sampleDeck.coreCardIds ? [...sampleDeck.coreCardIds] : [];
+        const newDeck = normalizeDeckCoreCards({
+          ...createNewDeck(collection, sampleDeck.name, sampleDeck.faction),
+          cards: [...sampleDeck.cardIds],
+          coreCardIds: sampleDeck.coreCardIds ? [...sampleDeck.coreCardIds] : [],
+        });
         collection = addDeckToCollection(collection, newDeck);
         collection = setActiveDeckForFaction(collection, sampleDeck.faction, newDeck.id);
       });
@@ -127,7 +129,9 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
 
   const handleCreateNewDeck = () => {
     if (selectedFaction) {
-      const newDeck = createNewDeck(deckCollection, `新しい ${FACTION_DATA[selectedFaction].name} デッキ`, selectedFaction);
+      const newDeck = normalizeDeckCoreCards(
+        createNewDeck(deckCollection, `新しい ${FACTION_DATA[selectedFaction].name} デッキ`, selectedFaction)
+      );
       setEditingDeck(newDeck);
     }
   };
