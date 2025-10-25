@@ -1,4 +1,4 @@
-import { validateDeck, normalizeDeckCoreCards } from '../lib/deck-utils';
+import { validateDeck, normalizeDeckCoreCards, loadDeckCollection } from '../lib/deck-utils';
 import type { CustomDeck } from '../types/game';
 import { GAME_CONSTANTS } from '../types/game';
 
@@ -142,5 +142,28 @@ describe('validateDeck', () => {
     };
     const normalized = normalizeDeckCoreCards(deck);
     expect(normalized).toBe(deck);
+  });
+
+  it('loadDeckCollection should normalize legacy stored decks', () => {
+    const legacyCollection = {
+      decks: [
+        {
+          ...baseDeck,
+          cards: fillDeck(['card-1', 'card-1', 'card-2', 'card-2']),
+          coreCardIds: ['card-1', 'card-1', 'card-2', 'card-3'],
+        },
+      ],
+      activeDeckIds: {},
+    };
+
+    localStorage.setItem('ashenhall_deck_collection', JSON.stringify(legacyCollection));
+
+    const loaded = loadDeckCollection();
+  expect(loaded.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
+
+    const storedAgain = JSON.parse(localStorage.getItem('ashenhall_deck_collection') || '{}');
+  expect(storedAgain.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
+
+    localStorage.clear();
   });
 });

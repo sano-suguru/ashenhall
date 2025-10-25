@@ -101,7 +101,28 @@ export function loadDeckCollection(): DeckCollection {
   try {
     const storedDecks = localStorage.getItem(DECK_STORAGE_KEY);
     if (storedDecks) {
-      return JSON.parse(storedDecks) as DeckCollection;
+      const parsed = JSON.parse(storedDecks) as DeckCollection;
+      const normalizedDecks = parsed.decks.map(normalizeDeckCoreCards);
+      if (areArraysEqual(normalizedDecks.map(d => d.id), parsed.decks.map(d => d.id))) {
+        let requiresUpdate = false;
+        const updatedDecks = parsed.decks.map((deck, index) => {
+          const normalized = normalizedDecks[index];
+          if (normalized !== deck) {
+            requiresUpdate = true;
+            return normalized;
+          }
+          return deck;
+        });
+        if (requiresUpdate) {
+          const normalizedCollection: DeckCollection = {
+            ...parsed,
+            decks: updatedDecks,
+          };
+          saveDeckCollection(normalizedCollection);
+          return normalizedCollection;
+        }
+      }
+      return parsed;
     }
   } catch (error) {
     logError('Failed to load deck collection from localStorage', error);
