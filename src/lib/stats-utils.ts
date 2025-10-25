@@ -1,4 +1,4 @@
-import type { GameState, GameAction, GameResult, LocalStats } from '@/types/game';
+import type { GameState, GameAction, LocalStats } from '@/types/game';
 import { GAME_CONSTANTS } from '@/types/game';
 import { getTurnNumberForAction } from './game-state-utils';
 // battle-analysis統合版（簡易実装）
@@ -166,34 +166,3 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
   return summaries;
 }
 
-
-// 戦況の全体分析
-export function analyzeBattleTrend(summaries: TurnSummary[], gameResult: GameResult | undefined): {
-  phases: { name: string; description: string }[];
-  keyMoments: { turn: number; description: string }[];
-} {
-  const phases = [];
-  const keyMoments = [];
-  const maxTurn = summaries.length > 0 ? Math.max(...summaries.map(s => s.turnNumber)) : 0;
-  
-  if (maxTurn <= 6) {
-    phases.push({ name: '短期決戦', description: '序盤で決着' });
-  } else if (maxTurn <= 12) {
-    phases.push({ name: '標準戦', description: '序盤→中盤で決着' });
-  } else {
-    phases.push({ name: '長期戦', description: `序盤(1-5)→中盤(6-12)→終盤(13-${maxTurn})` });
-  }
-
-  summaries.forEach(summary => {
-    if (summary.significance) {
-      keyMoments.push({ turn: summary.turnNumber, description: summary.significance });
-    }
-  });
-
-  if (gameResult && summaries.length > 0 && gameResult.reason === 'life_zero') {
-    const lastSummary = summaries[summaries.length - 1];
-    keyMoments.push({ turn: lastSummary.turnNumber, description: '最終決戦 → 勝負決定' });
-  }
-
-  return { phases, keyMoments };
-}
