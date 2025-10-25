@@ -631,19 +631,6 @@ function getFactionName(faction: string): string {
 }
 
 /**
- * 戦術名の日本語表示
- */
-function getTacticsName(tactics: string): string {
-  const names: Record<string, string> = {
-    aggressive: "攻撃重視",
-    defensive: "守備重視",
-    tempo: "速攻重視",
-    balanced: "バランス",
-  };
-  return names[tactics] || tactics;
-}
-
-/**
  * 勝利理由の日本語表示
  */
 function getReasonText(reason: string): string {

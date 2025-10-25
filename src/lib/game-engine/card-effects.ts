@@ -14,6 +14,7 @@ import type {
   CardEffect,
   PlayerId,
   EffectTrigger,
+  EffectTarget,
 } from "@/types/game";
 import type { ConditionalEffect } from "@/types/cards";
 
@@ -103,6 +104,80 @@ export function handleCreatureDeath(
 /**
  * 条件判定なしで単一カード効果を実行（内部使用）
  */
+const RANDOM_TARGETS: EffectTarget[] = ["enemy_random", "ally_random"];
+
+function isRandomTarget(target: EffectTarget): boolean {
+  return RANDOM_TARGETS.includes(target);
+}
+
+function determineInitialTargets(
+  state: GameState,
+  effect: CardEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  random: SeededRandom
+): FieldCard[] {
+  let initialTargets = selectTargets(state, sourcePlayerId, effect.target, random);
+
+  if (effect.target === "self" && sourceCard.type === "creature") {
+    const fieldCard = state.players[sourcePlayerId].field.find(
+      (card) => card.templateId === sourceCard.templateId
+    );
+    if (fieldCard) {
+      initialTargets = [fieldCard];
+    }
+  }
+
+  return initialTargets;
+}
+
+function collectRandomTargetCandidates(
+  state: GameState,
+  sourcePlayerId: PlayerId,
+  targetType: EffectTarget
+): FieldCard[] {
+  const opponentId: PlayerId = sourcePlayerId === "player1" ? "player2" : "player1";
+
+  if (targetType === "enemy_random") {
+    return state.players[opponentId].field.filter(
+      (card) => card.currentHealth > 0 && !card.keywords.includes("untargetable")
+    );
+  }
+
+  return state.players[sourcePlayerId].field.filter((card) => card.currentHealth > 0);
+}
+
+function applySelectionRulesToTargets(
+  state: GameState,
+  effect: CardEffect,
+  sourceCard: Card,
+  sourcePlayerId: PlayerId,
+  random: SeededRandom,
+  currentTargets: FieldCard[]
+): FieldCard[] {
+  const { selectionRules, target } = effect;
+  if (!selectionRules) {
+    return currentTargets;
+  }
+
+  if (isRandomTarget(target)) {
+    const candidates = collectRandomTargetCandidates(state, sourcePlayerId, target);
+    const filteredCandidates = TargetFilterEngine.applyRules(
+      candidates,
+      selectionRules,
+      sourceCard.templateId
+    );
+    const selectedTarget = random.choice(filteredCandidates);
+    return selectedTarget ? [selectedTarget] : [];
+  }
+
+  return TargetFilterEngine.applyRules(
+    currentTargets,
+    selectionRules,
+    sourceCard.templateId
+  );
+}
+
 function executeCardEffectWithoutConditionCheck(
   state: GameState,
   effect: CardEffect,
@@ -114,58 +189,33 @@ function executeCardEffectWithoutConditionCheck(
       state.randomSeed + state.turnNumber + sourceCard.templateId
     );
 
-    // 1. 初期対象候補を取得
-    let initialTargets = selectTargets(
+    const initialTargets = determineInitialTargets(
       state,
+      effect,
+      sourceCard,
       sourcePlayerId,
-      effect.target,
       random
     );
-    if (effect.target === "self" && sourceCard.type === "creature") {
-      const fieldCard = state.players[sourcePlayerId].field.find(
-        (c) => c.templateId === sourceCard.templateId
-      );
-      if (fieldCard) {
-        initialTargets = [fieldCard];
-      }
-    }
+    const targetsAfterSelection = applySelectionRulesToTargets(
+      state,
+      effect,
+      sourceCard,
+      sourcePlayerId,
+      random,
+      initialTargets
+    );
 
-    // 2. 対象選択フィルターを適用
-    // IMPORTANT: ランダム選択の「前」にフィルタを適用する必要がある場合のための特別処理
-    const selectionRules = effect.selectionRules;
-    
-    if (selectionRules && (effect.target === 'enemy_random' || effect.target === 'ally_random')) {
-      // ランダム選択の場合、まず全候補を取得してフィルタし、その後ランダム選択
-      const opponentId = sourcePlayerId === 'player1' ? 'player2' : 'player1';
-      const allCandidates = effect.target === 'enemy_random' 
-        ? state.players[opponentId].field.filter(c => c.currentHealth > 0 && !c.keywords.includes('untargetable'))
-        : state.players[sourcePlayerId].field.filter(c => c.currentHealth > 0);
-      
-      const filteredCandidates = TargetFilterEngine.applyRules(allCandidates, selectionRules, sourceCard.templateId);
-      
-      // フィルタ後の候補からランダム選択
-      const selectedTarget = random.choice(filteredCandidates);
-      initialTargets = selectedTarget ? [selectedTarget] : [];
-    } else if (selectionRules) {
-      // ランダム選択以外の場合は通常通りフィルタ適用
-      initialTargets = TargetFilterEngine.applyRules(initialTargets, selectionRules, sourceCard.templateId);
-    }
-
-    // 3. 動的パラメータを解決
     const { value, targets } = resolveDynamicEffectParameters(
       state,
       effect,
       sourceCard,
       sourcePlayerId,
-      initialTargets
+      targetsAfterSelection
     );
 
-    // 4. 効果ハンドラを取得して実行
     if (effect.conditionalEffect) {
-      // 新しい条件分岐効果システムを実行
       executeConditionalEffect(state, effect.conditionalEffect, sourceCard, sourcePlayerId);
     } else {
-      // 通常の効果ハンドラーを実行
       const handler = effectHandlers[effect.action];
       if (handler) {
         handler(state, effect, sourceCard, sourcePlayerId, random, targets, value);
