@@ -19,7 +19,7 @@ import { inquisitorCards } from './base-cards/inquisitor-cards';
 /**
  * 全カードテンプレートを勢力別にエクスポート
  */
-export const FACTION_CARD_TEMPLATES: Record<Faction, CardTemplate[]> = {
+const FACTION_CARD_TEMPLATES: Record<Faction, CardTemplate[]> = {
   necromancer: necromancerCards,
   berserker: berserkerCards,
   mage: mageCards,
@@ -80,7 +80,7 @@ export function getCardById(cardId: string, instanceId?: string): Card | undefin
  * @param faction 取得する勢力
  * @returns 指定勢力のカードテンプレート配列
  */
-export function getCardTemplatesByFaction(faction: Faction): CardTemplate[] {
+function getCardTemplatesByFaction(faction: Faction): CardTemplate[] {
   return FACTION_CARD_TEMPLATES[faction] || [];
 }
 
@@ -102,7 +102,7 @@ export function getCardsByFaction(faction: Faction): Card[] {
 export const ALL_CARDS = ALL_CARD_TEMPLATES.map(template => createCardFromTemplate(template));
 
 /**
- * @deprecated 新しいコードでは FACTION_CARD_TEMPLATES を使用してください
+ * @deprecated 新しいコードでは ALL_CARD_TEMPLATES を使用してください
  */
 export const FACTION_CARDS: Record<Faction, Card[]> = {
   necromancer: necromancerCards.map(t => createCardFromTemplate(t)),
