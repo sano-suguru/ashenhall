@@ -8,8 +8,8 @@
  * - 決定論的な処理（同条件なら同結果）
  * 
  * 統合内容:
- * - condition-checker.ts: checkEffectCondition, checkAllConditions, checkAnyCondition
- * - target-selector.ts: selectTargets, hasValidTargets
+ * - condition-checker.ts: checkEffectCondition, checkAllConditions
+ * - target-selector.ts: selectTargets
  */
 
 import type { 
@@ -64,23 +64,6 @@ export function checkAllConditions(
   conditions: (EffectCondition | undefined)[]
 ): boolean {
   return conditions.every(condition => 
-    checkEffectCondition(state, sourcePlayerId, condition)
-  );
-}
-
-/**
- * 複数の条件のうち少なくとも一つを満たすかどうかを判定する
- * @param state ゲーム状態
- * @param sourcePlayerId 効果の発動者
- * @param conditions 条件のリスト
- * @returns 少なくとも一つの条件を満たしているかどうか
- */
-export function checkAnyCondition(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  conditions: (EffectCondition | undefined)[]
-): boolean {
-  return conditions.some(condition => 
     checkEffectCondition(state, sourcePlayerId, condition)
   );
 }
@@ -226,44 +209,5 @@ export function selectTargets(
 
     default:
       return [];
-  }
-}
-
-/**
- * 対象選択が有効かどうかを判定する
- * @param state ゲーム状態
- * @param sourcePlayerId 効果の発動者
- * @param targetType 対象タイプ
- * @returns 有効な対象が存在するかどうか
- */
-export function hasValidTargets(
-  state: GameState,
-  sourcePlayerId: PlayerId,
-  targetType: EffectTarget
-): boolean {
-  const sourcePlayer = state.players[sourcePlayerId];
-  const opponentId: PlayerId =
-    sourcePlayerId === "player1" ? "player2" : "player1";
-  const opponent = state.players[opponentId];
-
-  switch (targetType) {
-    case "self":
-      return true; // 自分自身は常に有効
-
-    case "ally_all":
-    case "ally_random":
-      return sourcePlayer.field.some((card) => card.currentHealth > 0);
-
-    case "enemy_all":
-    case "enemy_random":
-      return opponent.field.some(
-        (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
-      );
-
-    case "player":
-      return true; // プレイヤー対象は常に有効
-
-    default:
-      return false;
   }
 }

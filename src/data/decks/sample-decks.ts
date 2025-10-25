@@ -1,6 +1,6 @@
 import type { Faction } from '@/types/game';
 
-export type SampleDeck = {
+type SampleDeck = {
   name: string;
   faction: Faction;
   cardIds: string[];

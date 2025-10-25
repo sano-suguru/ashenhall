@@ -26,7 +26,7 @@ export function getBrandedCreatureCount(creatures: FieldCard[]): number {
 /**
  * 烙印を持つ敵クリーチャーの配列を取得
  */
-export function getBrandedEnemies(state: GameState, playerId: PlayerId): FieldCard[] {
+function getBrandedEnemies(state: GameState, playerId: PlayerId): FieldCard[] {
   const opponentId: PlayerId = playerId === 'player1' ? 'player2' : 'player1';
   const opponent = state.players[opponentId];
   return opponent.field.filter(hasBrandedStatus);

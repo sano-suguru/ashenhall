@@ -35,7 +35,7 @@ const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
 /**
  * 標準的なテスト用デッキを作成
  */
-export function createStandardTestDeck(): Card[] {
+function createStandardTestDeck(): Card[] {
   const deck: Card[] = [];
   const availableCards = necromancerCards.slice(0, 4);
   
@@ -63,7 +63,7 @@ interface GuardBattleSetup {
 /**
  * 複数守護のランダム選択テスト用シナリオを作成
  */
-export function setupMultipleGuardBattleScenario(
+function setupMultipleGuardBattleScenario(
   config: Partial<BattleTestConfig> = {},
   attemptNumber: number = 0
 ): GuardBattleSetup {
@@ -164,7 +164,7 @@ export function executeBattlePhaseCompletely(gameState: GameState): GameState {
 /**
  * 攻撃ログからターゲット情報を抽出
  */
-export function extractAttackTargets(gameState: GameState): string[] {
+function extractAttackTargets(gameState: GameState): string[] {
   const attackActions = gameState.actionLog.filter(action => action.type === 'card_attack');
   
   return attackActions

@@ -111,7 +111,7 @@ export interface CardEffect {
 // === カードマスターデータ（テンプレート） ===
 
 /** カードテンプレート共通情報（マスターデータ） */
-export interface BaseCardTemplate {
+interface BaseCardTemplate {
   templateId: string;
   name: string;
   faction: Faction;
@@ -131,7 +131,7 @@ export interface CreatureCardTemplate extends BaseCardTemplate {
 }
 
 /** スペルカードテンプレート */
-export interface SpellCardTemplate extends BaseCardTemplate {
+interface SpellCardTemplate extends BaseCardTemplate {
   type: 'spell';
 }
 
@@ -141,7 +141,7 @@ export type CardTemplate = CreatureCardTemplate | SpellCardTemplate;
 // === ゲーム内カードインスタンス ===
 
 /** ゲーム内カード共通情報（instanceId必須） */
-export interface BaseCard {
+interface BaseCard {
   templateId: string;
   instanceId: string; // ゲーム内では必須
   name: string;
@@ -202,14 +202,3 @@ export interface FieldCard extends CreatureCard {
 }
 
 // === 特殊効果ハンドラー ===
-
-/** 特殊効果ハンドラーの型 */
-export type SpecialEffectHandler<TGameState = unknown> = (
-  state: TGameState,
-  effect: CardEffect,
-  sourceCard: Card,
-  sourcePlayerId: PlayerId,
-  targets: FieldCard[],
-  calculatedValue: number,
-  random: { choice: <T>(array: T[]) => T | undefined; next: () => number }
-) => void;

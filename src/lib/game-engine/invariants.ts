@@ -154,5 +154,3 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
   state.players.player1.field.forEach(inspectCard);
   state.players.player2.field.forEach(inspectCard);
 }
-
-export const __invariantTestHooks = { summarizeAction, actionReferencesCard };

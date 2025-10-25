@@ -12,7 +12,6 @@ export type {
   PlayerId,
   Faction,
   GamePhase,
-  CardType,
 } from './core';
 
 // === 効果システム型 ===
@@ -23,25 +22,19 @@ export type {
   EffectTarget,
   ConditionSubject,
   ConditionOperator,
-  StatusEffect
 } from './effects';
 
 // === カードシステム型 ===
 export type {
   FilterRule,
   EffectCondition,
-  ConditionalEffect,
   CardEffect,
-  BaseCardTemplate,
   CreatureCardTemplate,
-  SpellCardTemplate,
   CardTemplate,
-  BaseCard,
   CreatureCard,
   SpellCard,
   Card,
   FieldCard,
-  SpecialEffectHandler
 } from './cards';
 
 // === ゲーム状態型 ===
@@ -67,12 +60,7 @@ export type {
 
 // === 統計・分析型 ===
 export type {
-  CardMetrics,
-  DeckAnalysis,
-  FactionStats,
   LocalStats,
-  BattleRequest,
-  BattleMatch
 } from './statistics';
 
 // === UI・ユーティリティ型 ===
@@ -80,28 +68,20 @@ export type {
   LogDisplayParts,
   CustomDeck,
   DeckCollection,
-  ArrayElement,
-  Required,
-  Exact
 } from './ui-utils';
 
 // === アニメーション型 ===
 export type {
-  CardAnimationKind,
   CardAnimationState
 } from './animation';
 
 export {
   ANIMATION_NONE,
-  getAnimationCssClass,
-  convertLegacyAnimationState,
-  convertToLegacyAnimationState
 } from './animation';
 
 // === 定数の再エクスポート ===
 export {
   GAME_CONSTANTS,
-  BALANCE_GUIDELINES,
   FACTION_DESCRIPTIONS,
   AI_EVALUATION_WEIGHTS,
 } from './constants';

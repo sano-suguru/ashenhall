@@ -1,16 +1,16 @@
 import type { GameState, GameAction } from '@/types/game';
 
-export interface ActionTypeCounts {
+interface ActionTypeCounts {
   total: number;
   byType: Record<string, number>;
 }
 
-export interface TurnActionMetrics extends ActionTypeCounts {
+interface TurnActionMetrics extends ActionTypeCounts {
   turnNumber: number;
   currentPlayer: string;
 }
 
-export interface GameActionMetricsSummary {
+interface GameActionMetricsSummary {
   gameId: string;
   totalTurns: number;
   aggregate: ActionTypeCounts;
@@ -30,7 +30,7 @@ function addAction(counts: ActionTypeCounts, action: GameAction): void {
   counts.byType[action.type] = (counts.byType[action.type] || 0) + 1;
 }
 
-export function computePerTurnMetrics(state: GameState): TurnActionMetrics[] {
+function computePerTurnMetrics(state: GameState): TurnActionMetrics[] {
   const result: TurnActionMetrics[] = [];
   // フェーズやターン推移で action.sequence を元に各ターンのスライスを抽出
   // GameState 自体はターン境界を明示しないため、簡易に phase_change の toPhase === 'draw' を新ターン開始とみなす

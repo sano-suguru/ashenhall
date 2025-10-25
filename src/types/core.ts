@@ -32,8 +32,3 @@ export type GamePhase =
   | 'battle'       // 戦闘段階: 攻撃者リスト作成
   | 'battle_attack' // 攻撃実行段階: 1体ずつ攻撃処理
   | 'end';         // 終了段階: ターン終了効果、勝利判定
-
-// === カード基本型 ===
-
-/** カード種別 */
-export type CardType = 'creature' | 'spell';

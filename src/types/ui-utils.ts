@@ -46,16 +46,3 @@ export interface DeckCollection {
   decks: CustomDeck[];
   activeDeckIds: Partial<Record<Faction, string>>; // 各勢力で選択中のデッキID
 }
-
-// === 型安全性のためのユーティリティ型 ===
-
-/** 配列の要素型を取得 */
-export type ArrayElement<T extends readonly unknown[]> = T extends readonly (infer U)[] ? U : never;
-
-/** オプショナルなプロパティを必須に変換 */
-export type Required<T> = {
-  [P in keyof T]-?: T[P];
-};
-
-/** 型の厳密性チェック用 */
-export type Exact<T, U> = T extends U ? (U extends T ? T : never) : never;
