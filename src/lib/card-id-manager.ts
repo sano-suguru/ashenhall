@@ -11,7 +11,7 @@ import { ALL_CARD_TEMPLATES } from '@/data/cards/card-registry';
 import type { Faction } from '@/types/game';
 
 // 勢力の順序を固定するための配列（Single Source of Truth）
-export const FACTIONS_ORDER: Faction[] = [
+const FACTIONS_ORDER: Faction[] = [
   'necromancer',
   'berserker',
   'mage',

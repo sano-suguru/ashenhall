@@ -15,7 +15,7 @@ import type { Card, Faction, GameState, FieldCard, CreatureCard } from '@/types/
 /**
  * 戦闘テスト用の基本設定
  */
-export interface BattleTestConfig {
+interface BattleTestConfig {
   testGameId: string;
   testSeed: string;
   player1Faction: Faction;
@@ -25,7 +25,7 @@ export interface BattleTestConfig {
 /**
  * デフォルトの戦闘テスト設定
  */
-export const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
+const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
   testGameId: 'battle-test-001',
   testSeed: 'battle-test-seed',
   player1Faction: 'berserker',
@@ -53,7 +53,7 @@ export function createStandardTestDeck(): Card[] {
 /**
  * 守護戦闘シナリオのセットアップ
  */
-export interface GuardBattleSetup {
+interface GuardBattleSetup {
   gameState: GameState;
   attackerCard: CreatureCard;
   guardCards: CreatureCard[];
@@ -226,7 +226,7 @@ export function runMultipleGuardSelectionTest(
 /**
  * 直接攻撃テスト用のゲーム進行結果
  */
-export interface DirectAttackTestResult {
+interface DirectAttackTestResult {
   foundTargetScenario: boolean;
   attackOccurred: boolean;
   gameCompleted: boolean;
@@ -352,7 +352,7 @@ export function setupNoGuardBattleScenario(
 /**
  * 攻撃結果の検証
  */
-export interface AttackVerificationResult {
+interface AttackVerificationResult {
   playerAttacked: boolean;
   creatureAttacked: boolean;
   isValidResult: boolean;

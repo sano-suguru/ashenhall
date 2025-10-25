@@ -17,7 +17,7 @@ import type { GameState, PlayerId } from '@/types/game';
  * @param sourceId 生成元識別子（デバッグ用、オプション）
  * @returns 一意のインスタンスID
  */
-export function generateInstanceId(
+function generateInstanceId(
   templateId: string,
   state: GameState,
   sourceId?: string

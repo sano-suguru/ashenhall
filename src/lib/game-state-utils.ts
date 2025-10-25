@@ -42,7 +42,7 @@ export function getCardName(cardId: string): string {
   return card?.name || cardId;
 }
 
-export function getPlayerName(playerId: PlayerId): string {
+function getPlayerName(playerId: PlayerId): string {
   return playerId === "player1" ? "あなた" : "相手";
 }
 

@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { LocalStats, GameState } from '@/types/game';
 import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-utils';
 
-export interface LocalStatsReturn {
+interface LocalStatsReturn {
   // 統計データ
   localStats: LocalStats | null;
   

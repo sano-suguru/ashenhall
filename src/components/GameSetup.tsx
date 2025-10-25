@@ -67,7 +67,7 @@ export const FACTION_DATA = {
 
 
 // 選択カードの共通スタイル
-export const getSelectionCardStyle = (isSelected: boolean) => `
+const getSelectionCardStyle = (isSelected: boolean) => `
   relative cursor-pointer p-6 rounded-2xl border transition-all duration-300 group hover:scale-[1.02] backdrop-blur-sm
   ${isSelected 
     ? 'border-amber-400/60 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-transparent shadow-2xl shadow-amber-400/25' 

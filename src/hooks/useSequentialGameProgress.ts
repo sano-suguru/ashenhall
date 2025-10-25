@@ -65,7 +65,7 @@ export interface SequentialGameProgressConfig {
   replayData?: GameState;
 }
 
-export interface SequentialGameProgressReturn {
+interface SequentialGameProgressReturn {
   // 表示用ゲーム状態
   displayState: GameState | null;
   

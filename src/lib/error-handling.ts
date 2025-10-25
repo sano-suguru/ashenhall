@@ -10,7 +10,7 @@
 /**
  * エラーオブジェクトを標準化
  */
-export function createErrorObject(error: unknown): Error {
+function createErrorObject(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }

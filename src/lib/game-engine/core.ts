@@ -17,18 +17,18 @@ import {
   createInitialGameState as createInitialGameStateImpl,
   cloneGameState,
   checkGameEnd,
-} from "./game-state.ts";
-import { updateOptimizedLookups } from "./field-search-cache.ts";
+} from "./game-state";
+import { updateOptimizedLookups } from "./field-search-cache";
 import {
   processDrawPhase,
   processEnergyPhase,
   processDeployPhase,
   processEndPhase,
-} from "./phase-processors.ts";
+} from "./phase-processors";
 // 旧battle-system.tsから統合
 import { advancePhase } from "./game-state";
 import { applyPassiveEffects } from "./card-effects";
-import { createBattleIterator } from "./battle-iterator.ts";
+import { createBattleIterator } from "./battle-iterator";
 import { assertNoLingeringDeadCreatures } from './invariants';
 
 /**

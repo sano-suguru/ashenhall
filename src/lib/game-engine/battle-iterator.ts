@@ -13,7 +13,7 @@ import { evaluatePendingDeaths } from './death-sweeper';
  * - 破壊は別途 handleCreatureDeath 内で actionLog に push される (creature_destroyed)
  */
 
-export interface BattleIteratorContext {
+interface BattleIteratorContext {
   attackerQueueLength: number;
   currentAttackerId?: string;
   emittedForCurrent?: number; // 現在の攻撃者から何件 action を返したか

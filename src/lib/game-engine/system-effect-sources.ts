@@ -4,8 +4,8 @@ export const SYSTEM_EFFECT_SOURCES = {
   TURN_SYSTEM: 'turn_system',
 } as const;
 
-export type SystemEffectSourceConst = typeof SYSTEM_EFFECT_SOURCES[keyof typeof SYSTEM_EFFECT_SOURCES];
+type SystemEffectSourceConst = typeof SYSTEM_EFFECT_SOURCES[keyof typeof SYSTEM_EFFECT_SOURCES];
 
 // 型整合性チェック (types/game-state.ts の SystemEffectSource と一致させる目的)
-export type SystemEffectSourceTypeCheck =
+type _SystemEffectSourceTypeCheck =
   SystemEffectSourceConst extends import('../../types/game-state').SystemEffectSource ? true : never;

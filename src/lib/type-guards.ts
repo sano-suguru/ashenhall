@@ -14,7 +14,7 @@ import type { CardTemplate, CreatureCardTemplate } from '@/types/game';
 /**
  * カードテンプレートがクリーチャーかどうかを確認し、型安全にキャスト
  */
-export function ensureCreatureTemplate(template: CardTemplate | undefined, context: string): CreatureCardTemplate {
+function ensureCreatureTemplate(template: CardTemplate | undefined, context: string): CreatureCardTemplate {
   if (!template || template.type !== 'creature') {
     throw new Error(`${context}が見つかりません`);
   }

@@ -87,7 +87,7 @@ function uuidv4(): string {
 /**
  * 初期状態のデッキコレクションを生成
  */
-export function getInitialDeckCollection(): DeckCollection {
+function getInitialDeckCollection(): DeckCollection {
   return {
     decks: [],
     activeDeckIds: {},

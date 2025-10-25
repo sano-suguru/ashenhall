@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 
-export interface GameControlsReturn {
+interface GameControlsReturn {
   // 基本状態
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;

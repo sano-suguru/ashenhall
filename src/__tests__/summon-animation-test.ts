@@ -31,7 +31,7 @@ describe('Summon Animation Task Generation', () => {
     expect(tasks).toHaveLength(1);
     expect(tasks[0].kind).toBe('summon');
     expect(tasks[0].targetId).toBe('test_creature_123');
-    expect(tasks[0].duration).toBe(800);
+  expect(tasks[0].duration).toBe(600);
     expect(tasks[0].origin).toBe('other');
   });
 
