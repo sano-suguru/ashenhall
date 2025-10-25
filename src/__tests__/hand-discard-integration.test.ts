@@ -1,7 +1,7 @@
 /**
  * 手札破壊統合テスト
  * 
- * executeHandDiscardEffectのUniversalFilterEngine統合動作を検証
+ * executeHandDiscardEffectのfilterTargets統合動作を検証
  * 新規実装機能の安全性を保証
  */
 
@@ -13,7 +13,7 @@ import { createCardFromTemplate } from "@/data/cards/card-registry";
 import type { GameState, FilterRule } from "@/types/game";
 import { SeededRandom } from "@/lib/game-engine/seeded-random";
 
-describe("executeHandDiscardEffect - UniversalFilterEngine統合テスト", () => {
+describe("executeHandDiscardEffect - filterTargets統合テスト", () => {
   let gameState: GameState;
   let seededRandom: SeededRandom;
 

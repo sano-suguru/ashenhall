@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { TargetFilterEngine } from "@/lib/game-engine/core/target-filter";
+import { filterTargets } from "@/lib/game-engine/core/target-filter";
 import type { FieldCard, FilterRule, Keyword } from "@/types/game";
 
-describe("TargetFilterEngine - FilterRule System", () => {
+describe("filterTargets - FilterRule System", () => {
   let mockTarget: FieldCard;
   
   beforeEach(() => {
@@ -36,27 +36,27 @@ describe("TargetFilterEngine - FilterRule System", () => {
   describe("Brand Filter", () => {
     it("should filter branded creatures", () => {
       const rules: FilterRule[] = [{ type: 'brand', operator: 'has' }];
-      
+
       // 烙印なしの状態
-      let result = TargetFilterEngine.applyRules([mockTarget], rules);
+      let result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(0);
 
       // 烙印ありの状態
       mockTarget.statusEffects = [{ type: 'branded' }];
-      result = TargetFilterEngine.applyRules([mockTarget], rules);
+      result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
     });
 
     it("should filter non-branded creatures", () => {
       const rules: FilterRule[] = [{ type: 'brand', operator: 'not_has' }];
-      
+
       // 烙印なしの状態
-      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
 
       // 烙印ありの状態
       mockTarget.statusEffects = [{ type: 'branded' }];
-      const result2 = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result2 = filterTargets([mockTarget], rules);
       expect(result2).toHaveLength(0);
     });
   });
@@ -64,11 +64,11 @@ describe("TargetFilterEngine - FilterRule System", () => {
   describe("Cost Filter", () => {
     it("should filter by cost range", () => {
       const rules: FilterRule[] = [{ type: 'cost', operator: 'range', minValue: 2, maxValue: 4 }];
-      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
 
       const rules2: FilterRule[] = [{ type: 'cost', operator: 'range', minValue: 5, maxValue: 7 }];
-      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      const result2 = filterTargets([mockTarget], rules2);
       expect(result2).toHaveLength(0);
     });
   });
@@ -76,11 +76,11 @@ describe("TargetFilterEngine - FilterRule System", () => {
   describe("Keyword Filter", () => {
     it("should filter by keyword presence", () => {
       const rules: FilterRule[] = [{ type: 'keyword', operator: 'has', value: 'guard' }];
-      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
 
       const rules2: FilterRule[] = [{ type: 'keyword', operator: 'has', value: 'stealth' }];
-      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      const result2 = filterTargets([mockTarget], rules2);
       expect(result2).toHaveLength(0);
     });
   });
@@ -89,10 +89,10 @@ describe("TargetFilterEngine - FilterRule System", () => {
     it("should exclude self when specified", () => {
       const mockTarget2 = { ...mockTarget, templateId: "other-card" };
       const targets = [mockTarget, mockTarget2];
-      
+
       const rules: FilterRule[] = [{ type: 'exclude_self', operator: 'eq', value: true }];
-      const result = TargetFilterEngine.applyRules(targets, rules, "test-card");
-      
+      const result = filterTargets(targets, rules, "test-card");
+
       expect(result).toHaveLength(1);
       expect(result[0].templateId).toBe("other-card");
     });
@@ -100,20 +100,20 @@ describe("TargetFilterEngine - FilterRule System", () => {
 
   describe("Multiple Rules", () => {
     it("should apply multiple filter conditions", () => {
-      const mockTarget2 = { 
-        ...mockTarget, 
-        id: "expensive-card", 
+      const mockTarget2 = {
+        ...mockTarget,
+        id: "expensive-card",
         cost: 6,
-        keywords: ["rush"] as Keyword[]
+        keywords: ["rush"] as Keyword[],
       };
       const targets = [mockTarget, mockTarget2];
-      
+
       const rules: FilterRule[] = [
         { type: 'cost', operator: 'range', minValue: 2, maxValue: 4 },
-        { type: 'keyword', operator: 'has', value: 'guard' }
+        { type: 'keyword', operator: 'has', value: 'guard' },
       ];
-      const result = TargetFilterEngine.applyRules(targets, rules);
-      
+      const result = filterTargets(targets, rules);
+
       expect(result).toHaveLength(1);
       expect(result[0].templateId).toBe("test-card");
     });
@@ -122,21 +122,21 @@ describe("TargetFilterEngine - FilterRule System", () => {
   describe("New Filter Types", () => {
     it("should filter by card type", () => {
       const rules: FilterRule[] = [{ type: 'card_type', operator: 'eq', value: 'creature' }];
-      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
 
       const rules2: FilterRule[] = [{ type: 'card_type', operator: 'eq', value: 'spell' }];
-      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      const result2 = filterTargets([mockTarget], rules2);
       expect(result2).toHaveLength(0);
     });
 
     it("should filter by faction", () => {
       const rules: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'knight' }];
-      const result = TargetFilterEngine.applyRules([mockTarget], rules);
+      const result = filterTargets([mockTarget], rules);
       expect(result).toHaveLength(1);
 
       const rules2: FilterRule[] = [{ type: 'faction', operator: 'eq', value: 'mage' }];
-      const result2 = TargetFilterEngine.applyRules([mockTarget], rules2);
+      const result2 = filterTargets([mockTarget], rules2);
       expect(result2).toHaveLength(0);
     });
   });

@@ -140,31 +140,3 @@ export function filterTargets<T extends Card | FieldCard>(
     rules.every(rule => evaluateFilterRule(target, rule, sourceCardId))
   );
 }
-
-/**
- * 後方互換性のためのエイリアス（段階的移行用）
- * @deprecated filterTargets を使用してください
- */
-export class UniversalFilterEngine {
-  static applyRules<T extends Card | FieldCard>(
-    targets: T[],
-    rules: FilterRule[],
-    sourceCardId?: string
-  ): T[] {
-    return filterTargets(targets, rules, sourceCardId);
-  }
-}
-
-/**
- * 後方互換性のためのエイリアス（段階的移行用）
- * @deprecated filterTargets を使用してください
- */
-export class TargetFilterEngine {
-  static applyRules(
-    targets: FieldCard[],
-    rules: FilterRule[],
-    sourceCardId?: string
-  ): FieldCard[] {
-    return filterTargets(targets, rules, sourceCardId) as FieldCard[];
-  }
-}

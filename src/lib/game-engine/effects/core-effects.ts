@@ -28,7 +28,7 @@ import { handleCreatureDeath } from '../card-effects';
 import {
   addEffectTriggerAction as addEffectTriggerActionFromLogger,
 } from "../action-logger";
-import { UniversalFilterEngine } from "../core/target-filter";
+import { filterTargets } from "../core/target-filter";
 
 // =============================================================================
 // SHARED UTILITIES
@@ -426,9 +426,9 @@ export function executeHandDiscardEffect(
   for (let i = 0; i < count; i++) {
     let potentialTargets = player.hand;
 
-    // UniversalFilterEngineを使用して手札フィルタリング（実装完成）
+    // filterTargets を利用して手札フィルタリング
     if (filter && Array.isArray(filter)) {
-      potentialTargets = UniversalFilterEngine.applyRules(player.hand, filter, sourceCardId);
+      potentialTargets = filterTargets(player.hand, filter, sourceCardId);
     }
 
     if (potentialTargets.length === 0) return;

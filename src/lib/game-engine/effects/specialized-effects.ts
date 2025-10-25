@@ -24,10 +24,9 @@ import { SeededRandom } from "../seeded-random";
 import {
   addEffectTriggerAction as addEffectTriggerActionFromLogger,
 } from "../action-logger";
-import { UniversalFilterEngine } from "../core/target-filter";
+import { filterTargets } from "../core/target-filter";
 import { generateTokenInstanceId, generateFieldInstanceId } from "@/lib/instance-id-generator";
 import { selectTargets, checkEffectCondition } from "../core/game-logic-utils";
-import { TargetFilterEngine } from "../core/target-filter";
 import type { EffectHandler } from "../effect-registry";
 
 // =============================================================================
@@ -304,11 +303,11 @@ export function executeDeckSearchEffect(
     return;
   }
   
-  // UniversalFilterEngineを使用してデッキフィルタリング（複雑度削減）
+  // filterTargets を使用してデッキフィルタリング（複雑度削減）
   let searchTargets = player.deck;
   
   if (filter && Array.isArray(filter)) {
-    searchTargets = UniversalFilterEngine.applyRules(player.deck, filter, sourceCardId);
+     searchTargets = filterTargets(player.deck, filter, sourceCardId);
   }
   
   if (searchTargets.length === 0) {
@@ -474,7 +473,7 @@ export function executeChainEffect(
   
   // フィルター適用
   if (chainConfig.selectionRules) {
-    chainTargets = TargetFilterEngine.applyRules(
+     chainTargets = filterTargets(
       chainTargets,
       chainConfig.selectionRules,
       sourceCard.templateId

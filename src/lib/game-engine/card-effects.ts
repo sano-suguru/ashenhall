@@ -28,7 +28,7 @@ import {
   resolveDynamicEffectParameters,
 } from "./effect-registry";
 import { selectTargets, checkEffectCondition } from "./core/game-logic-utils";
-import { TargetFilterEngine } from "./core/target-filter";
+import { filterTargets } from "./core/target-filter";
 import { evaluatePendingDeaths } from './death-sweeper';
 
 /**
@@ -162,7 +162,7 @@ function applySelectionRulesToTargets(
 
   if (isRandomTarget(target)) {
     const candidates = collectRandomTargetCandidates(state, sourcePlayerId, target);
-    const filteredCandidates = TargetFilterEngine.applyRules(
+    const filteredCandidates = filterTargets(
       candidates,
       selectionRules,
       sourceCard.templateId
@@ -171,7 +171,7 @@ function applySelectionRulesToTargets(
     return selectedTarget ? [selectedTarget] : [];
   }
 
-  return TargetFilterEngine.applyRules(
+  return filterTargets(
     currentTargets,
     selectionRules,
     sourceCard.templateId

@@ -1,7 +1,7 @@
 /**
  * デッキサーチ統合テスト
  * 
- * executeDeckSearchEffectのUniversalFilterEngine統合動作を検証
+ * executeDeckSearchEffectのfilterTargets統合動作を検証
  * 実際のゲーム状況での安全性を保証
  */
 
@@ -12,7 +12,7 @@ import { necromancerCards, mageCards, knightCards } from "@/data/cards/base-card
 import { createCardInstance } from "@/test-helpers/card-test-helpers";
 import type { GameState, FilterRule, Keyword, CreatureCard } from "@/types/game";
 
-describe("executeDeckSearchEffect - UniversalFilterEngine統合テスト", () => {
+describe("executeDeckSearchEffect - filterTargets統合テスト", () => {
   let gameState: GameState;
   let mockRandom: { choice: <T>(array: T[]) => T | undefined };
 

@@ -61,7 +61,7 @@ describe("resolveDynamicEffectParameters", () => {
     const { targets } = resolveDynamicEffectParameters(gameState, effect, sourceCard, sourcePlayerId, initialTargets);
     expect(targets.length).toBe(2); // resolveDynamicEffectParameters では変更されない
     
-    // 実際の除外は TargetFilterEngine.applyRules で行われる
+  // 実際の除外は filterTargets 経由で行われる
   });
 
   it("通常カードの効果パラメータは変更されないこと", () => {
