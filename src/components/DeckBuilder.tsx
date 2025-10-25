@@ -11,7 +11,7 @@
 import { useState, useMemo, useRef } from 'react';
 import type { CustomDeck, Card } from '@/types/game';
 import { getCardsByFaction } from '@/data/cards/base-cards';
-import { validateDeck } from '@/lib/deck-utils';
+import { validateDeck, normalizeDeckCoreCards } from '@/lib/deck-utils';
 import { GAME_CONSTANTS } from '@/types/game';
 import CardComponent from './CardComponent';
 import ShareDeckModal from './ShareDeckModal';
@@ -26,8 +26,10 @@ interface DeckBuilderProps {
 
 export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBuilderProps) {
   const [currentDeck, setCurrentDeck] = useState<CustomDeck>({
-    ...deck,
-    coreCardIds: deck.coreCardIds || [],
+    ...normalizeDeckCoreCards({
+      ...deck,
+      coreCardIds: deck.coreCardIds || [],
+    }),
   });
   const [showShareModal, setShowShareModal] = useState(false);
   const deckContentRef = useRef<HTMLDivElement>(null);
@@ -55,11 +57,24 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
     if (cardIndex > -1) {
       const newCards = [...currentDeck.cards];
       newCards.splice(cardIndex, 1);
-      setCurrentDeck({ ...currentDeck, cards: newCards });
+      const remainingCount = newCards.filter(id => id === cardId).length;
+      const shouldRemoveFromCore = remainingCount === 0;
+      setCurrentDeck((prev) => ({
+        ...prev,
+        cards: newCards,
+        coreCardIds: shouldRemoveFromCore
+          ? prev.coreCardIds.filter(id => id !== cardId)
+          : prev.coreCardIds,
+      }));
     }
   };
 
   const toggleCoreCard = (cardId: string) => {
+    const cardCountInDeck = currentDeck.cards.filter(id => id === cardId).length;
+    if (cardCountInDeck === 0) {
+      console.warn(`[DeckBuilder] coreCardIds toggle skipped: card ${cardId} is not in the deck.`);
+      return;
+    }
     const isCore = currentDeck.coreCardIds.includes(cardId);
     if (isCore) {
       setCurrentDeck({
