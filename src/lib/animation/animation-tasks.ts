@@ -1,19 +1,17 @@
 import type { GameAction } from '@/types/game';
 import type { ValueChange } from '@/types/game-state';
 
-export type AnimationTaskKind =
-  | 'attack'
-  | 'damage'
-  | 'destroy'
-  | 'summon'
-  | 'draw'
-  | 'spell_cast'
-  | 'heal';
-
 export interface AnimationTask {
   id: string;
   sequence: number; // 元アクションの sequence を基準に安定化
-  kind: AnimationTaskKind;
+  kind:
+    | 'attack'
+    | 'damage'
+    | 'destroy'
+    | 'summon'
+    | 'draw'
+    | 'spell_cast'
+    | 'heal';
   batchId: string; // バッチ識別子 (legacy 経路は legacy-<sequence>)
   origin: 'attack' | 'effect' | 'other';
   attackerId?: string;
@@ -35,7 +33,7 @@ export interface AnimationTask {
   cssAnimationClass: string; // CSS演出クラス名
 }
 
-export interface AnimationDurationsSpec {
+interface AnimationDurationsSpec {
   ATTACK_WINDUP: number;
   ATTACK_STRIKE: number;
   ATTACK_RETALIATE: number;
@@ -44,7 +42,7 @@ export interface AnimationDurationsSpec {
   MIN: number;
 }
 
-export const DefaultAnimationDurations: AnimationDurationsSpec = {
+const DEFAULT_ANIMATION_DURATIONS: AnimationDurationsSpec = {
   ATTACK_WINDUP: 180,
   ATTACK_STRIKE: 220,
   ATTACK_RETALIATE: 220,
@@ -60,7 +58,7 @@ export const DefaultAnimationDurations: AnimationDurationsSpec = {
  * 単位: ミリ秒
  * UI（CSS）とロジック（TS）で一致させるための真実のソース
  */
-export const AnimationDurations = {
+const AnimationDurations = {
   ATTACK: 300,
   DAMAGE: 1000,
   DESTROY: 1000,
@@ -69,12 +67,6 @@ export const AnimationDurations = {
   SPELL_CAST: 500,
   HEAL: 400,
 } as const;
-
-export type AnimationPhase = keyof typeof AnimationDurations;
-
-export function getDurationForPhaseMs(phase: AnimationPhase): number {
-  return AnimationDurations[phase];
-}
 
 function ensureMin(d: number, spec: AnimationDurationsSpec): number { return Math.max(spec.MIN, d); }
 
@@ -88,7 +80,7 @@ function ensureMin(d: number, spec: AnimationDurationsSpec): number { return Mat
 function createAnimationTask(params: {
   id: string;
   sequence: number;
-  kind: AnimationTaskKind;
+  kind: AnimationTask['kind'];
   batchId: string;
   origin: 'attack' | 'effect' | 'other';
   duration: number;
@@ -118,7 +110,7 @@ function createAnimationTask(params: {
 }
 
 /** AnimationTaskKindに対応するCSSクラス名を取得 */
-function getCssClassForAnimationKind(kind: AnimationTaskKind): string {
+function getCssClassForAnimationKind(kind: AnimationTask['kind']): string {
   switch (kind) {
     case 'attack': return 'card-attacking';
     case 'damage': return 'card-being-attacked';
@@ -159,7 +151,7 @@ function processCardAttackAction(
     origin: 'attack',
     attackerId: action.data.attackerCardId,
     targetId: action.data.targetId,
-    duration: 300, // AnimationDurations.ATTACK相当
+    duration: AnimationDurations.ATTACK,
   }));
   
   // 2. ダメージ演出タスク（防御者がシェイクしダメージ表示）
@@ -172,7 +164,7 @@ function processCardAttackAction(
     attackerId: action.data.attackerCardId,
     targetId: action.data.targetId,
     damage: action.data.damage,
-    duration: 1000, // AnimationDurations.DAMAGE相当
+    duration: AnimationDurations.DAMAGE,
   }));
   
   return tasks;
@@ -217,7 +209,7 @@ function processEffectTriggerAction(
         attackerId: sourceCardId,
         targetId,
         damage: healAmount, // 回復量をdamageフィールドに格納（後で整理）
-        duration: 400, // AnimationDurations.HEAL相当
+  duration: AnimationDurations.HEAL,
         batchId: context.batchId,
         origin: 'effect'
       }));
@@ -260,7 +252,7 @@ function processCardPlayAction(
     sequence: action.sequence,
     kind: 'summon',
     targetId: targetId,
-    duration: 800, // AnimationDurations.SUMMON相当
+  duration: AnimationDurations.SUMMON,
     batchId: context.batchId,
     origin: 'other'
   }));
@@ -278,7 +270,7 @@ function processCardDrawAction(
     sequence: action.sequence,
     kind: 'draw',
     targetId: action.data.cardId,
-    duration: 600, // AnimationDurations.DRAW相当
+  duration: AnimationDurations.DRAW,
     batchId: context.batchId,
     origin: 'other'
   })];
@@ -287,14 +279,15 @@ function processCardDrawAction(
 /**
  * GameActionから直接AnimationTaskを生成（簡素化版）
  */
-export function buildAnimationTasksFromActions(actions: GameAction[], spec: AnimationDurationsSpec = DefaultAnimationDurations): AnimationTask[] {
+export function buildAnimationTasksFromActions(actions: GameAction[]): AnimationTask[] {
   const result: AnimationTask[] = [];
   let localTaskCounter = 0;
   const nextIdLocal = (base: string, seq: number) => `${seq}-${base}-${localTaskCounter++}`;
+  const spec = DEFAULT_ANIMATION_DURATIONS;
   
   for (const action of actions) {
     const batchId = `direct-${action.sequence}`;
-    const context = { nextId: nextIdLocal, batchId, spec };
+  const context = { nextId: nextIdLocal, batchId, spec };
     
     switch (action.type) {
       case 'card_attack':
