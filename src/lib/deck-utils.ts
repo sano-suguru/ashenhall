@@ -51,6 +51,29 @@ export function sanitizeCoreCardIds(coreCardIds: string[] = [], deckCards: strin
   return uniqueCoreCardIds.filter((cardId) => !missingSet.has(cardId));
 }
 
+function areArraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((value, index) => value === b[index]);
+}
+
+export function normalizeDeckCoreCards(deck: CustomDeck): CustomDeck {
+  const sanitizedCoreCardIds = sanitizeCoreCardIds(deck.coreCardIds, deck.cards);
+  const trimmedCoreCardIds = sanitizedCoreCardIds.length > 3
+    ? sanitizedCoreCardIds.slice(0, 3)
+    : sanitizedCoreCardIds;
+
+  if (areArraysEqual(trimmedCoreCardIds, deck.coreCardIds)) {
+    return deck;
+  }
+
+  return {
+    ...deck,
+    coreCardIds: trimmedCoreCardIds,
+  };
+}
+
 /**
  * 乱数生成器（簡易的なUUID用）
  */
@@ -125,7 +148,8 @@ export function addDeckToCollection(
   collection: DeckCollection,
   deck: CustomDeck
 ): DeckCollection {
-  const newCollection = { ...collection, decks: [...collection.decks, deck] };
+  const deckToStore = normalizeDeckCoreCards(deck);
+  const newCollection = { ...collection, decks: [...collection.decks, deckToStore] };
   return newCollection;
 }
 
@@ -136,8 +160,12 @@ export function updateDeckInCollection(
   collection: DeckCollection,
   updatedDeck: CustomDeck
 ): DeckCollection {
+  const deckToStore = {
+    ...normalizeDeckCoreCards(updatedDeck),
+    updatedAt: new Date().toISOString(),
+  };
   const newDecks = collection.decks.map(deck =>
-    deck.id === updatedDeck.id ? { ...updatedDeck, updatedAt: new Date().toISOString() } : deck
+    deck.id === updatedDeck.id ? deckToStore : deck
   );
   return { ...collection, decks: newDecks };
 }

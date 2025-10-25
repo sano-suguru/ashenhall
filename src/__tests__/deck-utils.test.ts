@@ -1,4 +1,4 @@
-import { validateDeck } from '../lib/deck-utils';
+import { validateDeck, normalizeDeckCoreCards } from '../lib/deck-utils';
 import type { CustomDeck } from '../types/game';
 import { GAME_CONSTANTS } from '../types/game';
 
@@ -112,5 +112,35 @@ describe('validateDeck', () => {
     const { isValid, errors } = validateDeck(deck);
     expect(isValid).toBe(false);
     expect(errors.some(e => e.includes('コアカードにデッキ外のカードが含まれています'))).toBe(true);
+  });
+
+  it('normalizeDeckCoreCards should dedupe, drop missing cards, and enforce max 3 entries', () => {
+    const cards = fillDeck([
+      'card-1', 'card-1',
+      'card-2', 'card-2',
+      'card-3', 'card-3',
+      'card-4', 'card-4',
+    ]);
+    const originalCoreCardIds = ['card-1', 'card-1', 'card-2', 'card-3', 'card-4', 'card-5'];
+    const deck: CustomDeck = {
+      ...baseDeck,
+      cards,
+      coreCardIds: [...originalCoreCardIds],
+    };
+
+    const normalized = normalizeDeckCoreCards(deck);
+    expect(deck.coreCardIds).toEqual(originalCoreCardIds);
+    expect(normalized.coreCardIds).toEqual(['card-1', 'card-2', 'card-3']);
+  });
+
+  it('normalizeDeckCoreCards should return the original reference when no changes are needed', () => {
+    const cards = fillDeck(['card-1', 'card-1']);
+    const deck: CustomDeck = {
+      ...baseDeck,
+      cards,
+      coreCardIds: ['card-1'],
+    };
+    const normalized = normalizeDeckCoreCards(deck);
+    expect(normalized).toBe(deck);
   });
 });
