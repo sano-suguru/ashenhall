@@ -139,6 +139,8 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
             <div className="grid grid-cols-2 gap-2">
               {availableCards.map(card => {
                 const isCore = currentDeck.coreCardIds.includes(card.templateId);
+                const cardCount = getCardCountInDeck(card.templateId);
+                const limit = isCore ? 3 : GAME_CONSTANTS.CARD_COPY_LIMIT;
                 return (
                   <div key={card.templateId} className="relative">
                     <div onClick={() => addCardToDeck(card)} className="cursor-pointer">
@@ -149,8 +151,13 @@ export default function DeckBuilder({ deck, onSave, onDelete, onClose }: DeckBui
                         <Star size={16} />
                       </button>
                       <div className="bg-black/70 rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold">
-                        {getCardCountInDeck(card.templateId)}
+                        {cardCount}
                       </div>
+                    </div>
+                    <div className="absolute bottom-2 left-2 bg-black/80 px-2 py-1 rounded text-xs font-semibold">
+                      <span className={isCore ? 'text-amber-300' : 'text-gray-400'}>
+                        {isCore ? `★${limit}枚まで` : `${limit}枚まで`}
+                      </span>
                     </div>
                   </div>
                 );
