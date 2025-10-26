@@ -4,6 +4,8 @@ import {
   Sparkles,
   Shield,
   Eye,
+  Swords,
+  Droplet,
 } from 'lucide-react';
 
 // 勢力ごとの色設定
@@ -60,6 +62,28 @@ export const CARD_TYPE_JP = {
   spell: 'スペル',
 };
 
+
+// キーワード表示設定（シャドウバース風：アイコンのみ）
+export const KEYWORD_ICONS = {
+  guard: Shield,
+  pierce: Swords,
+  rush: Zap,
+  lifesteal: Droplet,
+} as const;
+
+export const KEYWORD_LABELS: Record<string, string> = {
+  guard: '守護',
+  pierce: '貫通',
+  rush: '速攻',
+  lifesteal: '吸血',
+} as const;
+
+export const KEYWORD_COLORS: Record<string, string> = {
+  guard: 'text-blue-400 bg-blue-900/80',
+  pierce: 'text-red-400 bg-red-900/80',
+  rush: 'text-yellow-400 bg-yellow-900/80',
+  lifesteal: 'text-purple-400 bg-purple-900/80',
+} as const;
 
 // サイズ設定
 export const SIZE_CLASSES = {

@@ -12,7 +12,12 @@
 
 import React from 'react';
 import type { Card, FieldCard, CreatureCard } from '@/types/game';
-import { FACTION_COLORS, SIZE_CLASSES } from '@/lib/card-constants';
+import { 
+  FACTION_COLORS, 
+  SIZE_CLASSES, 
+  KEYWORD_ICONS,
+  KEYWORD_LABELS
+} from '@/lib/card-constants';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
 import { useCardState } from '@/hooks/useCardState';
 import { useCardAnimation } from '@/hooks/useCardAnimation';
@@ -166,12 +171,78 @@ const CardOverlays = ({ isFieldCard, fieldCard }: {
 };
 
 /**
+ * キーワードオーバーレイ（シャドウバース風：半透明の大きなアイコン）
+ */
+const KeywordOverlay = ({ keywords }: { keywords: string[] }) => {
+  if (!keywords || keywords.length === 0) return null;
+  
+  // 配置パターン（グリッド配置）
+  const positions = [
+    'top-1/4 left-1/4',      // 1個目: 左上寄り
+    'top-1/3 right-1/4',     // 2個目: 右上寄り
+    'bottom-1/3 left-1/3',   // 3個目: 左下寄り
+    'bottom-1/4 right-1/3',  // 4個目: 右下寄り
+  ];
+  
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {keywords.map((keyword, index) => {
+        const Icon = KEYWORD_ICONS[keyword as keyof typeof KEYWORD_ICONS];
+        if (!Icon) return null;
+        
+        const label = KEYWORD_LABELS[keyword];
+        const position = positions[index % positions.length];
+        
+        return (
+          <div
+            key={`${keyword}-${index}`}
+            className={`absolute ${position} transform -translate-x-1/2 -translate-y-1/2`}
+            title={label}
+          >
+            <Icon 
+              size={48} 
+              className="text-white opacity-15" 
+              strokeWidth={1.5}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
  * 攻撃力・体力の表示値を計算するヘルパー関数
  */
 const calculateCardStats = (creatureCard: CreatureCard, fieldCard: FieldCard | null) => {
   const attack = fieldCard ? creatureCard.attack + fieldCard.attackModifier : creatureCard.attack;
   const health = fieldCard ? `${fieldCard.currentHealth}/${creatureCard.health + fieldCard.healthModifier}` : creatureCard.health;
   return { attack, health };
+};
+
+/**
+ * 状態チェックヘルパー関数群（複雑度削減用）
+ */
+const hasStun = (fc: FieldCard) => fc.statusEffects?.some(e => e.type === 'stun');
+const hasSilenced = (fc: FieldCard) => fc.isSilenced;
+const hasPoison = (fc: FieldCard) => fc.statusEffects?.some(e => e.type === 'poison');
+const hasBuffs = (fc: FieldCard) => fc.attackModifier > 0 || fc.healthModifier > 0;
+const hasDebuffs = (fc: FieldCard) => fc.attackModifier < 0 || fc.healthModifier < 0;
+
+/**
+ * カード状態に基づくCSSクラスを取得
+ * 優先順位: スタン > 沈黙 > 毒 > バフ > デバフ
+ */
+const getCardStateClasses = (fieldCard: FieldCard | null): string => {
+  if (!fieldCard) return '';
+  
+  if (hasStun(fieldCard)) return 'card-state-stunned';
+  if (hasSilenced(fieldCard)) return 'card-state-silenced';
+  if (hasPoison(fieldCard)) return 'card-state-poisoned';
+  if (hasBuffs(fieldCard)) return 'card-state-buffed';
+  if (hasDebuffs(fieldCard)) return 'card-state-debuffed';
+  
+  return '';
 };
 
 /**
@@ -272,6 +343,9 @@ export default function CardComponent({
     faction: card.faction,
   });
 
+  // 状態クラスを取得（Phase 1: 状態の視覚化）
+  const stateClasses = getCardStateClasses(fieldCard);
+
   return (
     <div
       ref={tooltipRef}
@@ -279,7 +353,7 @@ export default function CardComponent({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={`${cardContainerClasses.trim()} ${animationClasses}`.trim()}>
+      <div className={`${cardContainerClasses.trim()} ${stateClasses} ${animationClasses}`.trim()}>
         <CardHeader card={card} />
         <CardArt card={card} size={size} factionStyle={factionStyle} />
         <CardBody card={card} sizeStyle={sizeStyle} factionStyle={factionStyle} />
@@ -294,6 +368,10 @@ export default function CardComponent({
           isFieldCard={isFieldCard} 
           fieldCard={fieldCard} 
         />
+        {/* Phase 2: キーワードオーバーレイ（シャドウバース風） */}
+        {isFieldCard && fieldCard && (
+          <KeywordOverlay keywords={fieldCard.keywords} />
+        )}
       </div>
 
       {damagePopupElement}
