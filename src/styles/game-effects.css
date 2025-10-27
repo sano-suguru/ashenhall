@@ -404,6 +404,218 @@
   }
 }
 
+/* === ゲーム進行・プレイヤー体験の視覚的フィードバック === */
+
+/* ターン開始バナー */
+.turn-banner {
+  animation: turnBanner 2000ms ease-out forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes turnBanner {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  25% {
+    transform: scale(1.0);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1.0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0) scale(0.95);
+  }
+}
+
+/* フェーズ変更アニメーション */
+.phase-transition {
+  animation: phaseTransition 800ms ease-out;
+}
+
+@keyframes phaseTransition {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.95);
+    filter: brightness(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.0);
+    filter: brightness(1.0);
+  }
+}
+
+/* ライフ減少エフェクト */
+.life-damage-flash {
+  animation: lifeDamageFlash 600ms ease-out;
+}
+
+@keyframes lifeDamageFlash {
+  0% {
+    box-shadow: inset 0 0 0 rgba(239, 68, 68, 0);
+    border-color: currentColor;
+  }
+  20% {
+    box-shadow: inset 0 0 80px rgba(239, 68, 68, 0.8);
+    border-color: #ef4444;
+  }
+  100% {
+    box-shadow: inset 0 0 0 rgba(239, 68, 68, 0);
+    border-color: currentColor;
+  }
+}
+
+/* ライフ回復エフェクト */
+.life-heal-flash {
+  animation: lifeHealFlash 600ms ease-out;
+}
+
+@keyframes lifeHealFlash {
+  0% {
+    box-shadow: inset 0 0 0 rgba(16, 185, 129, 0);
+    border-color: currentColor;
+  }
+  20% {
+    box-shadow: inset 0 0 80px rgba(16, 185, 129, 0.6);
+    border-color: #10b981;
+  }
+  100% {
+    box-shadow: inset 0 0 0 rgba(16, 185, 129, 0);
+    border-color: currentColor;
+  }
+}
+
+/* エネルギー増加エフェクト */
+.energy-gain {
+  animation: energyGain 500ms ease-out;
+}
+
+@keyframes energyGain {
+  0% {
+    transform: scale(1.0);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.2);
+    filter: brightness(1.5) saturate(1.5);
+  }
+  100% {
+    transform: scale(1.0);
+    filter: brightness(1);
+  }
+}
+
+/* エネルギーパルス（残量表示用） */
+.energy-pulse {
+  animation: energyPulse 1500ms ease-in-out infinite;
+}
+
+@keyframes energyPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.7);
+  }
+}
+
+/* 値変化ポップアップ（汎用） */
+.value-change-popup {
+  animation: valueChangePopup 600ms ease-out forwards;
+}
+
+@keyframes valueChangePopup {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(1.0);
+  }
+}
+
+/* 重要イベントハイライト */
+.important-event-highlight {
+  animation: importantEventHighlight 1200ms ease-out;
+}
+
+@keyframes importantEventHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+  }
+  15% {
+    box-shadow: 0 0 40px 10px rgba(234, 179, 8, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+  }
+}
+
+/* アクティブカード強調 */
+.active-card-emphasis {
+  border: 3px solid #fbbf24 !important;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.8) !important;
+  transform: scale(1.08);
+  z-index: 10;
+  position: relative;
+}
+
+/* 勝利演出 */
+.victory-celebration {
+  animation: victoryCelebration 2000ms ease-out forwards;
+}
+
+@keyframes victoryCelebration {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+    filter: brightness(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(5deg);
+    filter: brightness(1.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.0) rotate(0deg);
+    filter: brightness(1.0);
+  }
+}
+
+/* 敗北演出 */
+.defeat-fade {
+  animation: defeatFade 1500ms ease-out forwards;
+}
+
+@keyframes defeatFade {
+  0% {
+    opacity: 1;
+    filter: grayscale(0) brightness(1);
+  }
+  100% {
+    opacity: 0.6;
+    filter: grayscale(1) brightness(0.5);
+  }
+}
+
 /* アクセシビリティ: motion-reduce対応 */
 @media (prefers-reduced-motion: reduce) {
   .card-summoning,
@@ -414,7 +626,17 @@
   .card-spell-casting,
   .card-healing,
   .animate-damage-popup,
-  .animate-heal-popup {
+  .animate-heal-popup,
+  .turn-banner,
+  .phase-transition,
+  .life-damage-flash,
+  .life-heal-flash,
+  .energy-gain,
+  .energy-pulse,
+  .value-change-popup,
+  .important-event-highlight,
+  .victory-celebration,
+  .defeat-fade {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -432,5 +654,11 @@
   .card-summoning {
     border: 2px solid #ffffff !important;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important;
+  }
+  
+  .active-card-emphasis {
+    border: 3px solid #fbbf24 !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.6) !important;
+    transform: none !important;
   }
 }

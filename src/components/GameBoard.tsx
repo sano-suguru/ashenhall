@@ -14,6 +14,9 @@ import CardNameWithTooltip from './CardNameWithTooltip';
 import CardComponent from './CardComponent';
 import BattlePlaybackControls from './BattlePlaybackControls';
 import DestroyedCardGhost from './DestroyedCardGhost';
+import TurnBanner from './TurnBanner';
+import ValueChangePopup from './ValueChangePopup';
+import { useGameEffects } from '@/hooks/useGameEffects';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -59,19 +62,20 @@ const PHASE_DATA = {
   end: { name: '終了', icon: Flag, color: 'text-purple-400' },
 } as const;
 
-const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturnToSetup, onToggleLog }: {
+const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturnToSetup, onToggleLog, phaseTransition }: {
   turnNumber: number;
   phase: GamePhase;
   currentPlayerId: PlayerId;
   isLogVisible: boolean;
   onReturnToSetup: () => void;
   onToggleLog: () => void;
+  phaseTransition?: boolean;
 }) => {
   const currentPhase = PHASE_DATA[phase];
   const currentPlayerName = currentPlayerId === 'player1' ? 'あなた' : '相手';
 
   return (
-    <div className="bg-gray-800/90 border-b border-gray-700 p-4">
+    <div className={`bg-gray-800/90 border-b border-gray-700 p-4 ${phaseTransition ? 'phase-transition' : ''}`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
@@ -498,6 +502,16 @@ export default function GameBoard({
   const currentEnergyLimit = Math.min(displayState.turnNumber, GAME_CONSTANTS.ENERGY_LIMIT);
   const recentActions = displayState.actionLog.slice(-10).reverse();
 
+  // 視覚的フィードバック管理
+  const {
+    effectState,
+    resetTurnBanner,
+    resetPlayer1LifeChange,
+    resetPlayer2LifeChange,
+    resetPlayer1EnergyChange,
+    resetPlayer2EnergyChange,
+  } = useGameEffects(displayState);
+
   const calculateTurnFromSequence = (gs: GameState, targetSequence: number): number => {
     if (targetSequence <= 0) return 1;
     let turnNumber = 1;
@@ -535,6 +549,7 @@ export default function GameBoard({
         isLogVisible={showLog}
         onReturnToSetup={onReturnToSetup}
         onToggleLog={() => setShowLog(!showLog)}
+        phaseTransition={effectState.phaseTransition}
       />
 
       <div className="max-w-7xl mx-auto p-4">
@@ -583,6 +598,50 @@ export default function GameBoard({
         isOpen={showDetailedLog}
         onClose={() => setShowDetailedLog(false)}
         onJumpToAction={handleJumpToAction}
+      />
+
+      {/* 視覚的フィードバック要素 */}
+      <TurnBanner
+        turnNumber={effectState.turnBannerTurn}
+        currentPlayer={effectState.turnBannerPlayer}
+        isVisible={effectState.showTurnBanner}
+        onComplete={resetTurnBanner}
+      />
+
+      {/* Player1 ライフ変化 */}
+      <ValueChangePopup
+        type={effectState.player1LifeChange.type === 'gain' ? 'life-gain' : 'life-loss'}
+        value={effectState.player1LifeChange.value}
+        position={{ x: window.innerWidth / 2, y: window.innerHeight * 0.7 }}
+        isVisible={effectState.player1LifeChange.show}
+        onComplete={resetPlayer1LifeChange}
+      />
+
+      {/* Player2 ライフ変化 */}
+      <ValueChangePopup
+        type={effectState.player2LifeChange.type === 'gain' ? 'life-gain' : 'life-loss'}
+        value={effectState.player2LifeChange.value}
+        position={{ x: window.innerWidth / 2, y: window.innerHeight * 0.3 }}
+        isVisible={effectState.player2LifeChange.show}
+        onComplete={resetPlayer2LifeChange}
+      />
+
+      {/* Player1 エネルギー変化 */}
+      <ValueChangePopup
+        type="energy-gain"
+        value={effectState.player1EnergyChange.value}
+        position={{ x: window.innerWidth / 2 + 150, y: window.innerHeight * 0.7 }}
+        isVisible={effectState.player1EnergyChange.show}
+        onComplete={resetPlayer1EnergyChange}
+      />
+
+      {/* Player2 エネルギー変化 */}
+      <ValueChangePopup
+        type="energy-gain"
+        value={effectState.player2EnergyChange.value}
+        position={{ x: window.innerWidth / 2 + 150, y: window.innerHeight * 0.3 }}
+        isVisible={effectState.player2EnergyChange.show}
+        onComplete={resetPlayer2EnergyChange}
       />
     </div>
   );
