@@ -14,8 +14,6 @@ import CardNameWithTooltip from './CardNameWithTooltip';
 import CardComponent from './CardComponent';
 import BattlePlaybackControls from './BattlePlaybackControls';
 import DestroyedCardGhost from './DestroyedCardGhost';
-import TurnBanner from './TurnBanner';
-import ValueChangePopup from './ValueChangePopup';
 import { useGameEffects } from '@/hooks/useGameEffects';
 
 interface GameBoardProps {
@@ -505,11 +503,6 @@ export default function GameBoard({
   // 視覚的フィードバック管理
   const {
     effectState,
-    resetTurnBanner,
-    resetPlayer1LifeChange,
-    resetPlayer2LifeChange,
-    resetPlayer1EnergyChange,
-    resetPlayer2EnergyChange,
   } = useGameEffects(displayState);
 
   const calculateTurnFromSequence = (gs: GameState, targetSequence: number): number => {
@@ -600,49 +593,6 @@ export default function GameBoard({
         onJumpToAction={handleJumpToAction}
       />
 
-      {/* 視覚的フィードバック要素 */}
-      <TurnBanner
-        turnNumber={effectState.turnBannerTurn}
-        currentPlayer={effectState.turnBannerPlayer}
-        isVisible={effectState.showTurnBanner}
-        onComplete={resetTurnBanner}
-      />
-
-      {/* Player1 ライフ変化 */}
-      <ValueChangePopup
-        type={effectState.player1LifeChange.type === 'gain' ? 'life-gain' : 'life-loss'}
-        value={effectState.player1LifeChange.value}
-        position={{ x: window.innerWidth / 2, y: window.innerHeight * 0.7 }}
-        isVisible={effectState.player1LifeChange.show}
-        onComplete={resetPlayer1LifeChange}
-      />
-
-      {/* Player2 ライフ変化 */}
-      <ValueChangePopup
-        type={effectState.player2LifeChange.type === 'gain' ? 'life-gain' : 'life-loss'}
-        value={effectState.player2LifeChange.value}
-        position={{ x: window.innerWidth / 2, y: window.innerHeight * 0.3 }}
-        isVisible={effectState.player2LifeChange.show}
-        onComplete={resetPlayer2LifeChange}
-      />
-
-      {/* Player1 エネルギー変化 */}
-      <ValueChangePopup
-        type="energy-gain"
-        value={effectState.player1EnergyChange.value}
-        position={{ x: window.innerWidth / 2 + 150, y: window.innerHeight * 0.7 }}
-        isVisible={effectState.player1EnergyChange.show}
-        onComplete={resetPlayer1EnergyChange}
-      />
-
-      {/* Player2 エネルギー変化 */}
-      <ValueChangePopup
-        type="energy-gain"
-        value={effectState.player2EnergyChange.value}
-        position={{ x: window.innerWidth / 2 + 150, y: window.innerHeight * 0.3 }}
-        isVisible={effectState.player2EnergyChange.show}
-        onComplete={resetPlayer2EnergyChange}
-      />
     </div>
   );
 }
