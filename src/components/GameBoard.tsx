@@ -478,15 +478,28 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
   );
 }
 
+// ログフィルタリング: 内部処理ログを除外してユーザー向け表示を改善
+const INTERNAL_LOG_TYPES: GameAction['type'][] = [
+  'combat_stage',    // 戦闘サブステージ（card_attackで十分）
+  'end_stage',       // 終了ステージ処理（結果は他ログで表現）
+  'energy_update',   // エネルギー上限更新（energy_refillで十分）
+  'trigger_event',   // トリガーイベント（effect_triggerで十分）
+];
+
 const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: GameState }) => {
+  // 内部処理ログをフィルタリング
+  const visibleActions = actions.filter(
+    (action) => !INTERNAL_LOG_TYPES.includes(action.type)
+  );
+
   return (
     <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 max-h-40 overflow-y-auto">
       <h3 className="text-lg font-bold mb-2">戦闘ログ</h3>
       <div className="space-y-1 text-sm">
-        {actions.length === 0 ? (
+        {visibleActions.length === 0 ? (
           <div className="text-gray-500">ログがありません</div>
         ) : (
-          actions.map((action) => (
+          visibleActions.map((action) => (
             <div key={action.sequence} className="text-gray-300 flex items-center space-x-2">
               <span className="text-xs font-mono text-gray-500">#{action.sequence.toString().padStart(3, '0')}</span>
               {formatAction(action, gameState)}
