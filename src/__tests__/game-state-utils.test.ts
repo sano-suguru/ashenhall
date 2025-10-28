@@ -67,7 +67,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("あなたにドロー(1)");
+    expect(result).toContain("自身にドロー(1)");
   });
 
   it("should format effect log gracefully when there is no target", () => {
@@ -217,7 +217,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《deck_empty》の効果であなたにダメージ(1)");
+    expect(result).toContain("《deck_empty》の効果で自身にダメージ(1)");
   });
 });
 

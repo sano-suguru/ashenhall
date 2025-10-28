@@ -183,7 +183,7 @@ const EFFECT_TYPE_NAMES: Record<string, string> = {
 };
 
 // 効果対象のテキストとカードIDを取得
-function getEffectTargetInfo(targetIds: string[]): { text: string; cardIds: string[] } {
+function getEffectTargetInfo(targetIds: string[], sourcePlayerId: PlayerId): { text: string; cardIds: string[] } {
   const targetCount = targetIds.length;
   
   if (targetCount === 0) {
@@ -193,7 +193,9 @@ function getEffectTargetInfo(targetIds: string[]): { text: string; cardIds: stri
   if (targetCount === 1) {
     const targetId = targetIds[0];
     if (targetId === 'player1' || targetId === 'player2') {
-      return { text: getPlayerName(targetId as PlayerId), cardIds: [] };
+      // 対象が効果発動者自身の場合は「自身」、相手なら「相手プレイヤー」
+      const isSelf = targetId === sourcePlayerId;
+      return { text: isSelf ? '自身' : '相手プレイヤー', cardIds: [] };
     }
     const targetName = getCardName(targetId);
     return { 
@@ -221,8 +223,8 @@ function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisp
   // 効果値がある場合のみ表示（例: ダメージ量、強化値）
   const valueText = data.effectValue !== undefined ? `(${data.effectValue})` : '';
 
-  // 対象の名前を取得
-  const targetInfo = getEffectTargetInfo(targetIds);
+  // 対象の名前を取得（発動者のPlayerIdを渡す）
+  const targetInfo = getEffectTargetInfo(targetIds, action.playerId);
 
   return {
     type: 'effect_trigger',
