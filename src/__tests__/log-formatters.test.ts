@@ -36,7 +36,7 @@ describe("Log Formatters", () => {
   });
 
   describe("logFormatters.phase_change", () => {
-    it("should format draw phase message", () => {
+    it("should format draw phase transition as turn start", () => {
       const action: GameAction = {
         sequence: 1,
         playerId: "player1",
@@ -45,10 +45,11 @@ describe("Log Formatters", () => {
         data: { fromPhase: "end", toPhase: "draw" },
       };
       const result = logFormatters.phase_change(action, mockPlayerName, mockGameState);
-      expect(result.message).toBe("終了フェーズ → ドローフェーズ");
+      expect(result.message).toBe("━━ ターン開始 ━━");
+      expect(result.iconName).toBe("Flag");
     });
 
-    it("should format other phase messages", () => {
+    it("should format other phase messages concisely", () => {
       const action: GameAction = {
         sequence: 1,
         playerId: "player1",
@@ -57,7 +58,8 @@ describe("Log Formatters", () => {
         data: { fromPhase: "deploy", toPhase: "battle" },
       };
       const result = logFormatters.phase_change(action, mockPlayerName, mockGameState);
-      expect(result.message).toBe("展開フェーズ → 戦闘フェーズ");
+      expect(result.message).toBe("展開→戦闘");
+      expect(result.iconName).toBe("ArrowRight");
     });
   });
 

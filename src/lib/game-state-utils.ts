@@ -210,12 +210,23 @@ function formatPhaseChangeLog(action: GameAction, playerName: string): LogDispla
 
   const fromPhaseName = phaseNames[data.fromPhase] || data.fromPhase;
   const toPhaseName = phaseNames[data.toPhase] || data.toPhase;
+  
+  // ターン開始（drawフェーズ移行）のみ特別表示
+  if (data.toPhase === 'draw') {
+    return {
+      type: 'phase_change',
+      iconName: 'Flag',
+      playerName,
+      message: `━━ ターン開始 ━━`,
+      cardIds: [],
+    };
+  }
 
   return {
     type: 'phase_change',
     iconName: 'ArrowRight',
     playerName,
-    message: `${fromPhaseName}フェーズ → ${toPhaseName}フェーズ`,
+    message: `${fromPhaseName}→${toPhaseName}`,
     cardIds: [],
   };
 }
@@ -242,24 +253,41 @@ function formatTriggerEventLog(action: GameAction, playerName: string): LogDispl
 function formatCardDrawLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'card_draw') throw new Error('invalid type');
   const templateId = extractTemplateId(action.data.cardId);
+  const handSize = action.data.handSizeAfter;
+  
+  // デッキ切れ疲労ダメージの場合
+  if (action.data.fatigue) {
+    const damage = action.data.fatigue.lifeBefore - action.data.fatigue.lifeAfter;
+    return {
+      type: 'card_draw',
+      iconName: 'AlertCircle',
+      playerName,
+      message: `デッキ切れ！ライフ${damage}減少`,
+      details: `ライフ ${action.data.fatigue.lifeBefore}→${action.data.fatigue.lifeAfter}`,
+      cardIds: []
+    };
+  }
+  
   return {
     type: 'card_draw',
-    iconName: 'FilePlus',
+    iconName: 'CreditCard',
     playerName,
-    message: `カードをドロー (${action.data.handSizeBefore}->${action.data.handSizeAfter})`,
-    details: action.data.fatigue ? `疲労:${action.data.fatigue.lifeBefore}->${action.data.fatigue.lifeAfter}` : undefined,
+    message: `カードを引いた`,
+    details: `手札${handSize}枚`,
     cardIds: [templateId]
   };
 }
 
 function formatEnergyRefillLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'energy_refill') throw new Error('invalid type');
+  const recovered = action.data.energyAfter - action.data.energyBefore;
+  
   return {
     type: 'energy_refill',
-    iconName: 'BatteryCharging',
+    iconName: 'Zap',
     playerName,
-    message: `エネルギー回復 ${action.data.energyBefore}->${action.data.energyAfter}`,
-    details: `最大:${action.data.maxEnergy}`,
+    message: `エネルギー${recovered}回復`,
+    details: `(${action.data.energyAfter}/${action.data.maxEnergy})`,
     cardIds: []
   };
 }
