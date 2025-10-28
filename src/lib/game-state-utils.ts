@@ -220,8 +220,13 @@ function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisp
   const effectName = EFFECT_TYPE_NAMES[data.effectType] || data.effectType;
   const sourceTemplateId = typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
 
-  // 効果値がある場合のみ表示（例: ダメージ量、強化値）
-  const valueText = data.effectValue !== undefined ? `(${data.effectValue})` : '';
+  // 効果値の表示: debuff系は"-"を付ける、それ以外はそのまま
+  let valueText = '';
+  if (data.effectValue !== undefined) {
+    const isDebuff = data.effectType.startsWith('debuff_');
+    const sign = isDebuff ? '-' : '';
+    valueText = `(${sign}${data.effectValue})`;
+  }
 
   // 対象の名前を取得（発動者のPlayerIdを渡す）
   const targetInfo = getEffectTargetInfo(targetIds, action.playerId);
