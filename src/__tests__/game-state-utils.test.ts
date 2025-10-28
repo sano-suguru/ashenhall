@@ -31,7 +31,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("1体にダメージ(3)");
+    expect(result).toContain("《骸骨剣士》にダメージ(3)");
   });
 
   it("should format attack change correctly with before/after values", () => {
@@ -49,7 +49,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("1体に攻撃力強化(2)");
+    expect(result).toContain("《骸骨剣士》に攻撃力強化(2)");
   });
 
   it("should format log without value changes gracefully", () => {
@@ -67,7 +67,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("1体にドロー(1)");
+    expect(result).toContain("あなたにドロー(1)");
   });
 
   it("should format effect log gracefully when there is no target", () => {
@@ -217,7 +217,7 @@ describe("formatActionAsText", () => {
       timestamp: 0,
     };
     const result = formatActionAsText(action, mockGameState);
-    expect(result).toContain("《deck_empty》の効果で1体にダメージ(1)");
+    expect(result).toContain("《deck_empty》の効果であなたにダメージ(1)");
   });
 });
 

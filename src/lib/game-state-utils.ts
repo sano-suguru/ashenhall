@@ -182,6 +182,30 @@ const EFFECT_TYPE_NAMES: Record<string, string> = {
   deck_search: 'デッキサーチ',
 };
 
+// 効果対象のテキストとカードIDを取得
+function getEffectTargetInfo(targetIds: string[]): { text: string; cardIds: string[] } {
+  const targetCount = targetIds.length;
+  
+  if (targetCount === 0) {
+    return { text: '', cardIds: [] };
+  }
+  
+  if (targetCount === 1) {
+    const targetId = targetIds[0];
+    if (targetId === 'player1' || targetId === 'player2') {
+      return { text: getPlayerName(targetId as PlayerId), cardIds: [] };
+    }
+    const targetName = getCardName(targetId);
+    return { 
+      text: `《${targetName}》`, 
+      cardIds: [extractTemplateId(targetId)] 
+    };
+  }
+  
+  // 複数対象の場合は数だけ表示
+  return { text: `${targetCount}体`, cardIds: [] };
+}
+
 function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'effect_trigger') throw new Error('Invalid action type for formatEffectTriggerLog');
 
@@ -190,19 +214,22 @@ function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisp
     ? `《${getCardName(data.sourceCardId)}》`
     : data.sourceCardId; // system source のまま表示
   
-  const targetCount = Object.keys(data.targets).length;
+  const targetIds = Object.keys(data.targets);
   const effectName = EFFECT_TYPE_NAMES[data.effectType] || data.effectType;
   const sourceTemplateId = typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
 
   // 効果値がある場合のみ表示（例: ダメージ量、強化値）
   const valueText = data.effectValue !== undefined ? `(${data.effectValue})` : '';
 
+  // 対象の名前を取得
+  const targetInfo = getEffectTargetInfo(targetIds);
+
   return {
     type: 'effect_trigger',
     iconName: 'Zap',
     playerName,
-    message: `${sourceName}の効果で${targetCount}体に${effectName}${valueText}`,
-    cardIds: sourceTemplateId ? [sourceTemplateId] : [],
+    message: `${sourceName}の効果で${targetInfo.text}に${effectName}${valueText}`,
+    cardIds: sourceTemplateId ? [sourceTemplateId, ...targetInfo.cardIds] : targetInfo.cardIds,
   };
 }
 
