@@ -49,7 +49,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("1体にbuff_attack(2)");
+    expect(result).toContain("1体に攻撃力強化(2)");
   });
 
   it("should format log without value changes gracefully", () => {
@@ -67,7 +67,7 @@ describe("formatActionAsText", () => {
     };
     const result = formatActionAsText(action, mockGameState);
     expect(result).toContain("《秘術の連雷》の効果");
-    expect(result).toContain("1体にdraw_card(1)");
+    expect(result).toContain("1体にドロー(1)");
   });
 
   it("should format effect log gracefully when there is no target", () => {

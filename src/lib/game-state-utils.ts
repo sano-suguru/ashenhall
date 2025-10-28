@@ -16,6 +16,19 @@ import type {
 import { createInitialGameState, processGameStep } from "./game-engine/core";
 import { getCardById } from "@/data/cards/base-cards";
 
+// === ログフィルタリング定数 ===
+
+/**
+ * 内部処理ログのアクションタイプ
+ * ユーザー向け表示では除外され、デバッグ目的でのみ使用される
+ */
+export const INTERNAL_LOG_TYPES: GameAction['type'][] = [
+  'combat_stage',    // 戦闘サブステージ（card_attackで十分）
+  'end_stage',       // 終了ステージ処理（結果は他ログで表現）
+  'energy_update',   // エネルギー上限更新（energy_refillで十分）
+  'trigger_event',   // トリガーイベント（effect_triggerで十分）
+];
+
 // UIコンポーネントから移植された定数とヘルパー関数
 
 /**
@@ -104,15 +117,14 @@ function formatCardPlayLog(action: GameAction, playerName: string): LogDisplayPa
   const cardName = getCardName(data.cardId);
   const templateId = extractTemplateId(data.cardId);
   const energyChange = data.playerEnergy 
-    ? ` (エネルギー ${data.playerEnergy.before}→${data.playerEnergy.after})`
+    ? ` (${data.playerEnergy.before}→${data.playerEnergy.after}エネルギー)`
     : '';
 
   return {
     type: 'card_play',
     iconName: 'Plus',
     playerName,
-    message: `《${cardName}》を場に出した`,
-    details: `位置:${data.position}${energyChange}`,
+    message: `《${cardName}》を召喚${energyChange}`,
     cardIds: [templateId],
   };
 }
@@ -123,12 +135,19 @@ function formatCreatureDestroyedLog(action: GameAction, playerName: string): Log
   const { data } = action;
   const cardName = getCardName(data.destroyedCardId);
   const destroyedTemplateId = extractTemplateId(data.destroyedCardId);
-  const sourceText = data.source === 'combat' 
+  
+  // sourceCardId が destroyedCardId と同じ場合は戦闘による相互破壊
+  const isSelfDestruction = data.sourceCardId && 
+    extractTemplateId(data.sourceCardId) === destroyedTemplateId;
+  
+  const sourceText = data.source === 'combat' || isSelfDestruction
     ? '戦闘によって'
     : data.sourceCardId 
       ? `《${getCardName(data.sourceCardId)}》によって`
       : '効果によって';
-  const sourceTemplateId = data.sourceCardId ? extractTemplateId(data.sourceCardId) : undefined;
+  const sourceTemplateId = (data.sourceCardId && !isSelfDestruction) 
+    ? extractTemplateId(data.sourceCardId) 
+    : undefined;
 
   return {
     type: 'creature_destroyed',
@@ -139,6 +158,30 @@ function formatCreatureDestroyedLog(action: GameAction, playerName: string): Log
   };
 }
 
+// 効果タイプの人間が読める名称マッピング
+const EFFECT_TYPE_NAMES: Record<string, string> = {
+  damage: 'ダメージ',
+  heal: '回復',
+  buff_attack: '攻撃力強化',
+  buff_health: '体力強化',
+  debuff_attack: '攻撃力減少',
+  debuff_health: '体力減少',
+  summon: '召喚',
+  draw_card: 'ドロー',
+  resurrect: '蘇生',
+  silence: '沈黙',
+  guard: '守護付与',
+  stun: 'スタン',
+  destroy_deck_top: 'デッキトップ破壊',
+  swap_attack_health: '攻撃力と体力入替',
+  hand_discard: '手札破棄',
+  destroy_all_creatures: '全体破壊',
+  ready: '再行動',
+  apply_brand: '烙印付与',
+  banish: '消滅',
+  deck_search: 'デッキサーチ',
+};
+
 function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisplayParts {
   if (action.type !== 'effect_trigger') throw new Error('Invalid action type for formatEffectTriggerLog');
 
@@ -148,16 +191,17 @@ function formatEffectTriggerLog(action: GameAction, playerName: string): LogDisp
     : data.sourceCardId; // system source のまま表示
   
   const targetCount = Object.keys(data.targets).length;
-  const effectName = data.effectType === 'damage' ? 'ダメージ' 
-                   : data.effectType === 'heal' ? '回復'
-                   : data.effectType;
+  const effectName = EFFECT_TYPE_NAMES[data.effectType] || data.effectType;
   const sourceTemplateId = typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
+
+  // 効果値がある場合のみ表示（例: ダメージ量、強化値）
+  const valueText = data.effectValue !== undefined ? `(${data.effectValue})` : '';
 
   return {
     type: 'effect_trigger',
     iconName: 'Zap',
     playerName,
-    message: `${sourceName}の効果で${targetCount}体に${effectName}(${data.effectValue})`,
+    message: `${sourceName}の効果で${targetCount}体に${effectName}${valueText}`,
     cardIds: sourceTemplateId ? [sourceTemplateId] : [],
   };
 }

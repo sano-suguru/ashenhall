@@ -5,6 +5,7 @@ import {
   findDecisiveAction, 
   getTurnNumberForAction,
   getFinalGameState,
+  INTERNAL_LOG_TYPES,
 } from '@/lib/game-state-utils';
 import { calculateTurnSummaries, TurnSummary } from '@/lib/stats-utils';
 
@@ -16,6 +17,17 @@ export function useBattleLog(gameState: GameState) {
 
   const filteredActions = useMemo(() => {
     let filtered = [...gameState.actionLog];
+
+    // Phase 1-A: 内部処理ログを除外
+    filtered = filtered.filter(action => !INTERNAL_LOG_TYPES.includes(action.type));
+
+    // Phase 2: phase_change はターン開始のみ表示
+    filtered = filtered.filter(action => {
+      if (action.type === 'phase_change') {
+        return action.data.toPhase === 'draw';
+      }
+      return true;
+    });
 
     if (filterType !== 'all') {
       filtered = filtered.filter(action => action.type === filterType);

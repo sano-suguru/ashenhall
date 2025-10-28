@@ -15,7 +15,7 @@ import type { GameState, GameAction } from '@/types/game';
 import { useBattleLog } from '@/hooks/useBattleLog';
 // 旧battle-log/ディレクトリのコンポーネントを内部統合
 import type { PlayerId } from '@/types/game';
-import { getLogDisplayParts, getCardName, getFinalGameState } from '@/lib/game-state-utils';
+import { getLogDisplayParts, getCardName, getFinalGameState, INTERNAL_LOG_TYPES } from '@/lib/game-state-utils';
 import CardNameWithTooltip from './CardNameWithTooltip';
 import { 
   X, Copy, Check, Search,

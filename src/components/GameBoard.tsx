@@ -8,7 +8,7 @@ import BattleLogModal from './BattleLogModal';
 // 旧game-board/ディレクトリのコンポーネントを内部統合
 import type { PlayerId, GamePhase, PlayerState } from '@/types/game';
 import { CreditCard, Zap, Target, Swords, Flag, Handshake, ScrollText, Share, Trophy, X, FileText, Bot, User, Heart, Shield, ArrowDown, Users, Sparkles, RotateCcw, MicOff, AlertCircle, Skull, Repeat, Trash2, ShieldOff, AlertTriangle, Star, TrendingUp, TrendingDown, Layers, WalletCards as Wallet } from 'lucide-react';
-import { getLogDisplayParts, generateBattleReport, generateShareableText } from '@/lib/game-state-utils';
+import { getLogDisplayParts, generateBattleReport, generateShareableText, INTERNAL_LOG_TYPES } from '@/lib/game-state-utils';
 import { getCardById } from '@/data/cards/base-cards';
 import CardNameWithTooltip from './CardNameWithTooltip';
 import CardComponent from './CardComponent';
@@ -478,13 +478,7 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
   );
 }
 
-// ログフィルタリング: 内部処理ログを除外してユーザー向け表示を改善
-const INTERNAL_LOG_TYPES: GameAction['type'][] = [
-  'combat_stage',    // 戦闘サブステージ（card_attackで十分）
-  'end_stage',       // 終了ステージ処理（結果は他ログで表現）
-  'energy_update',   // エネルギー上限更新（energy_refillで十分）
-  'trigger_event',   // トリガーイベント（effect_triggerで十分）
-];
+// ログフィルタリング: 内部処理ログを除外してユーザー向け表示を改善（定義は game-state-utils.ts に移動）
 
 const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: GameState }) => {
   // 内部処理ログをフィルタリング

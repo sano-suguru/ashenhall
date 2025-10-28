@@ -91,6 +91,7 @@ describe("Log Formatters", () => {
       };
       const result = logFormatters.card_play(action, mockPlayerName, mockGameState);
       expect(result.message).toContain("test_card");
+      expect(result.message).toContain("召喚");
     });
 
     it("should format card attack", () => {
