@@ -1,4 +1,4 @@
-import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator } from '@/types/game';
+import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator, EffectTarget } from '@/types/game';
 
 /**
  * 動的効果値を持つカードの専用テキスト定義
@@ -119,15 +119,17 @@ const getSelectionRulesText = (rules?: import('@/types/cards').FilterRule[]): st
 
 
 const getTargetText = (target: CardEffect['target']): string => {
-  const targetMap: { [key: string]: string } = {
+  // 全てのEffectTargetを網羅的に定義し、型安全性を確保
+  const targetMap: Record<EffectTarget, string> = {
     self: '自身',
     ally_all: '味方全体',
     enemy_all: '敵全体',
     ally_random: 'ランダムな味方1体',
     enemy_random: 'ランダムな敵1体',
     player: '相手プレイヤー',
+    self_player: '自分',
   };
-  return targetMap[target] || '';
+  return targetMap[target];
 };
 
 const actionTextGenerator: Record<EffectAction, (effect: CardEffect) => string> = {
