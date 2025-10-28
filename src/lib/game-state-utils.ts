@@ -193,9 +193,14 @@ function getEffectTargetInfo(targetIds: string[], sourcePlayerId: PlayerId): { t
   if (targetCount === 1) {
     const targetId = targetIds[0];
     if (targetId === 'player1' || targetId === 'player2') {
-      // 対象が効果発動者自身の場合は「自身」、相手なら「相手プレイヤー」
+      // 対象が効果発動者自身の場合は「自身」
+      // 異なる場合は視聴者（常にplayer1）視点で表現
       const isSelf = targetId === sourcePlayerId;
-      return { text: isSelf ? '自身' : '相手プレイヤー', cardIds: [] };
+      if (isSelf) {
+        return { text: '自身', cardIds: [] };
+      }
+      // 視聴者視点: player1なら「あなた」、player2なら「相手」
+      return { text: getPlayerName(targetId as PlayerId), cardIds: [] };
     }
     const targetName = getCardName(targetId);
     return { 
