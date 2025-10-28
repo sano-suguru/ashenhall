@@ -120,11 +120,15 @@ function formatCardPlayLog(action: GameAction, playerName: string): LogDisplayPa
     ? ` (${data.playerEnergy.before}→${data.playerEnergy.after}エネルギー)`
     : '';
 
+  // カードタイプに応じて動詞を変更
+  const card = getCardById(templateId);
+  const verb = card?.type === 'spell' ? '使用' : '召喚';
+
   return {
     type: 'card_play',
     iconName: 'Plus',
     playerName,
-    message: `《${cardName}》を召喚${energyChange}`,
+    message: `《${cardName}》を${verb}${energyChange}`,
     cardIds: [templateId],
   };
 }
