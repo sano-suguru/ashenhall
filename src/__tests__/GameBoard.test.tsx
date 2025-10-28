@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import GameBoard from '@/components/GameBoard';
 import { createInitialGameState } from '@/lib/game-engine/game-state';
@@ -61,5 +61,31 @@ describe('GameBoard Component', () => {
 
   it('renders without errors', () => {
     expect(() => render(<GameBoard {...mockProps} />)).not.toThrow();
+  });
+
+  it('shows life pulse feedback when life changes', () => {
+    jest.useFakeTimers();
+    const { rerender } = render(<GameBoard {...mockProps} />);
+
+    const nextGameState = {
+      ...mockProps.gameState,
+      players: {
+        player1: { ...mockProps.gameState.players.player1, life: mockProps.gameState.players.player1.life - 3 },
+        player2: { ...mockProps.gameState.players.player2 },
+      },
+    };
+
+    act(() => {
+      rerender(<GameBoard {...mockProps} gameState={nextGameState} />);
+    });
+
+    expect(screen.getByText('-3')).toBeInTheDocument();
+
+    act(() => {
+      jest.advanceTimersByTime(710);
+    });
+
+    expect(screen.queryByText('-3')).not.toBeInTheDocument();
+    jest.useRealTimers();
   });
 });

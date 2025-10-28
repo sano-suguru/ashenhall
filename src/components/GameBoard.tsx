@@ -60,7 +60,7 @@ const PHASE_DATA = {
   end: { name: '終了', icon: Flag, color: 'text-purple-400' },
 } as const;
 
-const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturnToSetup, onToggleLog, phaseTransition }: {
+const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturnToSetup, onToggleLog, phaseTransition, resultChange }: {
   turnNumber: number;
   phase: GamePhase;
   currentPlayerId: PlayerId;
@@ -68,6 +68,7 @@ const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturn
   onReturnToSetup: () => void;
   onToggleLog: () => void;
   phaseTransition?: boolean;
+  resultChange?: boolean;
 }) => {
   const currentPhase = PHASE_DATA[phase];
   const currentPlayerName = currentPlayerId === 'player1' ? 'あなた' : '相手';
@@ -110,6 +111,11 @@ const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturn
           ログ {isLogVisible ? '非表示' : '表示'}
         </button>
       </div>
+      {resultChange && (
+        <div className="mt-2 text-center text-2xl font-bold text-yellow-300 animate-pulse drop-shadow">
+          ゲーム終了！
+        </div>
+      )}
     </div>
   );
 };
@@ -231,40 +237,48 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
 /**
  * PlayerArea - プレイヤーエリア部分
  */
-const StatusDisplay = ({ icon: Icon, label, value, colorClassName = 'text-white', sizeClassName = 'text-lg', iconSize = 18 }: {
+const StatusDisplay = ({ icon: Icon, label, value, colorClassName = 'text-white', sizeClassName = 'text-lg', iconSize = 18, diff, diffClassName }: {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   value: string | number;
   colorClassName?: string;
   sizeClassName?: string;
   iconSize?: number;
+  diff?: number;
+  diffClassName?: string;
 }) => (
   <div className="text-center">
     <div className="text-sm text-gray-400">{label}</div>
     <div className={`flex items-center justify-center space-x-1 font-bold ${sizeClassName} ${colorClassName}`}>
       <Icon size={iconSize} className="inline-block" />
       <span>{value}</span>
+      {typeof diff === 'number' && diff !== 0 && (
+        <span className={`ml-2 text-sm ${diffClassName ?? (diff > 0 ? 'text-green-300' : 'text-red-400')} animate-bounce`}>{diff > 0 ? `+${diff}` : diff}</span>
+      )}
     </div>
   </div>
 );
 
-const PlayerStatus = ({ player, energyLimit, isOpponent }: { player: PlayerState; energyLimit: number; isOpponent: boolean }) => (
+const PlayerStatus = ({ player, energyLimit, isOpponent, lifePulseDiff, energyPulseDiff }: { player: PlayerState; energyLimit: number; isOpponent: boolean; lifePulseDiff?: number; energyPulseDiff?: number }) => (
   <div className="flex items-center space-x-6">
     <StatusDisplay 
       icon={Heart} 
       label="ライフ" 
       value={player.life} 
-      colorClassName={player.life <= 5 ? 'text-red-400' : 'text-green-400'}
+      colorClassName={lifePulseDiff ? `${lifePulseDiff < 0 ? 'text-red-400' : 'text-green-200'} animate-pulse` : player.life <= 5 ? 'text-red-400' : 'text-green-400'}
       sizeClassName="text-2xl"
       iconSize={22}
+      diff={lifePulseDiff}
     />
     <StatusDisplay 
       icon={Zap} 
       label="エネルギー" 
       value={`${player.energy}/${energyLimit}`} 
-      colorClassName="text-blue-400"
+      colorClassName={energyPulseDiff ? 'text-blue-200 animate-pulse' : 'text-blue-400'}
       sizeClassName="text-xl"
       iconSize={20}
+      diff={energyPulseDiff}
+      diffClassName="text-blue-300"
     />
     <StatusDisplay 
       icon={Layers} 
@@ -309,12 +323,14 @@ const PlayerInfo = ({ player, isOpponent }: { player: PlayerState; isOpponent: b
   );
 };
 
-const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getCardAnimationState }: {
+const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getCardAnimationState, lifePulse, energyPulse }: {
   player: PlayerState;
   energyLimit: number;
   isOpponent: boolean;
   currentAttackAction?: GameAction | null;
   getCardAnimationState?: (cardId: string) => CardAnimationState;
+  lifePulse?: number;
+  energyPulse?: number;
 }) => {
   // 攻撃状態を判定するヘルパー関数（統合型対応）
   const getCardAttackState = (cardId: string): CardAnimationState => {
@@ -338,7 +354,13 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
   const playerInfo = (
     <div className="flex items-center justify-between mb-4">
       <PlayerInfo player={player} isOpponent={isOpponent} />
-      <PlayerStatus player={player} energyLimit={energyLimit} isOpponent={isOpponent} />
+      <PlayerStatus
+        player={player}
+        energyLimit={energyLimit}
+        isOpponent={isOpponent}
+        lifePulseDiff={lifePulse}
+        energyPulseDiff={energyPulse}
+      />
     </div>
   );
 
@@ -505,6 +527,18 @@ export default function GameBoard({
     effectState,
   } = useGameEffects(displayState);
 
+  const getPulseDiff = (pulses: Array<{ playerId: PlayerId; diff: number }>, playerId: PlayerId) => {
+    const matches = pulses.filter((pulse) => pulse.playerId === playerId);
+    if (matches.length === 0) return undefined;
+    const total = matches.reduce((sum, entry) => sum + entry.diff, 0);
+    return total !== 0 ? total : undefined;
+  };
+
+  const player1LifePulse = getPulseDiff(effectState.lifePulse, 'player1');
+  const player2LifePulse = getPulseDiff(effectState.lifePulse, 'player2');
+  const player1EnergyPulse = getPulseDiff(effectState.energyPulse, 'player1');
+  const player2EnergyPulse = getPulseDiff(effectState.energyPulse, 'player2');
+
   const calculateTurnFromSequence = (gs: GameState, targetSequence: number): number => {
     if (targetSequence <= 0) return 1;
     let turnNumber = 1;
@@ -541,6 +575,7 @@ export default function GameBoard({
         currentPlayerId={displayState.currentPlayer}
         isLogVisible={showLog}
         onReturnToSetup={onReturnToSetup}
+        resultChange={effectState.resultChange}
         onToggleLog={() => setShowLog(!showLog)}
         phaseTransition={effectState.phaseTransition}
       />
@@ -553,6 +588,8 @@ export default function GameBoard({
               player={displayState.players.player2} 
               energyLimit={currentEnergyLimit} 
               isOpponent={true}
+              lifePulse={player2LifePulse}
+              energyPulse={player2EnergyPulse}
               currentAttackAction={currentAttackAction}
               getCardAnimationState={getCardAnimationState}
             />
@@ -561,6 +598,8 @@ export default function GameBoard({
               player={displayState.players.player1} 
               energyLimit={currentEnergyLimit} 
               isOpponent={false}
+              lifePulse={player1LifePulse}
+              energyPulse={player1EnergyPulse}
               currentAttackAction={currentAttackAction}
               getCardAnimationState={getCardAnimationState}
             />
