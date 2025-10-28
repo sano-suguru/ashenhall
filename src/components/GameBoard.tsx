@@ -488,9 +488,18 @@ const INTERNAL_LOG_TYPES: GameAction['type'][] = [
 
 const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: GameState }) => {
   // 内部処理ログをフィルタリング
-  const visibleActions = actions.filter(
-    (action) => !INTERNAL_LOG_TYPES.includes(action.type)
-  );
+  const visibleActions = actions.filter((action) => {
+    // 内部処理ログを除外
+    if (INTERNAL_LOG_TYPES.includes(action.type)) return false;
+    
+    // phase_change: ターン開始（toPhase='draw'）のみ表示
+    // 理由: 他のフェーズ遷移は召喚/攻撃ログから推測可能
+    if (action.type === 'phase_change') {
+      return action.data.toPhase === 'draw';
+    }
+    
+    return true;
+  });
 
   return (
     <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 max-h-40 overflow-y-auto">
