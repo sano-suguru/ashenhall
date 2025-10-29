@@ -13,12 +13,12 @@ interface TurnContext {
 
 function determineTurnSignificance(context: TurnContext): string | null {
   const totalDamage = context.player1Damage + context.player2Damage;
-  
+
   if (totalDamage >= 8) return '大ダメージターン';
   if (totalDamage >= 4) return '中ダメージターン';
   if (context.player1LifeAfter <= 5 || context.player2LifeAfter <= 5) return '危険ライフ';
   if (context.turnNumber <= 3 && totalDamage > 0) return '初回攻撃';
-  
+
   return null;
 }
 
@@ -44,7 +44,7 @@ export function loadStats(): LocalStats {
     const statsJson = localStorage.getItem(STATS_STORAGE_KEY);
     return statsJson ? JSON.parse(statsJson) : initialStats;
   } catch (error) {
-    console.error("Failed to load stats:", error);
+    console.error('Failed to load stats:', error);
     return initialStats;
   }
 }
@@ -54,7 +54,7 @@ export function saveStats(stats: LocalStats) {
     const statsJson = JSON.stringify(stats);
     localStorage.setItem(STATS_STORAGE_KEY, statsJson);
   } catch (error) {
-    console.error("Failed to save stats:", error);
+    console.error('Failed to save stats:', error);
   }
 }
 
@@ -71,12 +71,11 @@ export function updateStatsWithGameResult(stats: LocalStats, gameState: GameStat
     newStats.totalWins += 1;
     newStats.factionStats[playerFaction].wins += 1;
   }
-  
+
   newStats.lastPlayed = new Date().toISOString();
 
   return newStats;
 }
-
 
 // --- Battle Log Analysis ---
 
@@ -97,9 +96,9 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
   const summaries: TurnSummary[] = [];
   let currentPlayer1Life = GAME_CONSTANTS.INITIAL_LIFE;
   let currentPlayer2Life = GAME_CONSTANTS.INITIAL_LIFE;
-  
+
   const turnGroups: Record<number, GameAction[]> = {};
-  gameState.actionLog.forEach(action => {
+  gameState.actionLog.forEach((action) => {
     const turnNumber = getTurnNumberForAction(action, gameState);
     if (!turnGroups[turnNumber]) turnGroups[turnNumber] = [];
     turnGroups[turnNumber].push(action);
@@ -114,8 +113,11 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
       let player1Damage = 0;
       let player2Damage = 0;
 
-      actions.forEach(action => {
-        if (action.type === 'card_attack' && (action.data.targetId === 'player1' || action.data.targetId === 'player2')) {
+      actions.forEach((action) => {
+        if (
+          action.type === 'card_attack' &&
+          (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+        ) {
           if (action.playerId === 'player1') {
             player2Damage += action.data.damage;
           } else {
@@ -165,4 +167,3 @@ export function calculateTurnSummaries(gameState: GameState): TurnSummary[] {
 
   return summaries;
 }
-

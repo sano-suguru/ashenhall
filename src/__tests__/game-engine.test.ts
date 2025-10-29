@@ -1,6 +1,6 @@
 /**
  * Ashenhall ゲームエンジン テスト
- * 
+ *
  * このテストファイル自体がゲーム仕様書として機能する：
  * - 各テストケースが期待される動作を明示
  * - 失敗した場合、仕様との差異が即座に判明
@@ -8,21 +8,17 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import {
-  createInitialGameState,
-  executeFullGame,
-  processGameStep,
-} from '@/lib/game-engine/core';
+import { createInitialGameState, executeFullGame, processGameStep } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { GAME_CONSTANTS } from '@/types/game';
 import type { Card, Faction, GameState } from '@/types/game';
-import { 
-  runMultipleGuardSelectionTest, 
+import {
+  runMultipleGuardSelectionTest,
   testDirectAttackWhenFieldEmpty,
   setupNoGuardBattleScenario,
   placeCreatureOnField,
   executeBattlePhaseCompletely,
-  verifyNoGuardAttackResult
+  verifyNoGuardAttackResult,
 } from '@/test-helpers/battle-test-helpers';
 import { findAndCreateCreature } from '@/test-helpers/card-test-helpers';
 
@@ -37,14 +33,18 @@ describe('Ashenhall ゲームエンジン', () => {
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
     const availableCards = necromancerCards.slice(0, 4); // 最初の4種類のカードを使用
-    
+
     // 各カードを5枚ずつ（20枚デッキ）
-    availableCards.forEach(card => {
+    availableCards.forEach((card) => {
       for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
+        deck.push({
+          ...card,
+          templateId: `${card.templateId}_${i}`,
+          instanceId: `${card.templateId}_${i}`,
+        });
       }
     });
-    
+
     return deck;
   };
 
@@ -52,7 +52,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('正しい初期状態が作成される', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const gameState = createInitialGameState(
         testGameId,
         deck1,
@@ -104,7 +104,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('決定論的乱数による一貫した結果', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       // 同じシードで複数回実行
       const gameState1 = createInitialGameState(
         testGameId,
@@ -114,7 +114,7 @@ describe('Ashenhall ゲームエンジン', () => {
         player2Faction,
         testSeed
       );
-      
+
       const gameState2 = createInitialGameState(
         testGameId,
         deck1,
@@ -126,7 +126,7 @@ describe('Ashenhall ゲームエンジン', () => {
 
       // 先攻プレイヤーが一致する（決定論的）
       expect(gameState1.currentPlayer).toBe(gameState2.currentPlayer);
-      
+
       // 手札の内容が一致する（シャッフル結果が決定論的）
       expect(gameState1.players.player1.hand).toEqual(gameState2.players.player1.hand);
       expect(gameState1.players.player2.hand).toEqual(gameState2.players.player2.hand);
@@ -137,7 +137,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('基本的なフェーズ進行', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       let gameState = createInitialGameState(
         testGameId,
         deck1,
@@ -154,10 +154,10 @@ describe('Ashenhall ゲームエンジン', () => {
 
       // フェーズが進行している
       expect(gameState.phase).not.toBe(initialPhase);
-      
+
       // まだゲームは終了していない
       expect(gameState.result).toBeUndefined();
-      
+
       // アクションログが増加している
       expect(gameState.actionLog.length).toBeGreaterThan(1);
     });
@@ -165,7 +165,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('エネルギーシステム - 毎ターンプラス1増加（上限8）', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       let gameState = createInitialGameState(
         testGameId,
         deck1,
@@ -185,17 +185,17 @@ describe('Ashenhall ゲームエンジン', () => {
 
       while (stepCount < maxSteps && !gameState.result) {
         stepCount++;
-        
+
         if (gameState.phase === 'energy') {
           const currentPlayerId = gameState.currentPlayer;
           const player = gameState.players[currentPlayerId];
           const maxEnergyBefore = player.maxEnergy;
-          
+
           gameState = processGameStep(gameState); // 新しい状態を取得
-          
+
           const updatedPlayer = gameState.players[currentPlayerId]; // 更新後のプレイヤー状態を取得
           const maxEnergyAfter = updatedPlayer.maxEnergy;
-          
+
           const expectedMaxEnergy = Math.min(maxEnergyBefore + 1, 8);
           expect(maxEnergyAfter).toBe(expectedMaxEnergy);
           expect(updatedPlayer.energy).toBe(expectedMaxEnergy);
@@ -204,17 +204,22 @@ describe('Ashenhall ゲームエンジン', () => {
           // energy フェーズで追加されたアクション差分抽出（直前状態は保持していないため末尾付近走査）
           // 仕様: max 増加あり -> energy_update -> energy_refill, 無し -> energy_refill のみ
           const tail = gameState.actionLog.slice(-5); // 直近数件を対象
-          const energyRelated = tail.filter(a => a.type === 'energy_update' || a.type === 'energy_refill');
+          const energyRelated = tail.filter(
+            (a) => a.type === 'energy_update' || a.type === 'energy_refill'
+          );
           if (maxEnergyAfter > maxEnergyBefore) {
             expect(energyRelated.length).toBeGreaterThanOrEqual(2);
             expect(energyRelated[0].type).toBe('energy_update');
             expect(energyRelated[1].type).toBe('energy_refill');
           } else {
-            expect(energyRelated.some(a => a.type === 'energy_refill')).toBe(true);
+            expect(energyRelated.some((a) => a.type === 'energy_refill')).toBe(true);
           }
-          
+
           // 両プレイヤーが上限に達したら終了
-          if (gameState.players.player1.maxEnergy >= 8 && gameState.players.player2.maxEnergy >= 8) {
+          if (
+            gameState.players.player1.maxEnergy >= 8 &&
+            gameState.players.player2.maxEnergy >= 8
+          ) {
             break;
           }
         } else {
@@ -232,7 +237,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('ゲームが正常に完了する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const finalGameState = executeFullGame(
         testGameId,
         deck1,
@@ -250,19 +255,32 @@ describe('Ashenhall ゲームエンジン', () => {
 
       // 勝者が決定している（引き分けまたはどちらかの勝利）
       expect(['player1', 'player2', null]).toContain(finalGameState.result!.winner);
-      
+
       // 終了理由が設定されている
       expect(['life_zero', 'timeout']).toContain(finalGameState.result!.reason);
 
       // アクションログが記録されている
       expect(finalGameState.actionLog.length).toBeGreaterThan(1);
-      
+
       // 各アクションが適切な形式である
       finalGameState.actionLog.forEach((action, index) => {
         expect(action.sequence).toBe(index);
         expect(['player1', 'player2']).toContain(action.playerId);
-    const allowed = new Set(['card_play','card_attack','combat_stage','effect_trigger','phase_change','creature_destroyed','trigger_event','energy_update','keyword_trigger','card_draw','energy_refill','end_stage']);
-    expect(allowed.has(action.type)).toBe(true);
+        const allowed = new Set([
+          'card_play',
+          'card_attack',
+          'combat_stage',
+          'effect_trigger',
+          'phase_change',
+          'creature_destroyed',
+          'trigger_event',
+          'energy_update',
+          'keyword_trigger',
+          'card_draw',
+          'energy_refill',
+          'end_stage',
+        ]);
+        expect(allowed.has(action.type)).toBe(true);
         expect(action.timestamp).toBeGreaterThan(0);
         expect(action.data).toBeDefined();
       });
@@ -271,7 +289,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('決定論的な結果', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       // 同じ条件で2回実行
       const result1 = executeFullGame(
         testGameId,
@@ -281,7 +299,7 @@ describe('Ashenhall ゲームエンジン', () => {
         player2Faction,
         testSeed
       );
-      
+
       const result2 = executeFullGame(
         testGameId,
         deck1,
@@ -295,7 +313,7 @@ describe('Ashenhall ゲームエンジン', () => {
       expect(result1.result!.winner).toBe(result2.result!.winner);
       expect(result1.result!.reason).toBe(result2.result!.reason);
       expect(result1.result!.totalTurns).toBe(result2.result!.totalTurns);
-      
+
       // アクションログの長さと内容が一致する（タイムスタンプ除く）
       expect(result1.actionLog.length).toBe(result2.actionLog.length);
       result1.actionLog.forEach((action1, index) => {
@@ -311,7 +329,7 @@ describe('Ashenhall ゲームエンジン', () => {
     test('異なるシードで異なる結果', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const result1 = executeFullGame(
         testGameId,
         deck1,
@@ -320,7 +338,7 @@ describe('Ashenhall ゲームエンジン', () => {
         player2Faction,
         'seed-1'
       );
-      
+
       const result2 = executeFullGame(
         testGameId,
         deck1,
@@ -331,11 +349,11 @@ describe('Ashenhall ゲームエンジン', () => {
       );
 
       // 少なくとも何らかの違いがある（完全に一致する可能性は低い）
-      const isDifferent = 
+      const isDifferent =
         result1.result!.winner !== result2.result!.winner ||
         result1.result!.totalTurns !== result2.result!.totalTurns ||
         result1.actionLog.length !== result2.actionLog.length;
-      
+
       expect(isDifferent).toBe(true);
     });
   });
@@ -347,7 +365,11 @@ describe('Ashenhall ゲームエンジン', () => {
 
       // on_damage_takenを持つカードと、攻撃用のカードを準備
       const thornOrc = findAndCreateCreature(berserkerCards, 'ber_thorn_orc', 'Thorn Orc');
-      const skeletonSwordsman = findAndCreateCreature(necromancerCards, 'necro_skeleton', 'Skeleton Swordsman');
+      const skeletonSwordsman = findAndCreateCreature(
+        necromancerCards,
+        'necro_skeleton',
+        'Skeleton Swordsman'
+      );
 
       let gameState = createInitialGameState(
         testGameId,
@@ -368,8 +390,17 @@ describe('Ashenhall ゲームエンジン', () => {
         instanceId: 'necro_skeleton-test',
         owner: 'player1',
         currentHealth: skeletonSwordsman.health,
-        attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-        summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
       });
       gameState.players.player2.field.push({
         ...thornOrc,
@@ -377,8 +408,17 @@ describe('Ashenhall ゲームエンジン', () => {
         instanceId: 'ber_thorn_orc-test',
         owner: 'player2',
         currentHealth: thornOrc.health,
-        attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-        summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
       });
 
       // player1のターンで戦闘フェーズまで進める（player1のskeletonがplayer2のthorn_orcを攻撃）
@@ -394,8 +434,10 @@ describe('Ashenhall ゲームエンジン', () => {
       }
 
       // ログを確認
-      const triggerEvent = gameState.actionLog.find(a => a.type === 'trigger_event' && a.data.triggerType === 'on_damage_taken');
-      const effectTrigger = gameState.actionLog.find(a => a.type === 'effect_trigger');
+      const triggerEvent = gameState.actionLog.find(
+        (a) => a.type === 'trigger_event' && a.data.triggerType === 'on_damage_taken'
+      );
+      const effectTrigger = gameState.actionLog.find((a) => a.type === 'effect_trigger');
 
       // トリガーイベントが記録されていることを確認
       expect(triggerEvent).toBeDefined();
@@ -408,676 +450,1004 @@ describe('Ashenhall ゲームエンジン', () => {
       if (effectTrigger && triggerEvent) {
         expect(triggerEvent.sequence).toBeLessThan(effectTrigger.sequence);
       }
+    });
   });
-});
 
-describe('守護キーワード処理テスト', () => {
-  const testGameId = 'guard-test';
-  const testSeed = 'guard-test-seed';
-  const player1Faction: Faction = 'berserker';
-  const player2Faction: Faction = 'knight';
+  describe('守護キーワード処理テスト', () => {
+    const testGameId = 'guard-test';
+    const testSeed = 'guard-test-seed';
+    const player1Faction: Faction = 'berserker';
+    const player2Faction: Faction = 'knight';
 
-  const createTestDeck = (): Card[] => {
-    const deck: Card[] = [];
-    const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
-      for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
-      }
-    });
-    return deck;
-  };
+    const createTestDeck = (): Card[] => {
+      const deck: Card[] = [];
+      const availableCards = necromancerCards.slice(0, 4);
+      availableCards.forEach((card) => {
+        for (let i = 0; i < 5; i++) {
+          deck.push({
+            ...card,
+            templateId: `${card.templateId}_${i}`,
+            instanceId: `${card.templateId}_${i}`,
+          });
+        }
+      });
+      return deck;
+    };
 
-  test('守護がいる場合、攻撃者は必ず守護を攻撃する', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed);
-
-    // 攻撃者（攻撃力4）を配置
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_champion');
-    if (!attackerCard || attackerCard.type !== 'creature') {
-      throw new Error('攻撃者カードが見つかりません');
-    }
-
-    // 守護クリーチャー（攻撃力1、体力2）と通常クリーチャー（攻撃力2、体力1）を配置
-    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    const normalCard = necromancerCards.find(c => c.templateId === 'necro_wraith');
-    if (!guardCard || guardCard.type !== 'creature' || !normalCard || normalCard.type !== 'creature') {
-      throw new Error('守護・通常カードが見つかりません');
-    }
-
-    // player1（攻撃者）の場にカードを配置
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_champion-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0,
-      hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    // player2の場に守護と通常クリーチャーを配置
-    gameState.players.player2.field.push({
-      ...guardCard,
-      instanceId: 'necro_skeleton-guard-test',
-      keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
-      owner: 'player2', currentHealth: guardCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0,
-      hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-    gameState.players.player2.field.push({
-      ...normalCard,
-      instanceId: 'necro_wraith-normal-test',
-      owner: 'player2', currentHealth: normalCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 1,
-      hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialPlayer2Life = gameState.players.player2.life;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    // 守護が攻撃されていることを確認（プレイヤーは攻撃されていない）
-    expect(gameState.players.player2.life).toBe(initialPlayer2Life);
-    
-    // 守護クリーチャーが攻撃されたことをアクションログで確認
-    const attackActions = gameState.actionLog.filter(action => action.type === 'card_attack');
-    expect(attackActions.length).toBeGreaterThan(0);
-    
-    // 守護クリーチャーへの攻撃が記録されている
-    const guardAttack = attackActions.find(action => 
-      action.type === 'card_attack' && 
-      action.data.targetId !== 'player1' && action.data.targetId !== 'player2' &&
-      action.playerId === 'player1'
-    );
-    expect(guardAttack).toBeDefined();
-    
-    // 通常クリーチャーは攻撃されていない（守護クリーチャーのIDと異なることを確認）
-    const normalCreature = gameState.players.player2.field.find(c => !c.keywords.includes('guard'));
-    if (normalCreature) {
-      const normalAttack = attackActions.find(action => 
-        action.type === 'card_attack' && action.data.targetId === normalCreature.templateId
+    test('守護がいる場合、攻撃者は必ず守護を攻撃する', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        testSeed
       );
-      expect(normalAttack).toBeUndefined();
-    }
+
+      // 攻撃者（攻撃力4）を配置
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_champion');
+      if (!attackerCard || attackerCard.type !== 'creature') {
+        throw new Error('攻撃者カードが見つかりません');
+      }
+
+      // 守護クリーチャー（攻撃力1、体力2）と通常クリーチャー（攻撃力2、体力1）を配置
+      const guardCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      const normalCard = necromancerCards.find((c) => c.templateId === 'necro_wraith');
+      if (
+        !guardCard ||
+        guardCard.type !== 'creature' ||
+        !normalCard ||
+        normalCard.type !== 'creature'
+      ) {
+        throw new Error('守護・通常カードが見つかりません');
+      }
+
+      // player1（攻撃者）の場にカードを配置
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_champion-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      // player2の場に守護と通常クリーチャーを配置
+      gameState.players.player2.field.push({
+        ...guardCard,
+        instanceId: 'necro_skeleton-guard-test',
+        keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
+        owner: 'player2',
+        currentHealth: guardCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+      gameState.players.player2.field.push({
+        ...normalCard,
+        instanceId: 'necro_wraith-normal-test',
+        owner: 'player2',
+        currentHealth: normalCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 1,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialPlayer2Life = gameState.players.player2.life;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      // 守護が攻撃されていることを確認（プレイヤーは攻撃されていない）
+      expect(gameState.players.player2.life).toBe(initialPlayer2Life);
+
+      // 守護クリーチャーが攻撃されたことをアクションログで確認
+      const attackActions = gameState.actionLog.filter((action) => action.type === 'card_attack');
+      expect(attackActions.length).toBeGreaterThan(0);
+
+      // 守護クリーチャーへの攻撃が記録されている
+      const guardAttack = attackActions.find(
+        (action) =>
+          action.type === 'card_attack' &&
+          action.data.targetId !== 'player1' &&
+          action.data.targetId !== 'player2' &&
+          action.playerId === 'player1'
+      );
+      expect(guardAttack).toBeDefined();
+
+      // 通常クリーチャーは攻撃されていない（守護クリーチャーのIDと異なることを確認）
+      const normalCreature = gameState.players.player2.field.find(
+        (c) => !c.keywords.includes('guard')
+      );
+      if (normalCreature) {
+        const normalAttack = attackActions.find(
+          (action) =>
+            action.type === 'card_attack' && action.data.targetId === normalCreature.templateId
+        );
+        expect(normalAttack).toBeUndefined();
+      }
+    });
+
+    test('守護がいない場合、プレイヤーまたは通常クリーチャーを攻撃できる', () => {
+      // 設定を準備
+      const config = {
+        testGameId,
+        testSeed,
+        player1Faction,
+        player2Faction,
+      };
+
+      // シナリオセットアップ
+      const setup = setupNoGuardBattleScenario(config);
+
+      // クリーチャーを配置
+      placeCreatureOnField(setup.gameState, 'player1', setup.attackerCard);
+      placeCreatureOnField(setup.gameState, 'player2', setup.normalCards[0]);
+
+      // 初期値を記録
+      const initialPlayer2Life = setup.gameState.players.player2.life;
+      const initialNormalHealth = setup.gameState.players.player2.field[0].currentHealth;
+
+      // 戦闘実行
+      const finalState = executeBattlePhaseCompletely(setup.gameState);
+
+      // 結果検証
+      const verificationResult = verifyNoGuardAttackResult(
+        finalState,
+        initialPlayer2Life,
+        initialNormalHealth
+      );
+      expect(verificationResult.isValidResult).toBe(true);
+    });
+
+    test('沈黙状態の守護は守護効果を発揮しない', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        testSeed + '_silenced'
+      );
+
+      // 攻撃者を配置
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_warrior');
+      if (!attackerCard || attackerCard.type !== 'creature') {
+        throw new Error('攻撃者カードが見つかりません');
+      }
+
+      // 沈黙状態の守護クリーチャーを配置
+      const guardCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      if (!guardCard || guardCard.type !== 'creature') {
+        throw new Error('守護カードが見つかりません');
+      }
+
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_warrior-attacker-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.players.player2.field.push({
+        ...guardCard,
+        instanceId: 'necro_skeleton-silenced-guard-test',
+        keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
+        owner: 'player2',
+        currentHealth: guardCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: true, // 沈黙状態
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialPlayer2Life = gameState.players.player2.life;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      // 沈黙状態の守護は効果を発揮しないため、プレイヤーが攻撃される可能性がある
+      const finalPlayer2Life = gameState.players.player2.life;
+
+      // プレイヤーまたは沈黙状態の守護のいずれかが攻撃されている
+      // 沈黙状態なので守護効果は発動せず、攻撃対象が自由に選択される
+      expect(finalPlayer2Life <= initialPlayer2Life).toBe(true);
+    });
+
+    test('体力0の守護は守護効果を発揮しない', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        testSeed + '_dead_guard'
+      );
+
+      // 攻撃者を配置
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_warrior');
+      if (!attackerCard || attackerCard.type !== 'creature') {
+        throw new Error('攻撃者カードが見つかりません');
+      }
+
+      // 体力0の守護クリーチャーを配置
+      const guardCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      if (!guardCard || guardCard.type !== 'creature') {
+        throw new Error('守護カードが見つかりません');
+      }
+
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_warrior-attacker-dead-guard-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.players.player2.field.push({
+        ...guardCard,
+        instanceId: 'necro_skeleton-dead-guard-test',
+        keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
+        owner: 'player2',
+        currentHealth: 0, // 体力0
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialPlayer2Life = gameState.players.player2.life;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      // 体力0の守護は効果を発揮しないため、プレイヤーが攻撃される
+      const finalPlayer2Life = gameState.players.player2.life;
+      expect(finalPlayer2Life).toBeLessThan(initialPlayer2Life);
+
+      // プレイヤーへの直接攻撃がログに記録されている
+      const playerAttacks = gameState.actionLog.filter(
+        (action) => action.type === 'card_attack' && action.data.targetId === 'player2'
+      );
+      expect(playerAttacks.length).toBeGreaterThan(0);
+    });
+
+    test('複数の守護がいる場合、その中からランダムに選択される', () => {
+      // 設定を準備
+      const config = {
+        testGameId,
+        testSeed,
+        player1Faction,
+        player2Faction,
+      };
+
+      // ヘルパー関数を使用して複数回の守護選択テストを実行
+      const targetCounts = runMultipleGuardSelectionTest(5, config);
+
+      // 複数の異なる守護が選択されていることを確認（完全にランダムなので、すべて同じになる可能性もあるが）
+      expect(targetCounts.size).toBeGreaterThanOrEqual(1);
+
+      // 少なくとも攻撃が発生していることを確認
+      const totalAttacks = Array.from(targetCounts.values()).reduce((sum, count) => sum + count, 0);
+      expect(totalAttacks).toBeGreaterThan(0);
+    });
   });
 
-  test('守護がいない場合、プレイヤーまたは通常クリーチャーを攻撃できる', () => {
-    // 設定を準備
-    const config = {
-      testGameId,
-      testSeed,
-      player1Faction,
-      player2Faction
+  describe('Card Keyword and Effect Tests', () => {
+    const testGameId = 'test-game-001';
+    const player1Faction: Faction = 'berserker';
+    const player2Faction: Faction = 'necromancer';
+
+    const createTestDeck = (): Card[] => {
+      const deck: Card[] = [];
+      const availableCards = necromancerCards.slice(0, 4);
+      availableCards.forEach((card) => {
+        for (let i = 0; i < 5; i++) {
+          deck.push({
+            ...card,
+            templateId: `${card.templateId}_${i}`,
+            instanceId: `${card.templateId}_${i}`,
+          });
+        }
+      });
+      return deck;
     };
 
-    // シナリオセットアップ
-    const setup = setupNoGuardBattleScenario(config);
+    test('Trample keyword should deal excess damage to the player', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'trample-test'
+      );
 
-    // クリーチャーを配置
-    placeCreatureOnField(setup.gameState, 'player1', setup.attackerCard);
-    placeCreatureOnField(setup.gameState, 'player2', setup.normalCards[0]);
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      const defenderCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      if (
+        !attackerCard ||
+        attackerCard.type !== 'creature' ||
+        !defenderCard ||
+        defenderCard.type !== 'creature'
+      ) {
+        throw new Error('Test cards not found');
+      }
 
-    // 初期値を記録
-    const initialPlayer2Life = setup.gameState.players.player2.life;
-    const initialNormalHealth = setup.gameState.players.player2.field[0].currentHealth;
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-trample-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+      gameState.players.player2.field.push({
+        ...defenderCard,
+        instanceId: 'necro_skeleton-defender-test',
+        keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
+        owner: 'player2',
+        currentHealth: defenderCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
 
-    // 戦闘実行
-    const finalState = executeBattlePhaseCompletely(setup.gameState);
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
 
-    // 結果検証
-    const verificationResult = verifyNoGuardAttackResult(finalState, initialPlayer2Life, initialNormalHealth);
-    expect(verificationResult.isValidResult).toBe(true);
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+      const defenderHealth = defenderCard.health;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      const expectedDamage = attackerPower - defenderHealth;
+      expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
+    });
+
+    test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-test'
+      );
+
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
+
+      gameState.players.player1.life = 10;
+      gameState.players.player2.life = 15; // player1's life is lower
+
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-ready-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack twice
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower * 2);
+    });
+
+    test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-no-trigger-test'
+      );
+
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
+
+      gameState.players.player1.life = 15;
+      gameState.players.player2.life = 10; // player1's life is higher
+
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-no-ready-test',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack once
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
+    });
   });
 
-  test('沈黙状態の守護は守護効果を発揮しない', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed + '_silenced');
+  describe('Card Keyword and Effect Tests', () => {
+    const testGameId = 'test-game-002';
+    const player1Faction: Faction = 'berserker';
+    const player2Faction: Faction = 'necromancer';
 
-    // 攻撃者を配置
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
-    if (!attackerCard || attackerCard.type !== 'creature') {
-      throw new Error('攻撃者カードが見つかりません');
-    }
-
-    // 沈黙状態の守護クリーチャーを配置
-    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    if (!guardCard || guardCard.type !== 'creature') {
-      throw new Error('守護カードが見つかりません');
-    }
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_warrior-attacker-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0,
-      hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.players.player2.field.push({
-      ...guardCard,
-      instanceId: 'necro_skeleton-silenced-guard-test',
-      keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
-      owner: 'player2', currentHealth: guardCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0,
-      hasAttacked: false, isStealthed: false, isSilenced: true, // 沈黙状態
-      statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialPlayer2Life = gameState.players.player2.life;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    // 沈黙状態の守護は効果を発揮しないため、プレイヤーが攻撃される可能性がある
-    const finalPlayer2Life = gameState.players.player2.life;
-    
-    // プレイヤーまたは沈黙状態の守護のいずれかが攻撃されている
-    // 沈黙状態なので守護効果は発動せず、攻撃対象が自由に選択される
-    expect(finalPlayer2Life <= initialPlayer2Life).toBe(true);
-  });
-
-  test('体力0の守護は守護効果を発揮しない', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed + '_dead_guard');
-
-    // 攻撃者を配置
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
-    if (!attackerCard || attackerCard.type !== 'creature') {
-      throw new Error('攻撃者カードが見つかりません');
-    }
-
-    // 体力0の守護クリーチャーを配置
-    const guardCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    if (!guardCard || guardCard.type !== 'creature') {
-      throw new Error('守護カードが見つかりません');
-    }
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_warrior-attacker-dead-guard-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0,
-      passiveAttackModifier: 0, passiveHealthModifier: 0, summonTurn: 0, position: 0,
-      hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.players.player2.field.push({
-      ...guardCard,
-      instanceId: 'necro_skeleton-dead-guard-test',
-      keywords: [...guardCard.keywords, 'guard'], // 守護キーワードを追加
-      owner: 'player2', currentHealth: 0, // 体力0
-      attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false,
-      statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialPlayer2Life = gameState.players.player2.life;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    // 体力0の守護は効果を発揮しないため、プレイヤーが攻撃される
-    const finalPlayer2Life = gameState.players.player2.life;
-    expect(finalPlayer2Life).toBeLessThan(initialPlayer2Life);
-
-    // プレイヤーへの直接攻撃がログに記録されている
-    const playerAttacks = gameState.actionLog.filter(action => 
-      action.type === 'card_attack' && action.data.targetId === 'player2'
-    );
-    expect(playerAttacks.length).toBeGreaterThan(0);
-  });
-
-  test('複数の守護がいる場合、その中からランダムに選択される', () => {
-    // 設定を準備
-    const config = {
-      testGameId,
-      testSeed,
-      player1Faction,
-      player2Faction
+    const createTestDeck = (): Card[] => {
+      const deck: Card[] = [];
+      const availableCards = necromancerCards.slice(0, 4);
+      availableCards.forEach((card) => {
+        for (let i = 0; i < 5; i++) {
+          deck.push({
+            ...card,
+            templateId: `${card.templateId}_${i}`,
+            instanceId: `${card.templateId}_${i}`,
+          });
+        }
+      });
+      return deck;
     };
 
-    // ヘルパー関数を使用して複数回の守護選択テストを実行
-    const targetCounts = runMultipleGuardSelectionTest(5, config);
+    test('Trample keyword should deal excess damage to the player', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'trample-test-2'
+      );
 
-    // 複数の異なる守護が選択されていることを確認（完全にランダムなので、すべて同じになる可能性もあるが）
-    expect(targetCounts.size).toBeGreaterThanOrEqual(1);
-    
-    // 少なくとも攻撃が発生していることを確認
-    const totalAttacks = Array.from(targetCounts.values()).reduce((sum, count) => sum + count, 0);
-    expect(totalAttacks).toBeGreaterThan(0);
-  });
-});
-
-describe('Card Keyword and Effect Tests', () => {
-  const testGameId = 'test-game-001';
-  const player1Faction: Faction = 'berserker';
-  const player2Faction: Faction = 'necromancer';
-
-  const createTestDeck = (): Card[] => {
-    const deck: Card[] = [];
-    const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
-      for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      const defenderCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      if (
+        !attackerCard ||
+        attackerCard.type !== 'creature' ||
+        !defenderCard ||
+        defenderCard.type !== 'creature'
+      ) {
+        throw new Error('Test cards not found');
       }
-    });
-    return deck;
-  };
 
-  test('Trample keyword should deal excess damage to the player', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test');
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-trample-test-2',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+      gameState.players.player2.field.push({
+        ...defenderCard,
+        instanceId: 'necro_skeleton-defender-test-2',
+        keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
+        owner: 'player2',
+        currentHealth: defenderCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
 
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
-      throw new Error('Test cards not found');
-    }
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
 
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-trample-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-    gameState.players.player2.field.push({
-      ...defenderCard,
-      instanceId: 'necro_skeleton-defender-test',
-      keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
-      owner: 'player2', currentHealth: defenderCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+      const defenderHealth = defenderCard.health;
 
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
+      gameState = processGameStep(gameState); // battle → battle_attack
 
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-    const defenderHealth = defenderCard.health;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    const finalOpponentLife = gameState.players.player2.life;
-    const expectedDamage = attackerPower - defenderHealth;
-    expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
-  });
-
-  test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test');
-
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
-
-    gameState.players.player1.life = 10;
-    gameState.players.player2.life = 15; // player1's life is lower
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-ready-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack twice
-    expect(finalOpponentLife).toBe(initialOpponentLife - (attackerPower * 2));
-  });
-
-  test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test');
-
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
-
-    gameState.players.player1.life = 15;
-    gameState.players.player2.life = 10; // player1's life is higher
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-no-ready-test',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack once
-    expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
-  });
-});
-
-describe('Card Keyword and Effect Tests', () => {
-  const testGameId = 'test-game-002';
-  const player1Faction: Faction = 'berserker';
-  const player2Faction: Faction = 'necromancer';
-
-  const createTestDeck = (): Card[] => {
-    const deck: Card[] = [];
-    const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
-      for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
       }
-    });
-    return deck;
-  };
 
-  test('Trample keyword should deal excess damage to the player', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test-2');
-
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
-      throw new Error('Test cards not found');
-    }
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-trample-test-2',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-    gameState.players.player2.field.push({
-      ...defenderCard,
-      instanceId: 'necro_skeleton-defender-test-2',
-      keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
-      owner: 'player2', currentHealth: defenderCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+      const finalOpponentLife = gameState.players.player2.life;
+      const expectedDamage = attackerPower - defenderHealth;
+      expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
     });
 
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
+    test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-test-2'
+      );
 
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-    const defenderHealth = defenderCard.health;
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
+      gameState.players.player1.life = 10;
+      gameState.players.player2.life = 15; // player1's life is lower
 
-    const finalOpponentLife = gameState.players.player2.life;
-    const expectedDamage = attackerPower - defenderHealth;
-    expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
-  });
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-ready-test-2',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
 
-  test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test-2');
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
 
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
 
-    gameState.players.player1.life = 10;
-    gameState.players.player2.life = 15; // player1's life is lower
+      gameState = processGameStep(gameState); // battle → battle_attack
 
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-ready-test-2',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack twice
-    expect(finalOpponentLife).toBe(initialOpponentLife - (attackerPower * 2));
-  });
-
-  test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test-2');
-
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
-
-    gameState.players.player1.life = 15;
-    gameState.players.player2.life = 10; // player1's life is higher
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-no-ready-test-2',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
-
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack once
-    expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
-  });
-});
-
-describe('Card Keyword and Effect Tests', () => {
-  const testGameId = 'test-game-003';
-  const player1Faction: Faction = 'berserker';
-  const player2Faction: Faction = 'necromancer';
-
-  const createTestDeck = (): Card[] => {
-    const deck: Card[] = [];
-    const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
-      for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
       }
-    });
-    return deck;
-  };
 
-  test('Trample keyword should deal excess damage to the player', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'trample-test-3');
-
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    const defenderCard = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-    if (!attackerCard || attackerCard.type !== 'creature' || !defenderCard || defenderCard.type !== 'creature') {
-      throw new Error('Test cards not found');
-    }
-
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-trample-test-3',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
-    });
-    gameState.players.player2.field.push({
-      ...defenderCard,
-      instanceId: 'necro_skeleton-defender-test-3',
-      keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
-      owner: 'player2', currentHealth: defenderCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack twice
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower * 2);
     });
 
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
+    test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-no-trigger-test-2'
+      );
 
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
-    const defenderHealth = defenderCard.health;
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
+      gameState.players.player1.life = 15;
+      gameState.players.player2.life = 10; // player1's life is higher
 
-    const finalOpponentLife = gameState.players.player2.life;
-    const expectedDamage = attackerPower - defenderHealth;
-    expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-no-ready-test-2',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack once
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
+    });
   });
 
-  test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-test-3');
+  describe('Card Keyword and Effect Tests', () => {
+    const testGameId = 'test-game-003';
+    const player1Faction: Faction = 'berserker';
+    const player2Faction: Faction = 'necromancer';
 
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
+    const createTestDeck = (): Card[] => {
+      const deck: Card[] = [];
+      const availableCards = necromancerCards.slice(0, 4);
+      availableCards.forEach((card) => {
+        for (let i = 0; i < 5; i++) {
+          deck.push({
+            ...card,
+            templateId: `${card.templateId}_${i}`,
+            instanceId: `${card.templateId}_${i}`,
+          });
+        }
+      });
+      return deck;
+    };
 
-    gameState.players.player1.life = 10;
-    gameState.players.player2.life = 15; // player1's life is lower
+    test('Trample keyword should deal excess damage to the player', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'trample-test-3'
+      );
 
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-ready-test-3',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      const defenderCard = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+      if (
+        !attackerCard ||
+        attackerCard.type !== 'creature' ||
+        !defenderCard ||
+        defenderCard.type !== 'creature'
+      ) {
+        throw new Error('Test cards not found');
+      }
+
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-trample-test-3',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+      gameState.players.player2.field.push({
+        ...defenderCard,
+        instanceId: 'necro_skeleton-defender-test-3',
+        keywords: [...defenderCard.keywords, 'guard'], // guardを追加して攻撃を強制
+        owner: 'player2',
+        currentHealth: defenderCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+      const defenderHealth = defenderCard.health;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      const expectedDamage = attackerPower - defenderHealth;
+      expect(finalOpponentLife).toBe(initialOpponentLife - expectedDamage);
     });
 
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
+    test('Ready effect (Desperate Berserker) should allow attacking twice when life is lower', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-test-3'
+      );
 
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
+      gameState.players.player1.life = 10;
+      gameState.players.player2.life = 15; // player1's life is lower
 
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack twice
-    expect(finalOpponentLife).toBe(initialOpponentLife - (attackerPower * 2));
-  });
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-ready-test-3',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
 
-  test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    let gameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, 'ready-no-trigger-test-3');
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
 
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_desperate_berserker');
-    if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
 
-    gameState.players.player1.life = 15;
-    gameState.players.player2.life = 10; // player1's life is higher
+      gameState = processGameStep(gameState); // battle → battle_attack
 
-    gameState.players.player1.field.push({
-      ...attackerCard,
-      instanceId: 'ber_desperate_berserker-no-ready-test-3',
-      owner: 'player1', currentHealth: attackerCard.health, attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-      summonTurn: 0, position: 0, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack twice
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower * 2);
     });
 
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
+    test('Ready effect (Desperate Berserker) should only attack once when life is higher', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      let gameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        'ready-no-trigger-test-3'
+      );
 
-    const initialOpponentLife = gameState.players.player2.life;
-    const attackerPower = attackerCard.attack;
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_desperate_berserker');
+      if (!attackerCard || attackerCard.type !== 'creature') throw new Error('Test card not found');
 
-    gameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (gameState.phase === 'battle_attack' && !gameState.result) {
-      gameState = processGameStep(gameState);
-    }
+      gameState.players.player1.life = 15;
+      gameState.players.player2.life = 10; // player1's life is higher
 
-    const finalOpponentLife = gameState.players.player2.life;
-    // Should attack once
-    expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
+      gameState.players.player1.field.push({
+        ...attackerCard,
+        instanceId: 'ber_desperate_berserker-no-ready-test-3',
+        owner: 'player1',
+        currentHealth: attackerCard.health,
+        attackModifier: 0,
+        healthModifier: 0,
+        passiveAttackModifier: 0,
+        passiveHealthModifier: 0,
+        summonTurn: 0,
+        position: 0,
+        hasAttacked: false,
+        isStealthed: false,
+        isSilenced: false,
+        statusEffects: [],
+        readiedThisTurn: false,
+      });
+
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      const initialOpponentLife = gameState.players.player2.life;
+      const attackerPower = attackerCard.attack;
+
+      gameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (gameState.phase === 'battle_attack' && !gameState.result) {
+        gameState = processGameStep(gameState);
+      }
+
+      const finalOpponentLife = gameState.players.player2.life;
+      // Should attack once
+      expect(finalOpponentLife).toBe(initialOpponentLife - attackerPower);
+    });
   });
-});
-
 
   describe('パフォーマンス要件', () => {
     test('1戦闘が5秒以内で完了する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const startTime = Date.now();
-      
+
       const finalGameState = executeFullGame(
         testGameId,
         deck1,
@@ -1086,12 +1456,12 @@ describe('Card Keyword and Effect Tests', () => {
         player2Faction,
         testSeed
       );
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       // 5秒（5000ms）以内で完了
       expect(executionTime).toBeLessThan(5000);
-      
+
       // ゲームが正常に完了している
       expect(finalGameState.result).toBeDefined();
     });
@@ -1101,7 +1471,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('無限ループ防止機能', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       // executeFullGameには内部的にmaxSteps制限がある
       const result = executeFullGame(
         testGameId,
@@ -1111,7 +1481,7 @@ describe('Card Keyword and Effect Tests', () => {
         player2Faction,
         testSeed
       );
-      
+
       // 必ず結果が返される（無限ループしない）
       expect(result.result).toBeDefined();
       expect(result.result!.totalTurns).toBeGreaterThan(0);
@@ -1122,7 +1492,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('エネルギーが十分な場合、エネルギー上限まで配置する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       let gameState = createInitialGameState(
         testGameId,
         deck1,
@@ -1134,33 +1504,33 @@ describe('Card Keyword and Effect Tests', () => {
 
       // ターン5まで進行させてエネルギーを十分に蓄積
       let maxDeploysInPhase = 0;
-      
+
       for (let step = 0; step < 200 && !gameState.result; step++) {
         const prevState = JSON.parse(JSON.stringify(gameState));
         gameState = processGameStep(gameState);
-        
+
         // 配置フェーズでの複数枚配置をチェック
         if (prevState.phase === 'deploy' && gameState.phase !== 'deploy') {
           const deployActionsInThisPhase = gameState.actionLog.filter(
-            action => action.type === 'card_play' && 
-            action.sequence > prevState.actionLog.length - 1
+            (action) =>
+              action.type === 'card_play' && action.sequence > prevState.actionLog.length - 1
           ).length;
-          
+
           maxDeploysInPhase = Math.max(maxDeploysInPhase, deployActionsInThisPhase);
-          
+
           // 複数枚配置が発生した場合をチェック
           if (deployActionsInThisPhase >= 2) {
             // 完全実装では場の上限（5枚）まで配置可能
             expect(deployActionsInThisPhase).toBeLessThanOrEqual(5);
           }
         }
-        
+
         // ターン7以降で十分なエネルギーがあることを確認
         if (gameState.turnNumber >= 7) {
           break;
         }
       }
-      
+
       // 複数枚配置が少なくとも一度は発生することを期待
       expect(gameState.turnNumber).toBeGreaterThanOrEqual(5);
     });
@@ -1168,7 +1538,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('エネルギー不足時は配置を適切に停止する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       let gameState = createInitialGameState(
         testGameId,
         deck1,
@@ -1182,14 +1552,14 @@ describe('Card Keyword and Effect Tests', () => {
       for (let step = 0; step < 20 && !gameState.result && gameState.turnNumber <= 2; step++) {
         const prevState = JSON.parse(JSON.stringify(gameState));
         gameState = processGameStep(gameState);
-        
+
         // 配置フェーズでの動作をチェック
         if (prevState.phase === 'deploy' && gameState.phase !== 'deploy') {
           const deployActions = gameState.actionLog.filter(
-            action => action.type === 'card_play' && 
-            action.sequence > prevState.actionLog.length - 1
+            (action) =>
+              action.type === 'card_play' && action.sequence > prevState.actionLog.length - 1
           );
-          
+
           // エネルギーが低い場合は配置枚数も制限される
           if (prevState.turnNumber <= 2) {
             expect(deployActions.length).toBeLessThanOrEqual(prevState.turnNumber);
@@ -1201,7 +1571,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('場が満杯時は配置を停止する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const finalGameState = executeFullGame(
         testGameId,
         deck1,
@@ -1212,13 +1582,15 @@ describe('Card Keyword and Effect Tests', () => {
       );
 
       // ゲーム中に場の制限が適切に守られていることを確認
-      const cardPlayActions = finalGameState.actionLog.filter(action => action.type === 'card_play');
-      
+      const cardPlayActions = finalGameState.actionLog.filter(
+        (action) => action.type === 'card_play'
+      );
+
       // 各配置アクションが場の制限内で実行されていることを確認
-      cardPlayActions.forEach(action => {
+      cardPlayActions.forEach((action) => {
         expect(action.data.position).toBeLessThan(5); // 場の上限は5
       });
-      
+
       // 最終的にゲームが完了していることを確認
       expect(finalGameState.result).toBeDefined();
     });
@@ -1226,7 +1598,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('複数配置時の効果発動が正常に動作する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const finalGameState = executeFullGame(
         testGameId,
         deck1,
@@ -1237,22 +1609,32 @@ describe('Card Keyword and Effect Tests', () => {
       );
 
       // カード配置と効果発動のアクションログを分析
-      const cardPlayActions = finalGameState.actionLog.filter(action => action.type === 'card_play');
-      const effectTriggerActions = finalGameState.actionLog.filter(action => action.type === 'effect_trigger');
+      const cardPlayActions = finalGameState.actionLog.filter(
+        (action) => action.type === 'card_play'
+      );
+      const effectTriggerActions = finalGameState.actionLog.filter(
+        (action) => action.type === 'effect_trigger'
+      );
 
       // カードが配置された場合、対応する効果が発動していることを確認
       if (cardPlayActions.length > 0) {
         // on_play効果を持つカードデータを確認
-        const cardsWithOnPlayEffects = ['necro_wraith', 'necro_necromancer', 'necro_lich', 'necro_ghoul'];
-        
-        cardPlayActions.forEach(playAction => {
+        const cardsWithOnPlayEffects = [
+          'necro_wraith',
+          'necro_necromancer',
+          'necro_lich',
+          'necro_ghoul',
+        ];
+
+        cardPlayActions.forEach((playAction) => {
           if (cardsWithOnPlayEffects.includes(playAction.data.cardId)) {
             // このカードの配置後に効果発動アクションが存在するはず
             const relatedEffects = effectTriggerActions.filter(
-              effectAction => effectAction.sequence > playAction.sequence &&
-              effectAction.data.sourceCardId === playAction.data.cardId
+              (effectAction) =>
+                effectAction.sequence > playAction.sequence &&
+                effectAction.data.sourceCardId === playAction.data.cardId
             );
-            
+
             // 効果を持つカードなら効果発動ログが存在することを確認
             // （ただし、対象がいない場合は発動しないこともある）
             expect(relatedEffects.length).toBeGreaterThanOrEqual(0);
@@ -1266,7 +1648,7 @@ describe('Card Keyword and Effect Tests', () => {
     test('決定論性が複数配置でも維持される', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const result1 = executeFullGame(
         testGameId,
         deck1,
@@ -1275,7 +1657,7 @@ describe('Card Keyword and Effect Tests', () => {
         player2Faction,
         'deterministic-multi-deploy-test'
       );
-      
+
       const result2 = executeFullGame(
         testGameId,
         deck1,
@@ -1291,99 +1673,119 @@ describe('Card Keyword and Effect Tests', () => {
       expect(result1.actionLog.length).toBe(result2.actionLog.length);
 
       // カード配置アクションが一致することを確認
-      const playActions1 = result1.actionLog.filter(action => action.type === 'card_play');
-      const playActions2 = result2.actionLog.filter(action => action.type === 'card_play');
-      
+      const playActions1 = result1.actionLog.filter((action) => action.type === 'card_play');
+      const playActions2 = result2.actionLog.filter((action) => action.type === 'card_play');
+
       expect(playActions1.length).toBe(playActions2.length);
-      
+
       playActions1.forEach((action1, index) => {
         const action2 = playActions2[index];
         expect(action1.data.cardId).toBe(action2.data.cardId);
         expect(action1.data.position).toBe(action2.data.position);
         expect(action1.playerId).toBe(action2.playerId);
-    });
-  });
-});
-
-describe('戦闘システム - 勝利判定後の処理', () => {
-  const testGameId = 'overkill-test';
-  const testSeed = 'overkill-test-seed';
-  const player1Faction: Faction = 'berserker';
-  const player2Faction: Faction = 'necromancer';
-
-  const createTestDeck = (): Card[] => {
-    const deck: Card[] = [];
-    const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
-      for (let i = 0; i < 5; i++) {
-        deck.push({ ...card, templateId: `${card.templateId}_${i}`, instanceId: `${card.templateId}_${i}` });
-      }
-    });
-    return deck;
-  };
-
-  test('ライフが0になった後、過剰な攻撃が行われず、ライフがマイナスにならない', () => {
-    const deck1 = createTestDeck();
-    const deck2 = createTestDeck();
-    const gameState: GameState = createInitialGameState(testGameId, deck1, deck2, player1Faction, player2Faction, testSeed);
-
-    // Arrange: 状況設定
-    gameState.turnNumber = 5; // 攻撃可能条件を満たすためにターン数を設定
-    // player2のライフを3に設定
-    gameState.players.player2.life = 3;
-    // player2の場は空
-    gameState.players.player2.field = [];
-
-    // player1の場に攻撃力2のクリーチャーを3体配置
-    const attackerCard = berserkerCards.find(c => c.templateId === 'ber_warrior');
-    if (!attackerCard || attackerCard.type !== 'creature') {
-      throw new Error('攻撃者カードが見つかりません');
-    }
-    for (let i = 0; i < 3; i++) {
-      gameState.players.player1.field.push({
-        ...attackerCard,
-        templateId: `attacker_${i}`,
-        instanceId: `attacker_${i}-instance`,
-        owner: 'player1',
-        currentHealth: attackerCard.health,
-        attackModifier: 0, healthModifier: 0, passiveAttackModifier: 0, passiveHealthModifier: 0,
-        summonTurn: 0, position: i, hasAttacked: false, isStealthed: false, isSilenced: false, statusEffects: [], readiedThisTurn: false,
       });
-    }
-
-    // player1のターン、戦闘フェーズに設定
-    gameState.currentPlayer = 'player1';
-    gameState.phase = 'battle';
-
-    // Act: 戦闘フェーズを実行
-    let finalGameState = processGameStep(gameState); // battle → battle_attack
-    
-    // 全攻撃者を処理するまでループ
-    while (finalGameState.phase === 'battle_attack' && !finalGameState.result) {
-      finalGameState = processGameStep(finalGameState);
-    }
-
-    // Assert: 結果を検証
-    // 1. 最終的なライフが0であること
-    expect(finalGameState.players.player2.life).toBe(0);
-
-    // 2. 攻撃アクションの記録を検証
-    const attackActions = finalGameState.actionLog.filter(
-      action => action.type === 'card_attack' && action.data.targetId === 'player2'
-    );
-    // ライフが0になった時点でゲームが終了するため、過剰な攻撃は行われない
-    // 攻撃力2 × 必要回数で停止（3ライフなので最大2回）
-    expect(attackActions.length).toBeLessThanOrEqual(2);
-    expect(attackActions.length).toBeGreaterThan(0);
-
-    // 3. ライフがマイナスにならないことを確認
-    attackActions.forEach(action => {
-      if (action.type === 'card_attack' && action.data.targetPlayerLife) {
-        expect(action.data.targetPlayerLife.after).toBeGreaterThanOrEqual(0);
-      }
     });
   });
-});
+
+  describe('戦闘システム - 勝利判定後の処理', () => {
+    const testGameId = 'overkill-test';
+    const testSeed = 'overkill-test-seed';
+    const player1Faction: Faction = 'berserker';
+    const player2Faction: Faction = 'necromancer';
+
+    const createTestDeck = (): Card[] => {
+      const deck: Card[] = [];
+      const availableCards = necromancerCards.slice(0, 4);
+      availableCards.forEach((card) => {
+        for (let i = 0; i < 5; i++) {
+          deck.push({
+            ...card,
+            templateId: `${card.templateId}_${i}`,
+            instanceId: `${card.templateId}_${i}`,
+          });
+        }
+      });
+      return deck;
+    };
+
+    test('ライフが0になった後、過剰な攻撃が行われず、ライフがマイナスにならない', () => {
+      const deck1 = createTestDeck();
+      const deck2 = createTestDeck();
+      const gameState: GameState = createInitialGameState(
+        testGameId,
+        deck1,
+        deck2,
+        player1Faction,
+        player2Faction,
+        testSeed
+      );
+
+      // Arrange: 状況設定
+      gameState.turnNumber = 5; // 攻撃可能条件を満たすためにターン数を設定
+      // player2のライフを3に設定
+      gameState.players.player2.life = 3;
+      // player2の場は空
+      gameState.players.player2.field = [];
+
+      // player1の場に攻撃力2のクリーチャーを3体配置
+      const attackerCard = berserkerCards.find((c) => c.templateId === 'ber_warrior');
+      if (!attackerCard || attackerCard.type !== 'creature') {
+        throw new Error('攻撃者カードが見つかりません');
+      }
+      for (let i = 0; i < 3; i++) {
+        gameState.players.player1.field.push({
+          ...attackerCard,
+          templateId: `attacker_${i}`,
+          instanceId: `attacker_${i}-instance`,
+          owner: 'player1',
+          currentHealth: attackerCard.health,
+          attackModifier: 0,
+          healthModifier: 0,
+          passiveAttackModifier: 0,
+          passiveHealthModifier: 0,
+          summonTurn: 0,
+          position: i,
+          hasAttacked: false,
+          isStealthed: false,
+          isSilenced: false,
+          statusEffects: [],
+          readiedThisTurn: false,
+        });
+      }
+
+      // player1のターン、戦闘フェーズに設定
+      gameState.currentPlayer = 'player1';
+      gameState.phase = 'battle';
+
+      // Act: 戦闘フェーズを実行
+      let finalGameState = processGameStep(gameState); // battle → battle_attack
+
+      // 全攻撃者を処理するまでループ
+      while (finalGameState.phase === 'battle_attack' && !finalGameState.result) {
+        finalGameState = processGameStep(finalGameState);
+      }
+
+      // Assert: 結果を検証
+      // 1. 最終的なライフが0であること
+      expect(finalGameState.players.player2.life).toBe(0);
+
+      // 2. 攻撃アクションの記録を検証
+      const attackActions = finalGameState.actionLog.filter(
+        (action) => action.type === 'card_attack' && action.data.targetId === 'player2'
+      );
+      // ライフが0になった時点でゲームが終了するため、過剰な攻撃は行われない
+      // 攻撃力2 × 必要回数で停止（3ライフなので最大2回）
+      expect(attackActions.length).toBeLessThanOrEqual(2);
+      expect(attackActions.length).toBeGreaterThan(0);
+
+      // 3. ライフがマイナスにならないことを確認
+      attackActions.forEach((action) => {
+        if (action.type === 'card_attack' && action.data.targetPlayerLife) {
+          expect(action.data.targetPlayerLife.after).toBeGreaterThanOrEqual(0);
+        }
+      });
+    });
+  });
 
   describe('戦闘システム - 直接攻撃バグ修正検証', () => {
     test('相手の場が空の時、プレイヤーに直接攻撃する', () => {
@@ -1392,7 +1794,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
         testGameId,
         testSeed: 'direct-attack-test-1',
         player1Faction,
-        player2Faction
+        player2Faction,
       };
 
       // ヘルパー関数を使用して直接攻撃テストを実行
@@ -1401,7 +1803,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
       // ゲームが正常に動作していることを確認
       // (シナリオを見つけられない場合もあるが、それ自体は正常な結果)
       expect(result.foundTargetScenario || result.gameCompleted || true).toBe(true);
-      
+
       // 理想的なシナリオが見つかった場合の追加検証
       if (result.foundTargetScenario && result.attackOccurred) {
         expect(result.attackOccurred).toBe(true);
@@ -1411,7 +1813,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
     test('生きているカードが存在しない場合、プレイヤーへ直接攻撃する', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const gameState = executeFullGame(
         testGameId,
         deck1,
@@ -1423,31 +1825,31 @@ describe('戦闘システム - 勝利判定後の処理', () => {
 
       // ゲームが完了していることを確認
       expect(gameState.result).toBeDefined();
-      
+
       // 戦闘ログから直接攻撃パターンを分析
-      const battleActions = gameState.actionLog.filter(action => action.type === 'card_attack');
-      
+      const battleActions = gameState.actionLog.filter((action) => action.type === 'card_attack');
+
       // 攻撃アクションが存在する場合の検証
       if (battleActions.length > 0) {
-        const directAttacks = battleActions.filter(action => {
+        const directAttacks = battleActions.filter((action) => {
           if (action.type === 'card_attack') {
             return action.data.targetId === 'player1' || action.data.targetId === 'player2';
           }
           return false;
         });
-        
-        const cardAttacks = battleActions.filter(action => {
+
+        const cardAttacks = battleActions.filter((action) => {
           if (action.type === 'card_attack') {
             return action.data.targetId !== 'player1' && action.data.targetId !== 'player2';
           }
           return false;
         });
-        
+
         // 戦闘が発生した場合、直接攻撃またはカード攻撃のいずれかが存在することを確認
         expect(directAttacks.length + cardAttacks.length).toBeGreaterThan(0);
-        
+
         // 直接攻撃が発生した場合、適切な形式であることを確認
-        directAttacks.forEach(action => {
+        directAttacks.forEach((action) => {
           if (action.type === 'card_attack') {
             expect(action.data.attackerCardId).toBeDefined();
             expect(['player1', 'player2']).toContain(action.data.targetId);
@@ -1460,7 +1862,7 @@ describe('戦闘システム - 勝利判定後の処理', () => {
     test('段階的戦闘進行でプレイヤー攻撃が確実に実行される', () => {
       const deck1 = createTestDeck();
       const deck2 = createTestDeck();
-      
+
       const gameState = executeFullGame(
         testGameId,
         deck1,
@@ -1472,18 +1874,19 @@ describe('戦闘システム - 勝利判定後の処理', () => {
 
       // ゲームが完了していることを確認
       expect(gameState.result).toBeDefined();
-      
+
       // アクションログに直接攻撃が記録されていることを確認
-      const directAttackActions = gameState.actionLog.filter(action => 
-        action.type === 'card_attack' && 
-        (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+      const directAttackActions = gameState.actionLog.filter(
+        (action) =>
+          action.type === 'card_attack' &&
+          (action.data.targetId === 'player1' || action.data.targetId === 'player2')
       );
 
       // 攻撃重視vs バランス型なので、直接攻撃が発生する可能性が高い
       expect(directAttackActions.length).toBeGreaterThanOrEqual(0);
-      
+
       // アクションログの形式が正しいことを確認
-      directAttackActions.forEach(action => {
+      directAttackActions.forEach((action) => {
         if (action.type === 'card_attack') {
           expect(action.data.attackerCardId).toBeDefined();
           expect(['player1', 'player2']).toContain(action.data.targetId);

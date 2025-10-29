@@ -1,6 +1,6 @@
 /**
  * ゲーム開始画面 - 分割後のメインコンポーネント
- * 
+ *
  * 設計方針:
  * - 各責務を専用コンポーネントに分離
  * - GameSetupProviderでState管理を統合
@@ -16,15 +16,7 @@ import GameStatsDisplay from './GameStatsDisplay';
 import { GameSetupProvider, useGameSetup } from './game-setup/GameSetupProvider';
 // 統合により外部コンポーネント依存を削除
 // 旧GameSetupConstants.tsから統合
-import { 
-  Skull, 
-  Zap, 
-  Sparkles, 
-  Shield, 
-  Eye,
-  PlusCircle,
-  Edit
-} from 'lucide-react';
+import { Skull, Zap, Sparkles, Shield, Eye, PlusCircle, Edit } from 'lucide-react';
 import { FACTION_DESCRIPTIONS, GAME_CONSTANTS } from '@/types/game';
 import { validateDeck } from '@/lib/deck-utils';
 import { useMemo } from 'react';
@@ -65,13 +57,13 @@ export const FACTION_DATA = {
   },
 } as const;
 
-
 // 選択カードの共通スタイル
 const getSelectionCardStyle = (isSelected: boolean) => `
   relative cursor-pointer p-6 rounded-2xl border transition-all duration-300 group hover:scale-[1.02] backdrop-blur-sm
-  ${isSelected 
-    ? 'border-amber-400/60 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-transparent shadow-2xl shadow-amber-400/25' 
-    : 'border-white/15 hover:border-amber-300/40 bg-gradient-to-br from-white/8 via-white/4 to-transparent hover:shadow-2xl hover:shadow-white/10'
+  ${
+    isSelected
+      ? 'border-amber-400/60 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-transparent shadow-2xl shadow-amber-400/25'
+      : 'border-white/15 hover:border-amber-300/40 bg-gradient-to-br from-white/8 via-white/4 to-transparent hover:shadow-2xl hover:shadow-white/10'
   }
 `;
 
@@ -83,18 +75,16 @@ interface GameSetupProps {
 // === 統合された内部コンポーネント（旧game-setup/ディレクトリから） ===
 
 // 勢力選択コンポーネント（旧FactionSelection.tsxから統合）
-function FactionSelection({ 
-  selectedFaction, 
-  onFactionSelect 
+function FactionSelection({
+  selectedFaction,
+  onFactionSelect,
 }: {
   selectedFaction: Faction | null;
   onFactionSelect: (faction: Faction) => void;
 }) {
   return (
     <section>
-      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
-        勢力選択
-      </h2>
+      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">勢力選択</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {Object.entries(FACTION_DATA).map(([faction, data]) => (
           <div
@@ -106,14 +96,10 @@ function FactionSelection({
               <div className="mb-4 text-amber-400 flex justify-center group-hover:scale-110 transition-transform">
                 <data.icon size={48} strokeWidth={1.5} />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-white font-serif">
-                {data.name}
-              </h3>
-              <p className="text-sm text-gray-400 font-serif leading-relaxed">
-                {data.description}
-              </p>
+              <h3 className="text-lg font-bold mb-2 text-white font-serif">{data.name}</h3>
+              <p className="text-sm text-gray-400 font-serif leading-relaxed">{data.description}</p>
             </div>
-            
+
             {selectedFaction === faction && (
               <div className="absolute -top-2 -right-2">
                 <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
@@ -129,13 +115,13 @@ function FactionSelection({
 }
 
 // デッキ管理コンポーネント（旧DeckManagement.tsxから統合）
-function DeckManagement({ 
+function DeckManagement({
   selectedFaction,
   deckCollection,
   activeDeckId,
   onCreateNewDeck,
   onEditDeck,
-  onSetActiveDeck
+  onSetActiveDeck,
 }: {
   selectedFaction: Faction | null;
   deckCollection: import('@/types/game').DeckCollection;
@@ -146,7 +132,7 @@ function DeckManagement({
 }) {
   const factionDecks = useMemo(() => {
     if (!selectedFaction) return [];
-    return deckCollection.decks.filter(d => d.faction === selectedFaction);
+    return deckCollection.decks.filter((d) => d.faction === selectedFaction);
   }, [deckCollection.decks, selectedFaction]);
 
   if (!selectedFaction) {
@@ -155,18 +141,16 @@ function DeckManagement({
 
   return (
     <section className="animate-fade-in">
-      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">
-        デッキ選択
-      </h2>
+      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">デッキ選択</h2>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {factionDecks.map(deck => {
+        {factionDecks.map((deck) => {
           const validation = validateDeck(deck);
           return (
-            <div 
-              key={deck.id} 
+            <div
+              key={deck.id}
               className={`p-4 rounded-lg border-2 transition-all ${
-                activeDeckId === deck.id 
-                  ? 'border-amber-400 bg-amber-500/10' 
+                activeDeckId === deck.id
+                  ? 'border-amber-400 bg-amber-500/10'
                   : 'border-gray-700 bg-gray-800/50'
               }`}
             >
@@ -175,20 +159,18 @@ function DeckManagement({
                 {deck.cards.length} / {GAME_CONSTANTS.DECK_SIZE} 枚
               </p>
               {!validation.isValid && (
-                <p className="text-xs text-red-400 mt-1">
-                  {validation.errors[0]}
-                </p>
+                <p className="text-xs text-red-400 mt-1">{validation.errors[0]}</p>
               )}
               <div className="mt-4 flex space-x-2">
-                <button 
-                  onClick={() => onSetActiveDeck(deck.id)} 
+                <button
+                  onClick={() => onSetActiveDeck(deck.id)}
                   disabled={activeDeckId === deck.id || !validation.isValid}
                   className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded disabled:bg-gray-500 text-sm transition-colors"
                 >
                   {activeDeckId === deck.id ? '選択中' : '選択'}
                 </button>
-                <button 
-                  onClick={() => onEditDeck(deck)} 
+                <button
+                  onClick={() => onEditDeck(deck)}
                   className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
                 >
                   <Edit size={16} />
@@ -205,7 +187,7 @@ function DeckManagement({
           <span className="mt-2 font-bold">新しいデッキを作成</span>
         </button>
       </div>
-      
+
       {selectedFaction && (
         <div className="text-center mt-8">
           <p className="text-gray-400 text-sm">
@@ -217,7 +199,6 @@ function DeckManagement({
   );
 }
 
-
 // ゲームルール表示コンポーネント（旧GameRules.tsxから統合）
 function GameRules() {
   return (
@@ -225,9 +206,8 @@ function GameRules() {
       <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-gradient-to-b from-amber-200 via-amber-300 to-amber-500 bg-clip-text font-serif">
         基本ルール
       </h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        
         {/* デッキ構成 */}
         <div className="p-8 bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl hover:shadow-amber-400/10 transition-all duration-300 group">
           <h3 className="text-2xl font-bold text-amber-300 mb-6 text-center font-serif group-hover:text-amber-200 transition-colors">
@@ -277,15 +257,21 @@ function GameRules() {
           </h3>
           <div className="space-y-4 text-gray-200">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">1</div>
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">
+                1
+              </div>
               <p className="text-sm font-serif">戦術でカード自動配置</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">2</div>
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">
+                2
+              </div>
               <p className="text-sm font-serif">戦闘は自動進行</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">3</div>
+              <div className="w-8 h-8 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black text-sm font-bold shadow-lg">
+                3
+              </div>
               <p className="text-sm font-serif">結果を観戦して楽しむ</p>
             </div>
           </div>
@@ -296,12 +282,12 @@ function GameRules() {
 }
 
 // ゲーム開始確認セクション
-function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, deck: Card[]) => void }) {
-  const { 
-    selectedFaction, 
-    activeDeckId, 
-    handleStart 
-  } = useGameSetup();
+function GameStartSection({
+  onGameStart,
+}: {
+  onGameStart: (faction: Faction, deck: Card[]) => void;
+}) {
+  const { selectedFaction, activeDeckId, handleStart } = useGameSetup();
 
   if (!selectedFaction || !activeDeckId) {
     return null;
@@ -310,14 +296,12 @@ function GameStartSection({ onGameStart }: { onGameStart: (faction: Faction, dec
   return (
     <section className="text-center animate-fade-in relative z-10">
       <div className="mb-10 p-6 bg-gradient-to-br from-amber-500/15 via-amber-400/10 to-transparent rounded-2xl border border-amber-400/40 max-w-md mx-auto backdrop-blur-sm shadow-2xl shadow-amber-400/20">
-        <div className="text-amber-200 font-serif font-bold text-lg mb-2">
-          選択された勢力
-        </div>
+        <div className="text-amber-200 font-serif font-bold text-lg mb-2">選択された勢力</div>
         <div className="text-amber-300 font-serif font-bold text-2xl">
           {FACTION_DATA[selectedFaction].name}
         </div>
       </div>
-      
+
       <button
         onClick={() => handleStart(onGameStart)}
         className="relative px-20 py-5 text-2xl font-bold font-serif tracking-wide rounded-2xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:via-amber-400 hover:to-amber-500 text-black shadow-2xl hover:shadow-amber-400/40 hover:scale-105 transition-all duration-300 border-2 border-amber-400/50 overflow-hidden group"
@@ -352,7 +336,7 @@ function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 -z-10"></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl -z-10"></div>
-        
+
         {/* タイトル */}
         <header className="text-center mb-24 relative z-10">
           <div className="relative">
@@ -364,14 +348,14 @@ function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
                 ASHENHALL
               </div>
             </h1>
-            
+
             {/* ゲーム説明 */}
             <div className="mb-6">
               <p className="text-lg text-gray-300">
                 時間を選ばない戦略体験 - いつでも対戦申請、結果は後で確認
               </p>
             </div>
-            
+
             {/* サブタイトル装飾 */}
             <div className="flex items-center justify-center mb-8 relative">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-amber-400/60 max-w-20"></div>
@@ -387,7 +371,7 @@ function GameSetupContent({ onGameStart, stats }: GameSetupProps) {
           </section>
 
           {/* 勢力選択 */}
-          <FactionSelection 
+          <FactionSelection
             selectedFaction={selectedFaction}
             onFactionSelect={setSelectedFaction}
           />

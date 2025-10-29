@@ -75,10 +75,14 @@ describe('validateDeck', () => {
 
   it('should return invalid if more than 3 core cards are selected', () => {
     const cards = fillDeck([
-      'core-1', 'core-1',
-      'core-2', 'core-2',
-      'core-3', 'core-3',
-      'core-4', 'core-4',
+      'core-1',
+      'core-1',
+      'core-2',
+      'core-2',
+      'core-3',
+      'core-3',
+      'core-4',
+      'core-4',
     ]);
     const deck: CustomDeck = {
       ...baseDeck,
@@ -87,7 +91,7 @@ describe('validateDeck', () => {
     };
     const { isValid, errors } = validateDeck(deck);
     expect(isValid).toBe(false);
-    expect(errors.some(e => e.includes('コアカードは3枚までしか指定できません'))).toBe(true);
+    expect(errors.some((e) => e.includes('コアカードは3枚までしか指定できません'))).toBe(true);
   });
 
   it('should return invalid when coreCardIds includes duplicates', () => {
@@ -99,7 +103,7 @@ describe('validateDeck', () => {
     };
     const { isValid, errors } = validateDeck(deck);
     expect(isValid).toBe(false);
-    expect(errors.some(e => e.includes('コアカードの指定に重複があります'))).toBe(true);
+    expect(errors.some((e) => e.includes('コアカードの指定に重複があります'))).toBe(true);
   });
 
   it('should return invalid when coreCardIds references cards not in the deck', () => {
@@ -111,15 +115,21 @@ describe('validateDeck', () => {
     };
     const { isValid, errors } = validateDeck(deck);
     expect(isValid).toBe(false);
-    expect(errors.some(e => e.includes('コアカードにデッキ外のカードが含まれています'))).toBe(true);
+    expect(errors.some((e) => e.includes('コアカードにデッキ外のカードが含まれています'))).toBe(
+      true
+    );
   });
 
   it('normalizeDeckCoreCards should dedupe, drop missing cards, and enforce max 3 entries', () => {
     const cards = fillDeck([
-      'card-1', 'card-1',
-      'card-2', 'card-2',
-      'card-3', 'card-3',
-      'card-4', 'card-4',
+      'card-1',
+      'card-1',
+      'card-2',
+      'card-2',
+      'card-3',
+      'card-3',
+      'card-4',
+      'card-4',
     ]);
     const originalCoreCardIds = ['card-1', 'card-1', 'card-2', 'card-3', 'card-4', 'card-5'];
     const deck: CustomDeck = {
@@ -159,10 +169,10 @@ describe('validateDeck', () => {
     localStorage.setItem('ashenhall_deck_collection', JSON.stringify(legacyCollection));
 
     const loaded = loadDeckCollection();
-  expect(loaded.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
+    expect(loaded.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
 
     const storedAgain = JSON.parse(localStorage.getItem('ashenhall_deck_collection') || '{}');
-  expect(storedAgain.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
+    expect(storedAgain.decks[0].coreCardIds).toEqual(['card-1', 'card-2']);
 
     localStorage.clear();
   });

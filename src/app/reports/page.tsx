@@ -29,8 +29,9 @@ export default async function ReportsPage() {
   let reportInfos: ReportInfo[] = [];
 
   try {
-    const reportFiles = (await fs.readdir(reportsDirectory))
-      .filter(file => file.endsWith('.json'));
+    const reportFiles = (await fs.readdir(reportsDirectory)).filter((file) =>
+      file.endsWith('.json')
+    );
 
     const reportsWithDates = await Promise.all(
       reportFiles.map(async (filename) => {
@@ -46,11 +47,10 @@ export default async function ReportsPage() {
     );
 
     reportInfos = reportsWithDates
-      .filter(info => info.date) // 日付が取得できたもののみ
+      .filter((info) => info.date) // 日付が取得できたもののみ
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
   } catch (error) {
-    console.error("Could not read reports directory:", error);
+    console.error('Could not read reports directory:', error);
   }
 
   return (
@@ -86,7 +86,10 @@ export default async function ReportsPage() {
         ) : (
           <div className="text-center bg-gray-800/50 rounded-lg p-8 border border-gray-700">
             <p className="text-gray-400">利用可能なレポートはありません。</p>
-            <p className="text-sm text-gray-500 mt-2">`pnpm test src/__tests__/ai-battle-simulator.test.ts` を実行してレポートを生成してください。</p>
+            <p className="text-sm text-gray-500 mt-2">
+              `pnpm test src/__tests__/ai-battle-simulator.test.ts`
+              を実行してレポートを生成してください。
+            </p>
           </div>
         )}
       </div>

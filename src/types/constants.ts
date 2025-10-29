@@ -1,6 +1,6 @@
 /**
  * Ashenhall ゲーム定数定義
- * 
+ *
  * 設計方針:
  * - ゲームバランスの基準となる数値
  * - AI戦術計算に使用される重み
@@ -55,19 +55,19 @@ export const AI_EVALUATION_WEIGHTS = {
     NECROMANCER: { ECHO_PER_GRAVEYARD: 3, ON_DEATH: 5 },
     KNIGHT: { FORMATION_PER_ALLY: 4, GUARD: 6 },
     BERSERKER: { PER_LIFE_DEFICIT: 1.5, HIGH_ATTACK: 2 },
-    MAGE: { 
-      SPELL_PLAY: 15, 
+    MAGE: {
+      SPELL_PLAY: 15,
       ON_SPELL_PLAY_TRIGGER: 10,
-      HAND_ADVANTAGE: 2,      // 手札アドバンテージボーナス
-      CARD_DRAW_VALUE: 8,     // カードドロー効果価値
-      SPELL_SYNERGY: 5,       // on_spell_playクリーチャー存在時のスペルボーナス
-      AOE_TARGET_RICH: 4,     // 敵が多い時の範囲攻撃ボーナス
+      HAND_ADVANTAGE: 2, // 手札アドバンテージボーナス
+      CARD_DRAW_VALUE: 8, // カードドロー効果価値
+      SPELL_SYNERGY: 5, // on_spell_playクリーチャー存在時のスペルボーナス
+      AOE_TARGET_RICH: 4, // 敵が多い時の範囲攻撃ボーナス
     },
-    INQUISITOR: { 
-      DEBUFF_PER_ENEMY: 3, 
-      SILENCE_STUN: 5,  // 8 → 5: 妨害スペルの過剰評価を是正
-      BRAND_SYNERGY_PER_TARGET: 3.0,  // 烙印シナジーボーナス
-      BRAND_APPLICATION: 6,  // 烙印付与カードのボーナス
+    INQUISITOR: {
+      DEBUFF_PER_ENEMY: 3,
+      SILENCE_STUN: 5, // 8 → 5: 妨害スペルの過剰評価を是正
+      BRAND_SYNERGY_PER_TARGET: 3.0, // 烙印シナジーボーナス
+      BRAND_APPLICATION: 6, // 烙印付与カードのボーナス
     },
   },
 } as const;

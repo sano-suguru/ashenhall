@@ -1,29 +1,20 @@
 /**
  * ゲームロジックユーティリティ - 統合版
- * 
+ *
  * 設計方針:
  * - 効果発動条件の判定ロジック
  * - 効果の対象選択ロジック
  * - ゲーム状態を変更しない（純粋関数）
  * - 決定論的な処理（同条件なら同結果）
- * 
+ *
  * 統合内容:
  * - condition-checker.ts: checkEffectCondition, checkAllConditions
  * - target-selector.ts: selectTargets
  */
 
-import type { 
-  GameState, 
-  PlayerId, 
-  EffectCondition,
-  FieldCard,
-  EffectTarget
-} from "@/types/game";
-import { SeededRandom } from "../seeded-random";
-import { 
-  getBrandedCreatureCount,
-  hasAnyBrandedEnemy 
-} from "../brand-utils";
+import type { GameState, PlayerId, EffectCondition, FieldCard, EffectTarget } from '@/types/game';
+import { SeededRandom } from '../seeded-random';
+import { getBrandedCreatureCount, hasAnyBrandedEnemy } from '../brand-utils';
 
 // =============================================================================
 // CONDITION CHECKING (from condition-checker.ts)
@@ -47,7 +38,7 @@ export function checkEffectCondition(
 
   const subjectValue = getSubjectValue(state, sourcePlayerId, condition.subject);
   const compareValue = getCompareValue(state, sourcePlayerId, condition.value);
-  
+
   return evaluateCondition(subjectValue, condition.operator, compareValue);
 }
 
@@ -63,9 +54,7 @@ export function checkAllConditions(
   sourcePlayerId: PlayerId,
   conditions: (EffectCondition | undefined)[]
 ): boolean {
-  return conditions.every(condition => 
-    checkEffectCondition(state, sourcePlayerId, condition)
-  );
+  return conditions.every((condition) => checkEffectCondition(state, sourcePlayerId, condition));
 }
 
 /**
@@ -77,30 +66,30 @@ function getSubjectValue(
   subject: EffectCondition['subject']
 ): number {
   const player = state.players[sourcePlayerId];
-  const opponent = state.players[sourcePlayerId === "player1" ? "player2" : "player1"];
+  const opponent = state.players[sourcePlayerId === 'player1' ? 'player2' : 'player1'];
 
   switch (subject) {
-    case "graveyard":
+    case 'graveyard':
       return player.graveyard.length;
-    
-    case "allyCount":
+
+    case 'allyCount':
       return player.field.length;
-    
-    case "playerLife":
+
+    case 'playerLife':
       return player.life;
-    
-    case "opponentLife":
+
+    case 'opponentLife':
       return opponent.life;
-    
-    case "brandedEnemyCount":
+
+    case 'brandedEnemyCount':
       return getBrandedCreatureCount(opponent.field);
-    
-    case "hasBrandedEnemy":
+
+    case 'hasBrandedEnemy':
       return hasAnyBrandedEnemy(state, sourcePlayerId) ? 1 : 0;
-    
-    case "enemyCreatureCount":
+
+    case 'enemyCreatureCount':
       return opponent.field.length;
-    
+
     default:
       console.warn(`Unknown condition subject: ${subject}`);
       return 0;
@@ -115,11 +104,11 @@ function getCompareValue(
   sourcePlayerId: PlayerId,
   value: EffectCondition['value']
 ): number {
-  if (value === "opponentLife") {
-    const opponent = state.players[sourcePlayerId === "player1" ? "player2" : "player1"];
+  if (value === 'opponentLife') {
+    const opponent = state.players[sourcePlayerId === 'player1' ? 'player2' : 'player1'];
     return opponent.life;
   }
-  
+
   return value as number;
 }
 
@@ -132,21 +121,21 @@ function evaluateCondition(
   compareValue: number
 ): boolean {
   switch (operator) {
-    case "gte":
+    case 'gte':
       return subjectValue >= compareValue;
-    
-    case "lte":
+
+    case 'lte':
       return subjectValue <= compareValue;
-    
-    case "lt":
+
+    case 'lt':
       return subjectValue < compareValue;
-    
-    case "gt":
+
+    case 'gt':
       return subjectValue > compareValue;
-    
-    case "eq":
+
+    case 'eq':
       return subjectValue === compareValue;
-    
+
     default:
       console.warn(`Unknown condition operator: ${operator}`);
       return true; // 不明な operator は true
@@ -172,38 +161,35 @@ export function selectTargets(
   random: SeededRandom
 ): FieldCard[] {
   const sourcePlayer = state.players[sourcePlayerId];
-  const opponentId: PlayerId =
-    sourcePlayerId === "player1" ? "player2" : "player1";
+  const opponentId: PlayerId = sourcePlayerId === 'player1' ? 'player2' : 'player1';
   const opponent = state.players[opponentId];
 
   switch (targetType) {
-    case "self":
+    case 'self':
       // 効果発動者自身は特別処理が必要（場にいない可能性）
       return [];
 
-    case "ally_all":
+    case 'ally_all':
       return [...sourcePlayer.field].filter((card) => card.currentHealth > 0);
 
-    case "enemy_all":
+    case 'enemy_all':
       return [...opponent.field].filter(
         (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
       );
 
-    case "ally_random":
-      const allyTargets = sourcePlayer.field.filter(
-        (card) => card.currentHealth > 0
-      );
+    case 'ally_random':
+      const allyTargets = sourcePlayer.field.filter((card) => card.currentHealth > 0);
       const randomAlly = random.choice(allyTargets);
       return randomAlly ? [randomAlly] : [];
 
-    case "enemy_random":
+    case 'enemy_random':
       const enemyTargets = opponent.field.filter(
         (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
       );
       const randomEnemy = random.choice(enemyTargets);
       return randomEnemy ? [randomEnemy] : [];
 
-    case "player":
+    case 'player':
       // プレイヤー対象は別処理
       return [];
 

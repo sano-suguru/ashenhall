@@ -1,6 +1,6 @@
 /**
  * ローカル戦績表示コンポーネント
- * 
+ *
  * 設計方針:
  * - LocalStatsオブジェクトを受け取り、総合戦績と勢力別戦績を表示
  * - 勝率は小数点以下1桁まで表示
@@ -78,7 +78,10 @@ export default function GameStatsDisplay({ stats }: GameStatsDisplayProps) {
           {Object.entries(stats.factionStats).map(([faction, factionStats]) => {
             const winRate = calculateWinRate(factionStats.wins, factionStats.games);
             return (
-              <div key={faction} className="grid grid-cols-4 items-center bg-gray-800 p-2 rounded-md text-sm">
+              <div
+                key={faction}
+                className="grid grid-cols-4 items-center bg-gray-800 p-2 rounded-md text-sm"
+              >
                 <div className="font-bold col-span-1">{FACTION_NAMES[faction as Faction]}</div>
                 <div className="text-center text-gray-300">
                   <span className="text-xs text-gray-500 mr-1">対戦:</span> {factionStats.games}

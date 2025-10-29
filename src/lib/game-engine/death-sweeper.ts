@@ -6,7 +6,8 @@ function collectDestroyedIds(actions: GameAction[]): Set<string> {
   const s = new Set<string>();
   for (const a of actions) {
     if (a.type === 'creature_destroyed') {
-      const destroyedId = (a as Extract<GameAction,{type:'creature_destroyed'}>).data.destroyedCardId;
+      const destroyedId = (a as Extract<GameAction, { type: 'creature_destroyed' }>).data
+        .destroyedCardId;
       s.add(destroyedId);
     }
   }
@@ -18,11 +19,11 @@ function collectDestroyedIds(actions: GameAction[]): Set<string> {
 export function evaluatePendingDeaths(
   state: GameState,
   origin: 'effect' | 'trigger' | 'passive' | 'system',
-  sourceCardId?: string,
+  sourceCardId?: string
 ): void {
   const destroyedIds = collectDestroyedIds(state.actionLog);
   const pending: FieldCard[] = [];
-  for (const pId of ['player1','player2'] as const) {
+  for (const pId of ['player1', 'player2'] as const) {
     const player = state.players[pId];
     for (const c of player.field) {
       if (c.currentHealth <= 0 && !destroyedIds.has(c.templateId)) {

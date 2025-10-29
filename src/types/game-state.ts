@@ -1,28 +1,17 @@
 /**
  * Ashenhall ゲーム状態管理型定義
- * 
+ *
  * 設計方針:
  * - ゲームの進行状況とプレイヤー状態
  * - 戦闘ログとアクションシステム
  * - ゲーム結果の記録
  */
 
-import type {
-  PlayerId,
-  Faction,
-  GamePhase
-} from './core';
+import type { PlayerId, Faction, GamePhase } from './core';
 
-import type {
-  EffectTrigger,
-  EffectAction,
-  Keyword
-} from './effects';
+import type { EffectTrigger, EffectAction, Keyword } from './effects';
 
-import type {
-  Card,
-  FieldCard
-} from './cards';
+import type { Card, FieldCard } from './cards';
 
 // === プレイヤー状態 ===
 
@@ -99,10 +88,7 @@ export interface CreatureDestroyedActionData {
 /** 効果発動アクションデータ */
 // system 起因 (例: 'deck_empty','poison_effect','turn_system' 等) を明示するための列挙。
 // 将来: 需要が増えたら別ファイルへ抽出。
-export type SystemEffectSource =
-  | 'deck_empty'
-  | 'poison_effect'
-  | 'turn_system';
+export type SystemEffectSource = 'deck_empty' | 'poison_effect' | 'turn_system';
 
 export interface EffectTriggerActionData {
   /**

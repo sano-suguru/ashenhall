@@ -9,25 +9,27 @@ import type { GameAction } from '@/types/game';
 describe('Summon Animation Task Generation', () => {
   test('card_play action should generate summon animation task', () => {
     // テスト用のcard_playアクション
-    const testActions: GameAction[] = [{
-      sequence: 0,
-      playerId: 'player1',
-      type: 'card_play',
-      data: {
-        cardId: 'test_creature_123',
-        position: 0,
-        initialStats: { attack: 2, health: 3 },
-        playerEnergy: { before: 3, after: 1 }
+    const testActions: GameAction[] = [
+      {
+        sequence: 0,
+        playerId: 'player1',
+        type: 'card_play',
+        data: {
+          cardId: 'test_creature_123',
+          position: 0,
+          initialStats: { attack: 2, health: 3 },
+          playerEnergy: { before: 3, after: 1 },
+        },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now()
-    }];
+    ];
 
     // AnimationTask変換実行
     const tasks = buildAnimationTasksFromActions(testActions);
 
     // 検証
     console.log('Generated tasks:', JSON.stringify(tasks, null, 2));
-    
+
     expect(tasks).toHaveLength(1);
     expect(tasks[0].kind).toBe('summon');
     expect(tasks[0].targetId).toBe('test_creature_123');
@@ -45,9 +47,9 @@ describe('Summon Animation Task Generation', () => {
           cardId: 'creature_1',
           position: 0,
           initialStats: { attack: 2, health: 3 },
-          playerEnergy: { before: 3, after: 1 }
+          playerEnergy: { before: 3, after: 1 },
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
       {
         sequence: 1,
@@ -57,16 +59,16 @@ describe('Summon Animation Task Generation', () => {
           cardId: 'creature_2',
           position: 1,
           initialStats: { attack: 1, health: 2 },
-          playerEnergy: { before: 1, after: 0 }
+          playerEnergy: { before: 1, after: 0 },
         },
-        timestamp: Date.now() + 1000
-      }
+        timestamp: Date.now() + 1000,
+      },
     ];
 
     const tasks = buildAnimationTasksFromActions(testActions);
 
     console.log('Multiple tasks:', JSON.stringify(tasks, null, 2));
-    
+
     expect(tasks).toHaveLength(2);
     expect(tasks[0].kind).toBe('summon');
     expect(tasks[0].targetId).toBe('creature_1');

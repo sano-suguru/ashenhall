@@ -1,56 +1,24 @@
 /**
  * 特殊効果 Executor - 統合版
- * 
+ *
  * 設計方針:
  * - 状態効果（沈黙・スタン・ドロー等）
  * - 召喚効果（トークン生成・蘇生）
  * - 決定論的な状態変更・召喚処理
- * 
+ *
  * 統合内容:
  * - status-effects.ts: executeSilenceEffect, executeReadyEffect, executeStunEffect, executeDrawCardEffect, executeApplyBrandEffect, executeDeckSearchEffect
  * - summon-effects.ts: executeSummonEffect, executeResurrectEffect
  */
 
-import type {
-  GameState,
-  Card,
-  FieldCard,
-  PlayerId,
-  ValueChange,
-  EffectAction,
-} from "@/types/game";
-import type { FilterRule, ChainEffect } from "@/types/cards";
-import { SeededRandom } from "../seeded-random";
-import {
-  addEffectTriggerAction as addEffectTriggerActionFromLogger,
-} from "../action-logger";
-import { filterTargets } from "../core/target-filter";
-import { generateTokenInstanceId, generateFieldInstanceId } from "@/lib/instance-id-generator";
-import { selectTargets, checkEffectCondition } from "../core/game-logic-utils";
-import type { EffectHandler } from "../effect-registry";
-
-// =============================================================================
-// SHARED UTILITIES
-// =============================================================================
-
-/**
- * 効果ログを追加のヘルパー関数
- * 全Effect Executorで共通使用
- */
-function addEffectTriggerAction(
-  state: GameState,
-  sourceCardId: string,
-  effectType: EffectAction,
-  effectValue: number,  
-  targets: Record<string, ValueChange>
-): void {
-  addEffectTriggerActionFromLogger(state, state.currentPlayer, {
-    sourceCardId,
-    effectType,
-    effectValue,
-    targets,
-  });
-}
+import type { GameState, Card, FieldCard, PlayerId, ValueChange, EffectAction } from '@/types/game';
+import type { FilterRule, ChainEffect } from '@/types/cards';
+import { SeededRandom } from '../seeded-random';
+import { filterTargets } from '../core/target-filter';
+import { generateTokenInstanceId, generateFieldInstanceId } from '@/lib/instance-id-generator';
+import { selectTargets, checkEffectCondition } from '../core/game-logic-utils';
+import type { EffectHandler } from '../effect-registry';
+import { addEffectTriggerAction } from '../effect-utils';
 
 // =============================================================================
 // STATUS EFFECTS (from status-effects.ts)
@@ -69,7 +37,7 @@ export function executeSilenceEffect(
     target.isSilenced = true;
     valueChanges[target.templateId] = {};
   });
-  addEffectTriggerAction(state, sourceCardId, "silence", 1, valueChanges);
+  addEffectTriggerAction(state, sourceCardId, 'silence', 1, valueChanges);
 }
 
 /**
@@ -90,7 +58,7 @@ export function executeReadyEffect(
   });
 
   if (Object.keys(valueChanges).length > 0) {
-    addEffectTriggerAction(state, sourceCardId, "ready", 1, valueChanges);
+    addEffectTriggerAction(state, sourceCardId, 'ready', 1, valueChanges);
   }
 }
 
@@ -108,13 +76,13 @@ function createTokenFieldCard(
   tokenStats?: { name?: string; attack: number; health: number }
 ): FieldCard {
   const player = state.players[sourcePlayerId];
-  
+
   return {
     templateId: tokenTemplateId,
     instanceId: generateTokenInstanceId(state, sourcePlayerId, tokenStats?.name),
     owner: sourcePlayerId,
-    name: tokenStats?.name || "トークン",
-    type: "creature",
+    name: tokenStats?.name || 'トークン',
+    type: 'creature',
     faction: player.faction,
     cost: 0,
     attack: tokenStats?.attack ?? 1,
@@ -158,7 +126,7 @@ function applySummon(
   const token = createTokenFieldCard(state, sourcePlayerId, tokenTemplateId, tokenStats);
 
   player.field.push(token);
-  addEffectTriggerAction(state, sourceCardId, "summon", 1, { [token.templateId]: {} });
+  addEffectTriggerAction(state, sourceCardId, 'summon', 1, { [token.templateId]: {} });
 }
 
 /**
@@ -179,7 +147,7 @@ function applyResurrect(
     if (graveyardIndex === -1) continue;
 
     const [resurrectedCard] = player.graveyard.splice(graveyardIndex, 1);
-    if (resurrectedCard.type !== "creature") continue;
+    if (resurrectedCard.type !== 'creature') continue;
 
     const newFieldCard: FieldCard = {
       ...resurrectedCard,
@@ -200,7 +168,7 @@ function applyResurrect(
     };
 
     player.field.push(newFieldCard);
-    addEffectTriggerAction(state, sourceCardId, "resurrect", 1, {
+    addEffectTriggerAction(state, sourceCardId, 'resurrect', 1, {
       [newFieldCard.templateId]: {},
     });
   }
@@ -216,18 +184,18 @@ export function executeStunEffect(
   sourceCardId: string
 ): void {
   targets.forEach((target) => {
-    const existingStun = target.statusEffects.find((e) => e.type === "stun");
+    const existingStun = target.statusEffects.find((e) => e.type === 'stun');
     if (existingStun) {
       existingStun.duration = Math.max(existingStun.duration, duration);
     } else {
-      target.statusEffects.push({ type: "stun", duration });
+      target.statusEffects.push({ type: 'stun', duration });
     }
   });
   const valueChanges: Record<string, ValueChange> = {};
   targets.forEach((target) => {
     valueChanges[target.templateId] = {};
   });
-  addEffectTriggerAction(state, sourceCardId, "stun", duration, valueChanges);
+  addEffectTriggerAction(state, sourceCardId, 'stun', duration, valueChanges);
 }
 
 /**
@@ -257,7 +225,7 @@ export function executeDrawCardEffect(
     }
   }
 
-  addEffectTriggerAction(state, sourceCardId, "draw_card", drawCount, {
+  addEffectTriggerAction(state, sourceCardId, 'draw_card', drawCount, {
     [targetPlayerId]: {},
   });
 }
@@ -271,10 +239,10 @@ export function executeApplyBrandEffect(
   sourceCardId: string
 ): void {
   const valueChanges: Record<string, ValueChange> = {};
-  
+
   targets.forEach((target) => {
     // 既に烙印を持っている場合は何もしない
-    const hasExistingBrand = target.statusEffects.some(e => e.type === 'branded');
+    const hasExistingBrand = target.statusEffects.some((e) => e.type === 'branded');
     if (!hasExistingBrand) {
       target.statusEffects.push({ type: 'branded' });
       valueChanges[target.templateId] = {}; // ログ用
@@ -282,7 +250,7 @@ export function executeApplyBrandEffect(
   });
 
   if (Object.keys(valueChanges).length > 0) {
-    addEffectTriggerAction(state, sourceCardId, "apply_brand", 1, valueChanges);
+    addEffectTriggerAction(state, sourceCardId, 'apply_brand', 1, valueChanges);
   }
 }
 
@@ -297,35 +265,35 @@ export function executeDeckSearchEffect(
   random?: { choice: <T>(array: T[]) => T | undefined }
 ): void {
   const player = state.players[targetPlayerId];
-  
+
   // 手札上限チェック
   if (player.hand.length >= 7) {
     return;
   }
-  
+
   // filterTargets を使用してデッキフィルタリング（複雑度削減）
   let searchTargets = player.deck;
-  
+
   if (filter && Array.isArray(filter)) {
-     searchTargets = filterTargets(player.deck, filter, sourceCardId);
+    searchTargets = filterTargets(player.deck, filter, sourceCardId);
   }
-  
+
   if (searchTargets.length === 0) {
     return;
   }
-  
+
   // ランダム選択
-  const chosenCard = random ? 
-    random.choice(searchTargets) : 
-    searchTargets[Math.floor(Math.random() * searchTargets.length)];
-    
+  const chosenCard = random
+    ? random.choice(searchTargets)
+    : searchTargets[Math.floor(Math.random() * searchTargets.length)];
+
   if (chosenCard) {
     // デッキから除去
-    player.deck = player.deck.filter(c => c.templateId !== chosenCard.templateId);
+    player.deck = player.deck.filter((c) => c.templateId !== chosenCard.templateId);
     // 手札に追加
     player.hand.push(chosenCard);
-    
-    addEffectTriggerAction(state, sourceCardId, "deck_search", 1, {
+
+    addEffectTriggerAction(state, sourceCardId, 'deck_search', 1, {
       [targetPlayerId]: {},
     });
   }
@@ -345,12 +313,12 @@ export function executeSummonEffect(
   random: SeededRandom,
   value: number
 ): void {
-  if (sourceCard.templateId === "necro_soul_vortex") {
+  if (sourceCard.templateId === 'necro_soul_vortex') {
     // 特殊効果: 魂の渦 - valueはeffect-registryで計算された墓地の枚数
     const sourcePlayer = state.players[sourcePlayerId];
     sourcePlayer.graveyard = []; // 墓地を空にする
     applySummon(state, sourcePlayerId, sourceCard.templateId, random, {
-      name: "魂の集合体",
+      name: '魂の集合体',
       attack: value,
       health: value,
     });
@@ -373,8 +341,8 @@ export function executeResurrectEffect(
   value: number
 ): void {
   const sourcePlayer = state.players[sourcePlayerId];
-  
-  if (sourceCard.templateId === "necro_soul_offering") {
+
+  if (sourceCard.templateId === 'necro_soul_offering') {
     // 特殊効果: 魂の供物
     const allies = sourcePlayer.field.filter((c) => c.currentHealth > 0);
     if (allies.length > 0) {
@@ -382,44 +350,32 @@ export function executeResurrectEffect(
       sacrifice.currentHealth = 0; // 死亡させる
     }
     const resurrectTargets = sourcePlayer.graveyard.filter(
-      (c) => c.type === "creature" && c.cost <= value
+      (c) => c.type === 'creature' && c.cost <= value
     );
     if (resurrectTargets.length > 0) {
       const toResurrect = random.choice(resurrectTargets)!;
-      applyResurrect(
-        state,
-        sourcePlayerId,
-        [toResurrect.templateId],
-        sourceCard.templateId
-      );
+      applyResurrect(state, sourcePlayerId, [toResurrect.templateId], sourceCard.templateId);
     }
   } else {
     // 通常の蘇生 - valueの数だけ蘇生処理
-    const resurrectTargets = sourcePlayer.graveyard.filter(
-      (c) => c.type === "creature"
-    );
-    
+    const resurrectTargets = sourcePlayer.graveyard.filter((c) => c.type === 'creature');
+
     const chosenIds: string[] = [];
     for (let i = 0; i < value && i < resurrectTargets.length; i++) {
       // 既に選択済みのカードを除外してランダム選択
       const availableTargets = resurrectTargets.filter(
-        target => !chosenIds.includes(target.templateId)
+        (target) => !chosenIds.includes(target.templateId)
       );
       if (availableTargets.length === 0) break;
-      
+
       const chosen = random.choice(availableTargets);
       if (chosen) {
         chosenIds.push(chosen.templateId);
       }
     }
-    
+
     if (chosenIds.length > 0) {
-      applyResurrect(
-        state,
-        sourcePlayerId,
-        chosenIds,
-        sourceCard.templateId
-      );
+      applyResurrect(state, sourcePlayerId, chosenIds, sourceCard.templateId);
     }
   }
 }
@@ -431,7 +387,7 @@ export function executeResurrectEffect(
 /**
  * 汎用連鎖効果エンジン
  * キル成功時に追加効果を再帰的に実行
- * 
+ *
  * @param state ゲーム状態
  * @param chainConfig 連鎖効果設定
  * @param sourceCard 効果元カード
@@ -454,38 +410,34 @@ export function executeChainEffect(
 ): void {
   const MAX_CHAIN_DEPTH = 3;
   if (chainDepth >= MAX_CHAIN_DEPTH) return;
-  
+
   // 連鎖発動条件判定
   if (chainConfig.activationCondition) {
     if (!checkEffectCondition(state, sourcePlayerId, chainConfig.activationCondition)) {
       return;
     }
   }
-  
+
   // 連鎖対象選択
   let chainTargets = selectTargets(state, sourcePlayerId, chainConfig.target, random);
-  
+
   // 元の対象を除外（デフォルトtrue）
   if (chainConfig.excludeOriginalTarget !== false) {
-    const killedIds = new Set(killedTargets.map(t => t.instanceId));
-    chainTargets = chainTargets.filter(c => !killedIds.has(c.instanceId));
+    const killedIds = new Set(killedTargets.map((t) => t.instanceId));
+    chainTargets = chainTargets.filter((c) => !killedIds.has(c.instanceId));
   }
-  
+
   // フィルター適用
   if (chainConfig.selectionRules) {
-     chainTargets = filterTargets(
-      chainTargets,
-      chainConfig.selectionRules,
-      sourceCard.templateId
-    );
+    chainTargets = filterTargets(chainTargets, chainConfig.selectionRules, sourceCard.templateId);
   }
-  
+
   if (chainTargets.length === 0) return;
-  
+
   // 連鎖アクション実行
   const handler = effectHandlers[chainConfig.action];
   if (!handler) return;
-  
+
   // 仮のCardEffect作成（ハンドラー呼び出し用）
   const tempEffect = {
     trigger: 'on_play' as const,
@@ -495,24 +447,24 @@ export function executeChainEffect(
     selectionRules: chainConfig.selectionRules,
     activationCondition: chainConfig.activationCondition,
   };
-  
+
   // ハンドラー実行前のHP記録（次の連鎖判定用）
-  const targetsHealthBefore = chainTargets.map(t => ({
+  const targetsHealthBefore = chainTargets.map((t) => ({
     card: t,
     health: t.currentHealth,
     instanceId: t.instanceId,
   }));
-  
+
   // ハンドラー実行
   handler(state, tempEffect, sourceCard, sourcePlayerId, random, chainTargets, chainConfig.value);
-  
+
   // さらなる連鎖判定
   if (chainConfig.chainOnKill && chainConfig.action === 'damage') {
     // 新たにキルされた対象を収集
     const newKilled = targetsHealthBefore
       .filter(({ card, health }) => health > 0 && card.currentHealth <= 0)
       .map(({ card }) => card);
-    
+
     if (newKilled.length > 0) {
       executeChainEffect(
         state,

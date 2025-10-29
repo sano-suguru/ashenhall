@@ -61,19 +61,39 @@ function actionReferencesCard(action: GameAction, cardId: string): boolean {
 
 function collectDuplicatePresence(state: GameState, cardId: string) {
   const zones: Record<string, number> = {
-    field_p1: 0, field_p2: 0,
-    grave_p1: 0, grave_p2: 0,
-    hand_p1: 0, hand_p2: 0,
-    banished_p1: 0, banished_p2: 0,
+    field_p1: 0,
+    field_p2: 0,
+    grave_p1: 0,
+    grave_p2: 0,
+    hand_p1: 0,
+    hand_p2: 0,
+    banished_p1: 0,
+    banished_p2: 0,
   };
-  state.players.player1.field.forEach(c => { if (c.templateId === cardId) zones.field_p1++; });
-  state.players.player2.field.forEach(c => { if (c.templateId === cardId) zones.field_p2++; });
-  state.players.player1.graveyard.forEach(c => { if (c.templateId === cardId) zones.grave_p1++; });
-  state.players.player2.graveyard.forEach(c => { if (c.templateId === cardId) zones.grave_p2++; });
-  state.players.player1.hand.forEach(c => { if (c.templateId === cardId) zones.hand_p1++; });
-  state.players.player2.hand.forEach(c => { if (c.templateId === cardId) zones.hand_p2++; });
-  state.players.player1.banishedCards.forEach(c => { if (c.templateId === cardId) zones.banished_p1++; });
-  state.players.player2.banishedCards.forEach(c => { if (c.templateId === cardId) zones.banished_p2++; });
+  state.players.player1.field.forEach((c) => {
+    if (c.templateId === cardId) zones.field_p1++;
+  });
+  state.players.player2.field.forEach((c) => {
+    if (c.templateId === cardId) zones.field_p2++;
+  });
+  state.players.player1.graveyard.forEach((c) => {
+    if (c.templateId === cardId) zones.grave_p1++;
+  });
+  state.players.player2.graveyard.forEach((c) => {
+    if (c.templateId === cardId) zones.grave_p2++;
+  });
+  state.players.player1.hand.forEach((c) => {
+    if (c.templateId === cardId) zones.hand_p1++;
+  });
+  state.players.player2.hand.forEach((c) => {
+    if (c.templateId === cardId) zones.hand_p2++;
+  });
+  state.players.player1.banishedCards.forEach((c) => {
+    if (c.templateId === cardId) zones.banished_p1++;
+  });
+  state.players.player2.banishedCards.forEach((c) => {
+    if (c.templateId === cardId) zones.banished_p2++;
+  });
   return zones;
 }
 
@@ -82,8 +102,8 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
 
   const destroyedIds = new Set(
     actions
-      .filter(a => a.type === 'creature_destroyed')
-      .map(a => (a as Extract<GameAction,{type:'creature_destroyed'}>).data.destroyedCardId)
+      .filter((a) => a.type === 'creature_destroyed')
+      .map((a) => (a as Extract<GameAction, { type: 'creature_destroyed' }>).data.destroyedCardId)
   );
 
   function inspectCard(card: FieldCard) {
@@ -98,15 +118,17 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
       if (actionReferencesCard(act, card.templateId)) {
         relevant.push({
           sequence: act.sequence,
-            type: act.type,
-            summary: summarizeAction(act)
+          type: act.type,
+          summary: summarizeAction(act),
         });
       }
     }
     const lastCombatStage = actions
       .slice()
       .reverse()
-      .find(a => a.type === 'combat_stage' && actionReferencesCard(a, card.templateId)) as Extract<GameAction,{type:'combat_stage'}> | undefined;
+      .find((a) => a.type === 'combat_stage' && actionReferencesCard(a, card.templateId)) as
+      | Extract<GameAction, { type: 'combat_stage' }>
+      | undefined;
 
     const zones = collectDuplicatePresence(state, card.templateId);
 
@@ -115,26 +137,41 @@ export function assertNoLingeringDeadCreatures(state: GameState): void {
 
     const msgLines: string[] = [];
     msgLines.push('InvariantViolation: lingering dead creature (hp<=0) not destroyed');
-    msgLines.push(` cardId=${card.templateId} name=${card.name} owner=${card.owner} pos=${card.position}`);
-    msgLines.push(` health: current=${card.currentHealth} base=${card.health} mods(h=${card.healthModifier} ph=${card.passiveHealthModifier}) totalBase=${totalHealthBase}`);
-    msgLines.push(` attack: base=${card.attack} mods(a=${card.attackModifier} pa=${card.passiveAttackModifier}) total=${totalAttack}`);
+    msgLines.push(
+      ` cardId=${card.templateId} name=${card.name} owner=${card.owner} pos=${card.position}`
+    );
+    msgLines.push(
+      ` health: current=${card.currentHealth} base=${card.health} mods(h=${card.healthModifier} ph=${card.passiveHealthModifier}) totalBase=${totalHealthBase}`
+    );
+    msgLines.push(
+      ` attack: base=${card.attack} mods(a=${card.attackModifier} pa=${card.passiveAttackModifier}) total=${totalAttack}`
+    );
     if (card.statusEffects.length > 0) {
-      const effStr = card.statusEffects.map(e => {
-        if ((e as any).type === 'poison') { // eslint-disable-line @typescript-eslint/no-explicit-any
-          const pe: any = e; // eslint-disable-line @typescript-eslint/no-explicit-any
-          return `poison(dmg=${pe.damage},dur=${pe.duration})`;
-        }
-        return e.type;
-      }).join(',');
+      const effStr = card.statusEffects
+        .map((e) => {
+          if ((e as any).type === 'poison') {
+            // eslint-disable-line @typescript-eslint/no-explicit-any
+            const pe: any = e; // eslint-disable-line @typescript-eslint/no-explicit-any
+            return `poison(dmg=${pe.damage},dur=${pe.duration})`;
+          }
+          return e.type;
+        })
+        .join(',');
       msgLines.push(` statusEffects: [${effStr}]`);
     } else {
       msgLines.push(' statusEffects: []');
     }
-    msgLines.push(` phase=${state.phase} turn=${state.turnNumber} currentPlayer=${state.currentPlayer}`);
+    msgLines.push(
+      ` phase=${state.phase} turn=${state.turnNumber} currentPlayer=${state.currentPlayer}`
+    );
     msgLines.push(` lastCombatStage=${lastCombatStage ? lastCombatStage.data.stage : 'none'}`);
     msgLines.push(` duplicateIdPresence=${JSON.stringify(zones)}`);
     if (relevant.length > 0) {
-      msgLines.push(' lastRelevantActions=[' + relevant.map(r => `#${r.sequence} ${r.summary}`).join(' | ') + ']');
+      msgLines.push(
+        ' lastRelevantActions=[' +
+          relevant.map((r) => `#${r.sequence} ${r.summary}`).join(' | ') +
+          ']'
+      );
     } else {
       msgLines.push(' lastRelevantActions=[]');
     }

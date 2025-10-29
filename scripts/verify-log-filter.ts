@@ -18,15 +18,26 @@ const INTERNAL_LOG_TYPES: GameAction['type'][] = [
 const necromancerDeck = sampleDecks.find((d) => d.faction === 'necromancer')!;
 const berserkerDeck = sampleDecks.find((d) => d.faction === 'berserker')!;
 
-const player1Deck: Card[] = necromancerDeck.cardIds.map((id) => getCardById(id)).filter(Boolean) as Card[];
-const player2Deck: Card[] = berserkerDeck.cardIds.map((id) => getCardById(id)).filter(Boolean) as Card[];
+const player1Deck: Card[] = necromancerDeck.cardIds
+  .map((id) => getCardById(id))
+  .filter(Boolean) as Card[];
+const player2Deck: Card[] = berserkerDeck.cardIds
+  .map((id) => getCardById(id))
+  .filter(Boolean) as Card[];
 
 console.log('🔍 Phase 1-A フィルタリング効果検証\n');
 
-const result = executeFullGame('filter-test', player1Deck, player2Deck, 'necromancer', 'berserker', 'test-seed');
+const result = executeFullGame(
+  'filter-test',
+  player1Deck,
+  player2Deck,
+  'necromancer',
+  'berserker',
+  'test-seed'
+);
 
 const totalActions = result.actionLog.length;
-const filteredActions = result.actionLog.filter(a => !INTERNAL_LOG_TYPES.includes(a.type));
+const filteredActions = result.actionLog.filter((a) => !INTERNAL_LOG_TYPES.includes(a.type));
 const removedCount = totalActions - filteredActions.length;
 
 console.log('📊 フィルタリング効果:');

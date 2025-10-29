@@ -16,7 +16,12 @@ describe('Deck Sharing Utilities (v2)', () => {
     faction: 'necromancer',
     coreCardIds: ['necro_lich'],
     cards: [
-      'necro_skeleton', 'necro_skeleton', 'necro_zombie', 'necro_lich', 'necro_lich', 'necro_lich'
+      'necro_skeleton',
+      'necro_skeleton',
+      'necro_zombie',
+      'necro_lich',
+      'necro_lich',
+      'necro_lich',
     ],
   };
 
@@ -37,7 +42,7 @@ describe('Deck Sharing Utilities (v2)', () => {
     const invalidCode = 'this is not base64';
     const decoded = decodeDeck(invalidCode);
     expect(decoded).toBeNull();
-    
+
     // console.errorが正しく呼ばれたことを検証
     expect(errorSpy).toHaveBeenCalledWith('Failed to decode deck code:', expect.any(Error));
   });
@@ -49,7 +54,7 @@ describe('Deck Sharing Utilities (v2)', () => {
     const code = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(code);
     expect(decoded).toBeNull();
-    
+
     // console.errorが正しく呼ばれたことを検証
     expect(errorSpy).toHaveBeenCalledWith('Invalid deck code format or version.');
   });
@@ -60,7 +65,7 @@ describe('Deck Sharing Utilities (v2)', () => {
     const badCode = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(badCode);
     expect(decoded).toBeNull();
-    
+
     // console.errorが正しく呼ばれたことを検証
     expect(errorSpy).toHaveBeenCalledWith('Deck code contains invalid card IDs.');
   });
@@ -71,7 +76,7 @@ describe('Deck Sharing Utilities (v2)', () => {
     const badCode = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     const decoded = decodeDeck(badCode);
     expect(decoded).toBeNull();
-    
+
     // console.errorが正しく呼ばれたことを検証
     expect(errorSpy).toHaveBeenCalledWith('Invalid faction ID in deck code.');
   });
@@ -92,8 +97,12 @@ describe('Deck Sharing Utilities (v2)', () => {
       faction: 'necromancer',
       coreCardIds: ['necro_lich', 'necro_lich', 'necro_skeleton'],
       cards: [
-        'necro_lich', 'necro_lich', 'necro_lich',
-        'necro_zombie', 'necro_zombie', 'necro_zombie',
+        'necro_lich',
+        'necro_lich',
+        'necro_lich',
+        'necro_zombie',
+        'necro_zombie',
+        'necro_zombie',
       ],
     };
 

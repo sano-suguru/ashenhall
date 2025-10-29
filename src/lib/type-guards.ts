@@ -1,6 +1,6 @@
 /**
  * 型ガード統一システム
- * 
+ *
  * 設計方針:
  * - 55箇所で重複する型チェックを共通化
  * - エラーメッセージの統一
@@ -14,7 +14,10 @@ import type { CardTemplate, CreatureCardTemplate } from '@/types/game';
 /**
  * カードテンプレートがクリーチャーかどうかを確認し、型安全にキャスト
  */
-function ensureCreatureTemplate(template: CardTemplate | undefined, context: string): CreatureCardTemplate {
+function ensureCreatureTemplate(
+  template: CardTemplate | undefined,
+  context: string
+): CreatureCardTemplate {
   if (!template || template.type !== 'creature') {
     throw new Error(`${context}が見つかりません`);
   }
@@ -24,8 +27,12 @@ function ensureCreatureTemplate(template: CardTemplate | undefined, context: str
 /**
  * カードIDでクリーチャーテンプレートを検索し、型安全に取得
  */
-export function findCreatureTemplateById(templates: CardTemplate[], cardId: string, context: string): CreatureCardTemplate {
-  const template = templates.find(t => t.templateId === cardId);
+export function findCreatureTemplateById(
+  templates: CardTemplate[],
+  cardId: string,
+  context: string
+): CreatureCardTemplate {
+  const template = templates.find((t) => t.templateId === cardId);
   return ensureCreatureTemplate(template, context);
 }
 

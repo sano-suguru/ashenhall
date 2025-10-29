@@ -1,15 +1,15 @@
 /**
  * Ashenhall アニメーション状態管理型定義
- * 
+ *
  * 設計方針:
  * - アニメーション状態の統合管理
  * - 複雑度削減のためのオブジェクト指向設計
  * - 型安全性の保証
  */
 
-type CardAnimationKind = 
+type CardAnimationKind =
   | 'none'
-  | 'attacking' 
+  | 'attacking'
   | 'being_attacked'
   | 'dying'
   | 'summoning'
@@ -41,16 +41,25 @@ export const ANIMATION_NONE: CardAnimationState = {
  */
 export function getAnimationCssClass(state: CardAnimationState | undefined | null): string {
   if (!state) return '';
-  
+
   switch (state.kind) {
-    case 'attacking': return 'card-attacking';
-    case 'being_attacked': return 'card-being-attacked';
-    case 'dying': return 'card-dying';
-    case 'summoning': return 'card-summoning';
-    case 'drawing': return 'card-drawing';
-    case 'spell_casting': return 'card-spell-casting';
-    case 'healing': return 'card-healing';
-    case 'none': return '';
-    default: return '';
+    case 'attacking':
+      return 'card-attacking';
+    case 'being_attacked':
+      return 'card-being-attacked';
+    case 'dying':
+      return 'card-dying';
+    case 'summoning':
+      return 'card-summoning';
+    case 'drawing':
+      return 'card-drawing';
+    case 'spell_casting':
+      return 'card-spell-casting';
+    case 'healing':
+      return 'card-healing';
+    case 'none':
+      return '';
+    default:
+      return '';
   }
 }

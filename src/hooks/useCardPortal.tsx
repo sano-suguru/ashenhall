@@ -1,6 +1,6 @@
 /**
  * カードPortalフック
- * 
+ *
  * CardComponentからPortal処理とマウント状態管理を分離し、
  * 複雑度を削減するためのフック
  */
@@ -15,10 +15,7 @@ interface UseCardPortalResult {
   isMounted: boolean;
 }
 
-export function useCardPortal(
-  shouldShow: boolean,
-  children: React.ReactNode
-): UseCardPortalResult {
+export function useCardPortal(shouldShow: boolean, children: React.ReactNode): UseCardPortalResult {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -30,7 +27,7 @@ export function useCardPortal(
     if (!isMounted || !shouldShow || !children) {
       return null;
     }
-    
+
     return createPortal(children, document.body);
   }, [isMounted, shouldShow, children]);
 

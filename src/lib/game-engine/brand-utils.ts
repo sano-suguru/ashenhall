@@ -1,19 +1,19 @@
 /**
  * 烙印システム ユーティリティ関数
- * 
+ *
  * 設計方針:
  * - 烙印状態の判定・カウント機能を提供
  * - 他のシステムから再利用可能な関数として実装
  * - 型安全性を保ちつつシンプルなAPI
  */
 
-import type { FieldCard, GameState, PlayerId } from "@/types/game";
+import type { FieldCard, GameState, PlayerId } from '@/types/game';
 
 /**
  * クリーチャーが烙印を持っているかチェック
  */
 export function hasBrandedStatus(creature: FieldCard): boolean {
-  return creature.statusEffects.some(effect => effect.type === 'branded');
+  return creature.statusEffects.some((effect) => effect.type === 'branded');
 }
 
 /**

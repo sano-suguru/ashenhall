@@ -1,0 +1,31 @@
+# 依存関係
+node_modules
+pnpm-lock.yaml
+
+# ビルド成果物
+.next
+out
+dist
+build
+
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# ログ
+*.log
+
+# テストカバレッジ
+coverage
+
+# キャッシュ
+.cache
+.turbo
+
+# シミュレーション結果
+simulation_reports
+
+# 生成されたファイル
+public/animations
+src/styles/animations.css

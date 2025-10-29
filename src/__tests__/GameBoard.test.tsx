@@ -20,13 +20,16 @@ jest.mock('@/components/BattlePlaybackControls', () => {
   return MockComponent;
 });
 
-
 describe('GameBoard Component', () => {
-  const necromancerDeckData = sampleDecks.find(d => d.faction === 'necromancer')!;
-  const berserkerDeckData = sampleDecks.find(d => d.faction === 'berserker')!;
+  const necromancerDeckData = sampleDecks.find((d) => d.faction === 'necromancer')!;
+  const berserkerDeckData = sampleDecks.find((d) => d.faction === 'berserker')!;
 
-  const player1Deck: Card[] = necromancerDeckData.cardIds.map(id => getCardById(id)).filter(Boolean) as Card[];
-  const player2Deck: Card[] = berserkerDeckData.cardIds.map(id => getCardById(id)).filter(Boolean) as Card[];
+  const player1Deck: Card[] = necromancerDeckData.cardIds
+    .map((id) => getCardById(id))
+    .filter(Boolean) as Card[];
+  const player2Deck: Card[] = berserkerDeckData.cardIds
+    .map((id) => getCardById(id))
+    .filter(Boolean) as Card[];
 
   const mockGameState = createInitialGameState(
     'test-game-id',
@@ -70,7 +73,10 @@ describe('GameBoard Component', () => {
     const nextGameState = {
       ...mockProps.gameState,
       players: {
-        player1: { ...mockProps.gameState.players.player1, life: mockProps.gameState.players.player1.life - 3 },
+        player1: {
+          ...mockProps.gameState.players.player1,
+          life: mockProps.gameState.players.player1.life - 3,
+        },
         player2: { ...mockProps.gameState.players.player2 },
       },
     };

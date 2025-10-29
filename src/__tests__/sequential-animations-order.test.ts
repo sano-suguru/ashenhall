@@ -1,6 +1,10 @@
 import { CompletionAwareProcessor } from '@/lib/game-engine/completion-aware-processor';
 import { createInitialGameState } from '@/lib/game-engine/core';
-import { addCardAttackAction, addEffectTriggerAction, addCreatureDestroyedAction } from '@/lib/game-engine/action-logger';
+import {
+  addCardAttackAction,
+  addEffectTriggerAction,
+  addCreatureDestroyedAction,
+} from '@/lib/game-engine/action-logger';
 import type { GameState, CreatureCard } from '@/types/game';
 import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 
@@ -35,7 +39,7 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
       keywords: [],
     };
     placeCreatureOnField(gs, 'player1', mockCreature, { id: 'attacker', currentHealth: 5 });
-    const attacker = gs.players.player1.field.find(c => c.templateId === 'attacker');
+    const attacker = gs.players.player1.field.find((c) => c.templateId === 'attacker');
     if (!attacker) throw new Error('Failed to place attacker');
     // player2 にターゲット2体を配置 (health 5)
     placeCreatureOnField(gs, 'player2', attacker as CreatureCard, { id: 't1', currentHealth: 5 });
@@ -61,7 +65,7 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
       targets: {
         [state.players.player2.field[0].instanceId]: { health: { before: 5, after: 2 } },
         [state.players.player2.field[1].instanceId]: { health: { before: 5, after: 0 } },
-      }
+      },
     });
     // destroy action for second target (after it hit 0)
     addCreatureDestroyedAction(state, 'player2', {
@@ -91,9 +95,11 @@ describe('CompletionAwareProcessor sequential animation ordering', () => {
     expect(processor.isCurrentlyProcessing()).toBe(false);
 
     // シーケンス順検証: actionLog の sequence は追加順で自明、ここでは Processor 内部順序副作用が崩れていないことを間接検証
-    const attackIndex = state.actionLog.findIndex(a => a.type === 'card_attack');
-    const damageIndex = state.actionLog.findIndex(a => a.type === 'effect_trigger' && a.data.effectType === 'damage');
-    const destroyIndex = state.actionLog.findIndex(a => a.type === 'creature_destroyed');
+    const attackIndex = state.actionLog.findIndex((a) => a.type === 'card_attack');
+    const damageIndex = state.actionLog.findIndex(
+      (a) => a.type === 'effect_trigger' && a.data.effectType === 'damage'
+    );
+    const destroyIndex = state.actionLog.findIndex((a) => a.type === 'creature_destroyed');
     expect(attackIndex).toBeGreaterThanOrEqual(0);
     expect(damageIndex).toBeGreaterThan(attackIndex);
     expect(destroyIndex).toBeGreaterThan(damageIndex);

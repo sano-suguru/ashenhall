@@ -1,6 +1,6 @@
 /**
  * 戦闘再生コントロール - YouTube風プレイヤーUI
- * 
+ *
  * 設計方針:
  * - シンプルな再生/一時停止の統一概念
  * - スライダー操作で自動一時停止
@@ -10,15 +10,7 @@
 'use client';
 
 import React from 'react';
-import { 
-  Play, 
-  Pause, 
-  SkipBack,
-  SkipForward,
-  Rewind,
-  FastForward,
-  Zap
-} from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Rewind, FastForward, Zap } from 'lucide-react';
 import styles from '@/styles/components/BattlePlayback.module.css';
 
 interface BattlePlaybackControlsProps {
@@ -61,19 +53,19 @@ export default function BattlePlaybackControls({
   };
 
   // ===== ヘルパー関数群（複雑度削減） =====
-  
+
   // 状態判定関数
   const getPlaybackStates = () => {
     const displayTurn = currentTurn === -1 ? maxTurn : currentTurn;
     const isInPastMode = currentTurn !== -1 && currentTurn < maxTurn;
     const canStepBackward = currentTurn > 0;
     const canStepForward = currentTurn < maxTurn;
-    
+
     return {
       displayTurn,
       isInPastMode,
       canStepBackward,
-      canStepForward
+      canStepForward,
     };
   };
 
@@ -94,15 +86,15 @@ export default function BattlePlaybackControls({
 
   // 再生ボタンのスタイル取得
   const getPlayButtonStyles = () => {
-    return isPlaying 
-      ? 'bg-yellow-600 hover:bg-yellow-500 text-white' 
+    return isPlaying
+      ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
       : 'bg-green-600 hover:bg-green-500 text-white';
   };
 
   // ヘルプテキストの内容取得
   const getHelpText = () => {
     if (isPlaying) {
-      return currentTurn === -1 
+      return currentTurn === -1
         ? '⏹️ スライダーを動かすと自動的に一時停止します'
         : '🔄 最新まで自動再生中...';
     }
@@ -119,13 +111,15 @@ export default function BattlePlaybackControls({
           <Zap size={20} className="text-amber-400" />
           <span>戦闘再生</span>
         </h3>
-        
+
         {/* 状態表示 */}
         <div className="flex items-center space-x-3 text-sm">
-          <span className={`px-2 py-1 rounded-full font-bold ${isPlaying ? 'bg-green-600' : 'bg-gray-600'} text-white`}>
+          <span
+            className={`px-2 py-1 rounded-full font-bold ${isPlaying ? 'bg-green-600' : 'bg-gray-600'} text-white`}
+          >
             {isPlaying ? '再生中' : '一時停止'}
           </span>
-          
+
           {isInPastMode && (
             <span className="bg-blue-600 text-white px-2 py-1 rounded-full font-bold text-xs">
               過去表示中
@@ -150,10 +144,10 @@ export default function BattlePlaybackControls({
           onChange={handleSliderChange}
           className={`w-full h-3 bg-gray-600 rounded-lg appearance-none cursor-pointer ${styles.slider}`}
           style={{
-            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(displayTurn / maxTurn) * 100}%, #4b5563 ${(displayTurn / maxTurn) * 100}%, #4b5563 100%)`
+            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(displayTurn / maxTurn) * 100}%, #4b5563 ${(displayTurn / maxTurn) * 100}%, #4b5563 100%)`,
           }}
         />
-        
+
         {/* スライダーの目盛り */}
         <div className="flex justify-between mt-1 text-xs text-gray-500">
           <span>開始</span>
@@ -178,7 +172,7 @@ export default function BattlePlaybackControls({
           >
             <SkipBack size={16} className="text-white" />
           </button>
-          
+
           {/* 1ターン戻る */}
           <button
             onClick={handleStepBackward}
@@ -207,7 +201,7 @@ export default function BattlePlaybackControls({
           >
             <FastForward size={16} className="text-white" />
           </button>
-          
+
           {/* 最新に進む */}
           <button
             onClick={onJumpToEnd}
@@ -227,7 +221,7 @@ export default function BattlePlaybackControls({
             disabled={!isPlaying && !isGameFinished}
             className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:border-blue-400 focus:outline-none"
           >
-            {SPEED_OPTIONS.map(speed => (
+            {SPEED_OPTIONS.map((speed) => (
               <option key={speed} value={speed}>
                 {speed}x
               </option>

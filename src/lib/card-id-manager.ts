@@ -1,6 +1,6 @@
 /**
  * カード・勢力ID管理ユーティリティ
- * 
+ *
  * 設計方針:
  * - 文字列IDと一意の数値IDを相互に変換するマッピングを提供
  * - アプリケーション全体でIDの対応関係を単一のソース（Single Source of Truth）から管理
@@ -11,13 +11,7 @@ import { ALL_CARD_TEMPLATES } from '@/data/cards/card-registry';
 import type { Faction } from '@/types/game';
 
 // 勢力の順序を固定するための配列（Single Source of Truth）
-const FACTIONS_ORDER: Faction[] = [
-  'necromancer',
-  'berserker',
-  'mage',
-  'knight',
-  'inquisitor',
-];
+const FACTIONS_ORDER: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
 
 // --- カードIDマッピング ---
 

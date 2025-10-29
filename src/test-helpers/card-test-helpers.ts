@@ -1,6 +1,6 @@
 /**
  * カードテスト用ヘルパー関数
- * 
+ *
  * 設計方針:
  * - CardTemplateからテスト用Cardインスタンスへの変換を統一
  * - 型安全性の確保と重複コードの削減
@@ -11,17 +11,14 @@ import type { Card, CreatureCard, SpellCard, CardTemplate } from '@/types/game';
 
 /**
  * CardTemplateからテスト用Cardインスタンスを生成
- * 
+ *
  * @param template - カードテンプレート（マスターデータ）
  * @param instanceIdSuffix - instanceIdの接尾辞（オプション、デフォルトは'test'）
  * @returns instanceId付きのCardインスタンス
  */
-export function createCardInstance(
-  template: CardTemplate,
-  instanceIdSuffix?: string
-): Card {
+export function createCardInstance(template: CardTemplate, instanceIdSuffix?: string): Card {
   const instanceId = `${template.templateId}${instanceIdSuffix ? `-${instanceIdSuffix}` : '-test'}`;
-  
+
   if (template.type === 'creature') {
     return {
       ...template,
@@ -37,7 +34,7 @@ export function createCardInstance(
 
 /**
  * CardTemplate配列からクリーチャーを検索し、Cardインスタンスとして取得
- * 
+ *
  * @param templates - カードテンプレート配列
  * @param templateId - 検索するカードのテンプレートID
  * @param context - エラーメッセージ用のコンテキスト情報
@@ -51,22 +48,22 @@ export function findAndCreateCreature(
   context: string,
   instanceIdSuffix?: string
 ): CreatureCard {
-  const template = templates.find(t => t.templateId === templateId);
-  
+  const template = templates.find((t) => t.templateId === templateId);
+
   if (!template) {
     throw new Error(`${context}（templateId: ${templateId}）が見つかりません`);
   }
-  
+
   if (template.type !== 'creature') {
     throw new Error(`${context}はクリーチャーカードではありません`);
   }
-  
+
   return createCardInstance(template, instanceIdSuffix) as CreatureCard;
 }
 
 /**
  * CardTemplate配列からカードを検索し、Cardインスタンスとして取得
- * 
+ *
  * @param templates - カードテンプレート配列
  * @param templateId - 検索するカードのテンプレートID
  * @param context - エラーメッセージ用のコンテキスト情報
@@ -80,11 +77,11 @@ export function findAndCreateCard(
   context: string,
   instanceIdSuffix?: string
 ): Card {
-  const template = templates.find(t => t.templateId === templateId);
-  
+  const template = templates.find((t) => t.templateId === templateId);
+
   if (!template) {
     throw new Error(`${context}（templateId: ${templateId}）が見つかりません`);
   }
-  
+
   return createCardInstance(template, instanceIdSuffix);
 }

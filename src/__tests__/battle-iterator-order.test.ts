@@ -2,7 +2,12 @@ import { createInitialGameState } from '@/lib/game-engine/core';
 import type { FieldCard, GameState, GameAction } from '@/types/game';
 import { CompletionAwareProcessor } from '@/lib/game-engine/completion-aware-processor';
 
-function makeFieldCard(templateId: string, atk: number, hp: number, owner: 'player1' | 'player2'): FieldCard {
+function makeFieldCard(
+  templateId: string,
+  atk: number,
+  hp: number,
+  owner: 'player1' | 'player2'
+): FieldCard {
   return {
     templateId,
     instanceId: templateId, // テスト用にtemplateIdをinstanceIdとして使用
@@ -32,14 +37,7 @@ function makeFieldCard(templateId: string, atk: number, hp: number, owner: 'play
 
 describe('BattleIterator basic emission', () => {
   test('emits expected attack + death sequence (lethal)', () => {
-    const gs: GameState = createInitialGameState(
-      'g1',
-      [],
-      [],
-      'mage',
-      'knight',
-      'seed'
-    );
+    const gs: GameState = createInitialGameState('g1', [], [], 'mage', 'knight', 'seed');
     gs.phase = 'battle_attack';
     gs.currentPlayer = 'player1';
     gs.turnNumber = 2;
@@ -56,7 +54,9 @@ describe('BattleIterator basic emission', () => {
       isPlaying: true,
       currentTurn: -1,
       gameSpeed: 1,
-      onStateChange: (s) => { Object.assign(gs, s); },
+      onStateChange: (s) => {
+        Object.assign(gs, s);
+      },
       onAnimationStateChange: () => {},
     });
 
@@ -64,10 +64,14 @@ describe('BattleIterator basic emission', () => {
       (processor as unknown as { executeAutonomousStep: () => void }).executeAutonomousStep();
     }
 
-    const attackActions = gs.actionLog.filter((a): a is Extract<GameAction, { type: 'card_attack' }> => a.type === 'card_attack');
+    const attackActions = gs.actionLog.filter(
+      (a): a is Extract<GameAction, { type: 'card_attack' }> => a.type === 'card_attack'
+    );
     expect(attackActions.length).toBeGreaterThanOrEqual(1);
-    expect(attackActions.some(a => a.data.attackerCardId === 'A')).toBe(true);
-    const destroy = gs.actionLog.find(a => a.type === 'creature_destroyed' && a.data.destroyedCardId === 'D');
+    expect(attackActions.some((a) => a.data.attackerCardId === 'A')).toBe(true);
+    const destroy = gs.actionLog.find(
+      (a) => a.type === 'creature_destroyed' && a.data.destroyedCardId === 'D'
+    );
     expect(destroy).toBeTruthy();
   });
 });

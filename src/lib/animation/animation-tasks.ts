@@ -4,14 +4,7 @@ import type { ValueChange } from '@/types/game-state';
 export interface AnimationTask {
   id: string;
   sequence: number; // 元アクションの sequence を基準に安定化
-  kind:
-    | 'attack'
-    | 'damage'
-    | 'destroy'
-    | 'summon'
-    | 'draw'
-    | 'spell_cast'
-    | 'heal';
+  kind: 'attack' | 'damage' | 'destroy' | 'summon' | 'draw' | 'spell_cast' | 'heal';
   batchId: string; // バッチ識別子 (legacy 経路は legacy-<sequence>)
   origin: 'attack' | 'effect' | 'other';
   attackerId?: string;
@@ -68,7 +61,9 @@ const AnimationDurations = {
   HEAL: 400,
 } as const;
 
-function ensureMin(d: number, spec: AnimationDurationsSpec): number { return Math.max(spec.MIN, d); }
+function ensureMin(d: number, spec: AnimationDurationsSpec): number {
+  return Math.max(spec.MIN, d);
+}
 
 /**
  * 新規アクション配列からアニメーションタスク列を生成（純関数）
@@ -92,7 +87,7 @@ function createAnimationTask(params: {
 }): AnimationTask {
   // CSS演出クラス名をkindに基づいて自動生成
   const cssClass = params.cssAnimationClass || getCssClassForAnimationKind(params.kind);
-  
+
   return {
     id: params.id,
     sequence: params.sequence,
@@ -112,14 +107,22 @@ function createAnimationTask(params: {
 /** AnimationTaskKindに対応するCSSクラス名を取得 */
 function getCssClassForAnimationKind(kind: AnimationTask['kind']): string {
   switch (kind) {
-    case 'attack': return 'card-attacking';
-    case 'damage': return 'card-being-attacked';
-    case 'destroy': return 'card-dying';
-    case 'summon': return 'card-summoning';
-    case 'draw': return 'card-drawing';
-    case 'spell_cast': return 'card-spell-casting';
-    case 'heal': return 'card-healing';
-    default: return '';
+    case 'attack':
+      return 'card-attacking';
+    case 'damage':
+      return 'card-being-attacked';
+    case 'destroy':
+      return 'card-dying';
+    case 'summon':
+      return 'card-summoning';
+    case 'draw':
+      return 'card-drawing';
+    case 'spell_cast':
+      return 'card-spell-casting';
+    case 'heal':
+      return 'card-healing';
+    default:
+      return '';
   }
 }
 
@@ -134,146 +137,182 @@ function calculateDamageFromValueChange(change: ValueChange, fallbackValue: numb
 
 // === アクションタイプ別処理関数 ===
 
-
 /** card_attackアクションの処理 */
 function processCardAttackAction(
   action: Extract<GameAction, { type: 'card_attack' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  context: {
+    nextId: (base: string, seq: number) => string;
+    batchId: string;
+    spec: AnimationDurationsSpec;
+  }
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
-  
+
   // 1. 攻撃演出タスク（攻撃者が赤く光る）
-  tasks.push(createAnimationTask({
-    id: context.nextId('attack', action.sequence),
-    sequence: action.sequence,
-    kind: 'attack',
-    batchId: context.batchId,
-    origin: 'attack',
-    attackerId: action.data.attackerCardId,
-    targetId: action.data.targetId,
-    duration: AnimationDurations.ATTACK,
-  }));
-  
+  tasks.push(
+    createAnimationTask({
+      id: context.nextId('attack', action.sequence),
+      sequence: action.sequence,
+      kind: 'attack',
+      batchId: context.batchId,
+      origin: 'attack',
+      attackerId: action.data.attackerCardId,
+      targetId: action.data.targetId,
+      duration: AnimationDurations.ATTACK,
+    })
+  );
+
   // 2. ダメージ演出タスク（防御者がシェイクしダメージ表示）
-  tasks.push(createAnimationTask({
-    id: context.nextId('damage', action.sequence),
-    sequence: action.sequence,
-    kind: 'damage',
-    batchId: context.batchId,
-    origin: 'attack',
-    attackerId: action.data.attackerCardId,
-    targetId: action.data.targetId,
-    damage: action.data.damage,
-    duration: AnimationDurations.DAMAGE,
-  }));
-  
+  tasks.push(
+    createAnimationTask({
+      id: context.nextId('damage', action.sequence),
+      sequence: action.sequence,
+      kind: 'damage',
+      batchId: context.batchId,
+      origin: 'attack',
+      attackerId: action.data.attackerCardId,
+      targetId: action.data.targetId,
+      damage: action.data.damage,
+      duration: AnimationDurations.DAMAGE,
+    })
+  );
+
   return tasks;
 }
 
 /** effect_triggerアクションの処理 */
 function processEffectTriggerAction(
   action: Extract<GameAction, { type: 'effect_trigger' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  context: {
+    nextId: (base: string, seq: number) => string;
+    batchId: string;
+    spec: AnimationDurationsSpec;
+  }
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
-  const sourceCardId = typeof action.data.sourceCardId === 'string' ? action.data.sourceCardId : undefined;
-  
+  const sourceCardId =
+    typeof action.data.sourceCardId === 'string' ? action.data.sourceCardId : undefined;
+
   // ダメージ演出
   if (action.data.effectType === 'damage') {
     for (const [targetId, change] of Object.entries(action.data.targets)) {
       if (targetId.startsWith('player')) continue;
-      
+
       const damage = calculateDamageFromValueChange(change as ValueChange, action.data.effectValue);
-      tasks.push(createAnimationTask({
-        id: context.nextId('damage', action.sequence),
-        sequence: action.sequence,
-        kind: 'damage',
-        attackerId: sourceCardId,
-        targetId,
-        damage,
-        duration: ensureMin(context.spec.IMPACT, context.spec),
-        batchId: context.batchId,
-        origin: 'effect'
-      }));
+      tasks.push(
+        createAnimationTask({
+          id: context.nextId('damage', action.sequence),
+          sequence: action.sequence,
+          kind: 'damage',
+          attackerId: sourceCardId,
+          targetId,
+          damage,
+          duration: ensureMin(context.spec.IMPACT, context.spec),
+          batchId: context.batchId,
+          origin: 'effect',
+        })
+      );
     }
   }
-  
+
   // 回復演出
   if (action.data.effectType === 'heal') {
     for (const [targetId, change] of Object.entries(action.data.targets)) {
-      const healAmount = change.health ? Math.max(0, (change.health.after as number) - (change.health.before as number)) : action.data.effectValue;
-      tasks.push(createAnimationTask({
-        id: context.nextId('heal', action.sequence),
-        sequence: action.sequence,
-        kind: 'heal',
-        attackerId: sourceCardId,
-        targetId,
-        damage: healAmount, // 回復量をdamageフィールドに格納（後で整理）
-  duration: AnimationDurations.HEAL,
-        batchId: context.batchId,
-        origin: 'effect'
-      }));
+      const healAmount = change.health
+        ? Math.max(0, (change.health.after as number) - (change.health.before as number))
+        : action.data.effectValue;
+      tasks.push(
+        createAnimationTask({
+          id: context.nextId('heal', action.sequence),
+          sequence: action.sequence,
+          kind: 'heal',
+          attackerId: sourceCardId,
+          targetId,
+          damage: healAmount, // 回復量をdamageフィールドに格納（後で整理）
+          duration: AnimationDurations.HEAL,
+          batchId: context.batchId,
+          origin: 'effect',
+        })
+      );
     }
   }
-  
+
   return tasks;
 }
 
 /** creature_destroyedアクションの処理 */
 function processCreatureDestroyedAction(
   action: Extract<GameAction, { type: 'creature_destroyed' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  context: {
+    nextId: (base: string, seq: number) => string;
+    batchId: string;
+    spec: AnimationDurationsSpec;
+  }
 ): AnimationTask[] {
-  return [createAnimationTask({
-    id: context.nextId('destroy', action.sequence),
-    sequence: action.sequence,
-    kind: 'destroy',
-    targetId: action.data.destroyedCardId,
-    snapshot: action.data.cardSnapshot,
-    duration: ensureMin(context.spec.DESTROY, context.spec),
-    batchId: context.batchId,
-    origin: 'other'
-  })];
+  return [
+    createAnimationTask({
+      id: context.nextId('destroy', action.sequence),
+      sequence: action.sequence,
+      kind: 'destroy',
+      targetId: action.data.destroyedCardId,
+      snapshot: action.data.cardSnapshot,
+      duration: ensureMin(context.spec.DESTROY, context.spec),
+      batchId: context.batchId,
+      origin: 'other',
+    }),
+  ];
 }
 
 /** card_playアクションの処理 (召喚・スペル使用演出) */
 function processCardPlayAction(
   action: Extract<GameAction, { type: 'card_play' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  context: {
+    nextId: (base: string, seq: number) => string;
+    batchId: string;
+    spec: AnimationDurationsSpec;
+  }
 ): AnimationTask[] {
   const tasks: AnimationTask[] = [];
-  
+
   // card_playではinstanceIdを使用（phase-processorsで設定済み）
   const targetId = action.data.cardId;
-  
+
   // カードプレイ演出（召喚・スペル共通）
-  tasks.push(createAnimationTask({
-    id: context.nextId('summon', action.sequence),
-    sequence: action.sequence,
-    kind: 'summon',
-    targetId: targetId,
-  duration: AnimationDurations.SUMMON,
-    batchId: context.batchId,
-    origin: 'other'
-  }));
-  
+  tasks.push(
+    createAnimationTask({
+      id: context.nextId('summon', action.sequence),
+      sequence: action.sequence,
+      kind: 'summon',
+      targetId: targetId,
+      duration: AnimationDurations.SUMMON,
+      batchId: context.batchId,
+      origin: 'other',
+    })
+  );
+
   return tasks;
 }
 
 /** card_drawアクションの処理 (ドロー演出) */
 function processCardDrawAction(
   action: Extract<GameAction, { type: 'card_draw' }>,
-  context: { nextId: (base: string, seq: number) => string; batchId: string; spec: AnimationDurationsSpec }
+  context: {
+    nextId: (base: string, seq: number) => string;
+    batchId: string;
+    spec: AnimationDurationsSpec;
+  }
 ): AnimationTask[] {
-  return [createAnimationTask({
-    id: context.nextId('draw', action.sequence),
-    sequence: action.sequence,
-    kind: 'draw',
-    targetId: action.data.cardId,
-  duration: AnimationDurations.DRAW,
-    batchId: context.batchId,
-    origin: 'other'
-  })];
+  return [
+    createAnimationTask({
+      id: context.nextId('draw', action.sequence),
+      sequence: action.sequence,
+      kind: 'draw',
+      targetId: action.data.cardId,
+      duration: AnimationDurations.DRAW,
+      batchId: context.batchId,
+      origin: 'other',
+    }),
+  ];
 }
 
 /**
@@ -284,11 +323,11 @@ export function buildAnimationTasksFromActions(actions: GameAction[]): Animation
   let localTaskCounter = 0;
   const nextIdLocal = (base: string, seq: number) => `${seq}-${base}-${localTaskCounter++}`;
   const spec = DEFAULT_ANIMATION_DURATIONS;
-  
+
   for (const action of actions) {
     const batchId = `direct-${action.sequence}`;
-  const context = { nextId: nextIdLocal, batchId, spec };
-    
+    const context = { nextId: nextIdLocal, batchId, spec };
+
     switch (action.type) {
       case 'card_attack':
         result.push(...processCardAttackAction(action, context));
@@ -309,6 +348,6 @@ export function buildAnimationTasksFromActions(actions: GameAction[]): Animation
         break;
     }
   }
-  
+
   return result.sort((a, b) => a.sequence - b.sequence || a.id.localeCompare(b.id));
 }

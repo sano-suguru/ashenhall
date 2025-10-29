@@ -1,6 +1,6 @@
 /**
  * 審問官カード - 弱体化と除去
- * 
+ *
  * 設計方針:
  * - 烙印システムによる対象マーキング
  * - 沈黙・気絶による無力化
@@ -117,7 +117,9 @@ export const inquisitorCards: CardTemplate[] = [
         target: 'enemy_random',
         action: 'hand_discard',
         value: 1,
-        selectionRules: [{ type: 'property', operator: 'eq', value: { property: 'type', expectedValue: 'spell' } }],
+        selectionRules: [
+          { type: 'property', operator: 'eq', value: { property: 'type', expectedValue: 'spell' } },
+        ],
       },
     ],
     flavor: '隠された切り札など、我らが正義の前では塵に同じ。',
@@ -358,7 +360,7 @@ export const inquisitorCards: CardTemplate[] = [
               action: 'damage',
               value: 99, // 烙印持ちがいる場合は99ダメージ（破壊）
               selectionRules: [{ type: 'brand', operator: 'has' }], // 烙印持ちを優先選択
-            }
+            },
           ],
           ifFalse: [
             {
@@ -366,7 +368,7 @@ export const inquisitorCards: CardTemplate[] = [
               target: 'enemy_random',
               action: 'damage',
               value: 3, // 烙印持ちがいない場合は通常の3ダメージ
-            }
+            },
           ],
         },
       },
@@ -395,7 +397,7 @@ export const inquisitorCards: CardTemplate[] = [
         selectionRules: [
           { type: 'card_type', operator: 'eq', value: 'creature' },
           { type: 'faction', operator: 'eq', value: 'inquisitor' },
-          { type: 'cost', operator: 'range', maxValue: 2 }
+          { type: 'cost', operator: 'range', maxValue: 2 },
         ],
       },
     ],

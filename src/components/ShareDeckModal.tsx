@@ -20,11 +20,14 @@ export default function ShareDeckModal({ isOpen, onClose, deck }: ShareDeckModal
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast.success(`${type}をクリップボードにコピーしました。`);
-    }).catch(() => {
-      toast.error('コピーに失敗しました。');
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast.success(`${type}をクリップボードにコピーしました。`);
+      })
+      .catch(() => {
+        toast.error('コピーに失敗しました。');
+      });
   };
 
   const handleCopyUrl = () => {
@@ -46,7 +49,7 @@ export default function ShareDeckModal({ isOpen, onClose, deck }: ShareDeckModal
     document.body.appendChild(tempContainer);
 
     const root = createRoot(tempContainer);
-    
+
     try {
       await new Promise<void>((resolve) => {
         root.render(<DeckImageGenerator deck={deck} />);
@@ -63,7 +66,6 @@ export default function ShareDeckModal({ isOpen, onClose, deck }: ShareDeckModal
       link.href = dataUrl;
       link.click();
       toast.success('画像をダウンロードしました。');
-
     } catch (err) {
       console.error('Image generation failed:', err);
       toast.error('画像の生成に失敗しました。');
@@ -78,17 +80,27 @@ export default function ShareDeckModal({ isOpen, onClose, deck }: ShareDeckModal
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-bold">デッキを共有</h3>
-        <button onClick={onClose}><X /></button>
+        <button onClick={onClose}>
+          <X />
+        </button>
       </div>
       <div className="space-y-4">
-        <button onClick={handleCopyUrl} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-          <Link /><span>URLをコピー</span>
+        <button
+          onClick={handleCopyUrl}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+        >
+          <Link />
+          <span>URLをコピー</span>
         </button>
-        <button onClick={handleCopyCode} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-          <Copy /><span>デッキコードをコピー</span>
+        <button
+          onClick={handleCopyCode}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+        >
+          <Copy />
+          <span>デッキコードをコピー</span>
         </button>
-        <button 
-          onClick={handleDownloadImage} 
+        <button
+          onClick={handleDownloadImage}
           disabled={isGeneratingImage}
           className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
         >

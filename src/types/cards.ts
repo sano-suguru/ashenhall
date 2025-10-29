@@ -1,16 +1,13 @@
 /**
  * Ashenhall カードシステム型定義
- * 
+ *
  * 設計方針:
  * - カードの基本構造とエフェクトシステム
  * - ゲーム中のカード状態管理
  * - カード効果の詳細設定
  */
 
-import type {
-  PlayerId,
-  Faction
-} from './core';
+import type { PlayerId, Faction } from './core';
 
 import type {
   Keyword,
@@ -19,14 +16,22 @@ import type {
   EffectTarget,
   ConditionSubject,
   ConditionOperator,
-  StatusEffect
+  StatusEffect,
 } from './effects';
 
 // === カード効果システム ===
 
 /** フィルタールール（統一インターフェース） */
 export interface FilterRule {
-  type: 'brand' | 'property' | 'cost' | 'keyword' | 'health' | 'exclude_self' | 'card_type' | 'faction';
+  type:
+    | 'brand'
+    | 'property'
+    | 'cost'
+    | 'keyword'
+    | 'health'
+    | 'exclude_self'
+    | 'card_type'
+    | 'faction';
   operator: 'eq' | 'gte' | 'lte' | 'has' | 'not_has' | 'range';
   value?: string | number | boolean | Keyword | { property: string; expectedValue: unknown };
   minValue?: number;

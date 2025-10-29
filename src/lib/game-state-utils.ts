@@ -7,14 +7,9 @@
  * - 決定論的な再現性を保証
  */
 
-import type {
-  GameState,
-  GameAction,
-  PlayerId,
-  LogDisplayParts,
-} from "@/types/game";
-import { createInitialGameState, processGameStep } from "./game-engine/core";
-import { getCardById } from "@/data/cards/base-cards";
+import type { GameState, GameAction, PlayerId, LogDisplayParts } from '@/types/game';
+import { createInitialGameState, processGameStep } from './game-engine/core';
+import { getCardById } from '@/data/cards/base-cards';
 
 // === ログフィルタリング定数 ===
 
@@ -23,20 +18,20 @@ import { getCardById } from "@/data/cards/base-cards";
  * ユーザー向け表示では除外され、デバッグ目的でのみ使用される
  */
 export const INTERNAL_LOG_TYPES: GameAction['type'][] = [
-  'combat_stage',    // 戦闘サブステージ（card_attackで十分）
-  'end_stage',       // 終了ステージ処理（結果は他ログで表現）
-  'energy_update',   // エネルギー上限更新（energy_refillで十分）
-  'trigger_event',   // トリガーイベント（effect_triggerで十分）
+  'combat_stage', // 戦闘サブステージ（card_attackで十分）
+  'end_stage', // 終了ステージ処理（結果は他ログで表現）
+  'energy_update', // エネルギー上限更新（energy_refillで十分）
+  'trigger_event', // トリガーイベント（effect_triggerで十分）
 ];
 
 // UIコンポーネントから移植された定数とヘルパー関数
 
 /**
  * インスタンスIDまたはテンプレートIDからテンプレートIDを抽出
- * 
+ *
  * @param cardId インスタンスID or テンプレートID or システムエフェクトソース
  * @returns テンプレートID（システムソースの場合はそのまま返す）
- * 
+ *
  * @example
  * extractTemplateId("ber_fury-inst-1-6-player2-field-0") // => "ber_fury"
  * extractTemplateId("ber_fury-deck-0-5") // => "ber_fury"
@@ -48,12 +43,12 @@ function extractTemplateId(cardId: string): string {
   // パターン1: {templateId}-(inst|deck|token)-... (決定論的ID)
   const structuredMatch = cardId.match(/^(.+?)-(inst|deck|token)-/);
   if (structuredMatch) return structuredMatch[1];
-  
+
   // パターン2: {templateId}-{timestamp}-{random} (非決定論的ID)
   // タイムスタンプは13桁の数値で始まる
   const timestampMatch = cardId.match(/^(.+?)-\d{13}-[a-z0-9]+$/);
   if (timestampMatch) return timestampMatch[1];
-  
+
   // パターン3: templateIdそのまま
   return cardId;
 }
@@ -63,10 +58,7 @@ function extractTemplateId(cardId: string): string {
  * トークンなどテンプレートに存在しないカードに対応
  */
 function getFieldCardName(cardId: string, gameState: GameState): string | undefined {
-  const allFieldCards = [
-    ...gameState.players.player1.field,
-    ...gameState.players.player2.field,
-  ];
+  const allFieldCards = [...gameState.players.player1.field, ...gameState.players.player2.field];
   const fieldCard = allFieldCards.find(
     (card) => card.instanceId === cardId || card.templateId === cardId
   );
@@ -87,20 +79,17 @@ export function getCardName(cardId: string, gameState?: GameState): string {
 }
 
 function getPlayerName(playerId: PlayerId): string {
-  return playerId === "player1" ? "あなた" : "相手";
+  return playerId === 'player1' ? 'あなた' : '相手';
 }
 
-export function getTurnNumberForAction(
-  action: GameAction,
-  gameState: GameState
-): number {
+export function getTurnNumberForAction(action: GameAction, gameState: GameState): number {
   let turnNumber = 1;
   for (let i = 0; i <= action.sequence; i++) {
     const currentAction = gameState.actionLog[i];
     if (
       currentAction &&
-      currentAction.type === "phase_change" &&
-      currentAction.data.toPhase === "draw"
+      currentAction.type === 'phase_change' &&
+      currentAction.data.toPhase === 'draw'
     ) {
       if (i > 0) {
         turnNumber++;
@@ -112,18 +101,28 @@ export function getTurnNumberForAction(
 
 // === 統合されたログフォーマッター実装（旧log-formatters/index.tsから） ===
 
-type LogFormatter = (action: GameAction, playerName: string, gameState: GameState) => LogDisplayParts;
+type LogFormatter = (
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+) => LogDisplayParts;
 
-function formatCardAttackLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
+function formatCardAttackLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
   if (action.type !== 'card_attack') throw new Error('Invalid action type for formatCardAttackLog');
 
   const { data } = action;
   const attackerName = getCardName(data.attackerCardId, gameState);
   const attackerTemplateId = extractTemplateId(data.attackerCardId);
-  const isPlayerTarget = data.targetId === "player1" || data.targetId === "player2";
-  const targetName = isPlayerTarget ? getPlayerName(data.targetId as PlayerId) : `《${getCardName(data.targetId, gameState)}》`;
+  const isPlayerTarget = data.targetId === 'player1' || data.targetId === 'player2';
+  const targetName = isPlayerTarget
+    ? getPlayerName(data.targetId as PlayerId)
+    : `《${getCardName(data.targetId, gameState)}》`;
   const targetTemplateId = isPlayerTarget ? data.targetId : extractTemplateId(data.targetId);
-  
+
   let details = `(${data.damage}ダメージ)`;
   if (data.targetHealth) {
     details += ` 体力 ${data.targetHealth.before}→${data.targetHealth.after}`;
@@ -141,13 +140,17 @@ function formatCardAttackLog(action: GameAction, playerName: string, gameState: 
   };
 }
 
-function formatCardPlayLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
+function formatCardPlayLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
   if (action.type !== 'card_play') throw new Error('Invalid action type for formatCardPlayLog');
 
   const { data } = action;
   const cardName = getCardName(data.cardId, gameState);
   const templateId = extractTemplateId(data.cardId);
-  const energyChange = data.playerEnergy 
+  const energyChange = data.playerEnergy
     ? ` (${data.playerEnergy.before}→${data.playerEnergy.after}エネルギー)`
     : '';
 
@@ -164,25 +167,30 @@ function formatCardPlayLog(action: GameAction, playerName: string, gameState: Ga
   };
 }
 
-function formatCreatureDestroyedLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
-  if (action.type !== 'creature_destroyed') throw new Error('Invalid action type for formatCreatureDestroyedLog');
+function formatCreatureDestroyedLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'creature_destroyed')
+    throw new Error('Invalid action type for formatCreatureDestroyedLog');
 
   const { data } = action;
   const cardName = getCardName(data.destroyedCardId, gameState);
   const destroyedTemplateId = extractTemplateId(data.destroyedCardId);
-  
+
   // sourceCardId が destroyedCardId と同じ場合は戦闘による相互破壊
-  const isSelfDestruction = data.sourceCardId && 
-    extractTemplateId(data.sourceCardId) === destroyedTemplateId;
-  
-  const sourceText = data.source === 'combat' || isSelfDestruction
-    ? '戦闘によって'
-    : data.sourceCardId 
-      ? `《${getCardName(data.sourceCardId)}》によって`
-      : '効果によって';
-  const sourceTemplateId = (data.sourceCardId && !isSelfDestruction) 
-    ? extractTemplateId(data.sourceCardId) 
-    : undefined;
+  const isSelfDestruction =
+    data.sourceCardId && extractTemplateId(data.sourceCardId) === destroyedTemplateId;
+
+  const sourceText =
+    data.source === 'combat' || isSelfDestruction
+      ? '戦闘によって'
+      : data.sourceCardId
+        ? `《${getCardName(data.sourceCardId)}》によって`
+        : '効果によって';
+  const sourceTemplateId =
+    data.sourceCardId && !isSelfDestruction ? extractTemplateId(data.sourceCardId) : undefined;
 
   return {
     type: 'creature_destroyed',
@@ -219,16 +227,16 @@ const EFFECT_TYPE_NAMES: Record<string, string> = {
 
 // 効果対象のテキストとカードIDを取得
 function getEffectTargetInfo(
-  targetIds: string[], 
-  sourcePlayerId: PlayerId, 
+  targetIds: string[],
+  sourcePlayerId: PlayerId,
   gameState: GameState
 ): { text: string; cardIds: string[] } {
   const targetCount = targetIds.length;
-  
+
   if (targetCount === 0) {
     return { text: '', cardIds: [] };
   }
-  
+
   if (targetCount === 1) {
     const targetId = targetIds[0];
     if (targetId === 'player1' || targetId === 'player2') {
@@ -242,27 +250,34 @@ function getEffectTargetInfo(
       return { text: getPlayerName(targetId as PlayerId), cardIds: [] };
     }
     const targetName = getCardName(targetId, gameState);
-    return { 
-      text: `《${targetName}》`, 
-      cardIds: [extractTemplateId(targetId)] 
+    return {
+      text: `《${targetName}》`,
+      cardIds: [extractTemplateId(targetId)],
     };
   }
-  
+
   // 複数対象の場合は数だけ表示
   return { text: `${targetCount}体`, cardIds: [] };
 }
 
-function formatEffectTriggerLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
-  if (action.type !== 'effect_trigger') throw new Error('Invalid action type for formatEffectTriggerLog');
+function formatEffectTriggerLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'effect_trigger')
+    throw new Error('Invalid action type for formatEffectTriggerLog');
 
   const { data } = action;
-  const sourceName = typeof data.sourceCardId === 'string' 
-    ? `《${getCardName(data.sourceCardId, gameState)}》`
-    : data.sourceCardId; // system source のまま表示
-  
+  const sourceName =
+    typeof data.sourceCardId === 'string'
+      ? `《${getCardName(data.sourceCardId, gameState)}》`
+      : data.sourceCardId; // system source のまま表示
+
   const targetIds = Object.keys(data.targets);
   const effectName = EFFECT_TYPE_NAMES[data.effectType] || data.effectType;
-  const sourceTemplateId = typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
+  const sourceTemplateId =
+    typeof data.sourceCardId === 'string' ? extractTemplateId(data.sourceCardId) : undefined;
 
   // 効果値の表示: debuff系は"-"を付ける、それ以外はそのまま
   let valueText = '';
@@ -284,8 +299,13 @@ function formatEffectTriggerLog(action: GameAction, playerName: string, gameStat
   };
 }
 
-function formatEnergyUpdateLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
-  if (action.type !== 'energy_update') throw new Error('Invalid action type for formatEnergyUpdateLog');
+function formatEnergyUpdateLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'energy_update')
+    throw new Error('Invalid action type for formatEnergyUpdateLog');
 
   const { data } = action;
   return {
@@ -297,16 +317,23 @@ function formatEnergyUpdateLog(action: GameAction, playerName: string, _gameStat
   };
 }
 
-function formatKeywordTriggerLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
-  if (action.type !== 'keyword_trigger') throw new Error('Invalid action type for formatKeywordTriggerLog');
+function formatKeywordTriggerLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'keyword_trigger')
+    throw new Error('Invalid action type for formatKeywordTriggerLog');
 
   const { data } = action;
   const sourceName = getCardName(data.sourceCardId, gameState);
   const sourceTemplateId = extractTemplateId(data.sourceCardId);
-  const targetName = data.targetId.startsWith('player') 
+  const targetName = data.targetId.startsWith('player')
     ? getPlayerName(data.targetId as PlayerId)
     : `《${getCardName(data.targetId, gameState)}》`;
-  const targetTemplateId = data.targetId.startsWith('player') ? data.targetId : extractTemplateId(data.targetId);
+  const targetTemplateId = data.targetId.startsWith('player')
+    ? data.targetId
+    : extractTemplateId(data.targetId);
 
   return {
     type: 'keyword_trigger',
@@ -317,8 +344,13 @@ function formatKeywordTriggerLog(action: GameAction, playerName: string, gameSta
   };
 }
 
-function formatPhaseChangeLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
-  if (action.type !== 'phase_change') throw new Error('Invalid action type for formatPhaseChangeLog');
+function formatPhaseChangeLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'phase_change')
+    throw new Error('Invalid action type for formatPhaseChangeLog');
 
   const { data } = action;
   const phaseNames: Record<string, string> = {
@@ -332,7 +364,7 @@ function formatPhaseChangeLog(action: GameAction, playerName: string, _gameState
 
   const fromPhaseName = phaseNames[data.fromPhase] || data.fromPhase;
   const toPhaseName = phaseNames[data.toPhase] || data.toPhase;
-  
+
   // ターン開始（drawフェーズ移行）のみ特別表示
   if (data.toPhase === 'draw') {
     return {
@@ -353,11 +385,18 @@ function formatPhaseChangeLog(action: GameAction, playerName: string, _gameState
   };
 }
 
-function formatTriggerEventLog(action: GameAction, playerName: string, gameState: GameState): LogDisplayParts {
-  if (action.type !== 'trigger_event') throw new Error('Invalid action type for formatTriggerEventLog');
+function formatTriggerEventLog(
+  action: GameAction,
+  playerName: string,
+  gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'trigger_event')
+    throw new Error('Invalid action type for formatTriggerEventLog');
 
   const { data } = action;
-  const sourceName = data.sourceCardId ? `《${getCardName(data.sourceCardId, gameState)}》` : 'システム';
+  const sourceName = data.sourceCardId
+    ? `《${getCardName(data.sourceCardId, gameState)}》`
+    : 'システム';
   const targetText = data.targetCardId ? ` → 《${getCardName(data.targetCardId, gameState)}》` : '';
   const sourceTemplateId = data.sourceCardId ? extractTemplateId(data.sourceCardId) : undefined;
   const targetTemplateId = data.targetCardId ? extractTemplateId(data.targetCardId) : undefined;
@@ -372,11 +411,15 @@ function formatTriggerEventLog(action: GameAction, playerName: string, gameState
 }
 
 // 仮フォーマッタ（詳細仕様未定のため簡易）
-function formatCardDrawLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
+function formatCardDrawLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
   if (action.type !== 'card_draw') throw new Error('invalid type');
   const templateId = extractTemplateId(action.data.cardId);
   const handSize = action.data.handSizeAfter;
-  
+
   // デッキ切れ疲労ダメージの場合
   if (action.data.fatigue) {
     const damage = action.data.fatigue.lifeBefore - action.data.fatigue.lifeAfter;
@@ -386,60 +429,75 @@ function formatCardDrawLog(action: GameAction, playerName: string, _gameState: G
       playerName,
       message: `デッキ切れ！ライフ${damage}減少`,
       details: `ライフ ${action.data.fatigue.lifeBefore}→${action.data.fatigue.lifeAfter}`,
-      cardIds: []
+      cardIds: [],
     };
   }
-  
+
   return {
     type: 'card_draw',
     iconName: 'CreditCard',
     playerName,
     message: `カードを引いた`,
     details: `手札${handSize}枚`,
-    cardIds: [templateId]
+    cardIds: [templateId],
   };
 }
 
-function formatEnergyRefillLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
+function formatEnergyRefillLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
   if (action.type !== 'energy_refill') throw new Error('invalid type');
   const recovered = action.data.energyAfter - action.data.energyBefore;
-  
+
   return {
     type: 'energy_refill',
     iconName: 'Zap',
     playerName,
     message: `エネルギー${recovered}回復`,
     details: `(${action.data.energyAfter}/${action.data.maxEnergy})`,
-    cardIds: []
+    cardIds: [],
   };
 }
 
-function formatEndStageLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
+function formatEndStageLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
   if (action.type !== 'end_stage') throw new Error('invalid type');
   return {
     type: 'end_stage',
     iconName: 'Clock',
     playerName,
     message: `EndStage:${action.data.stage}`,
-    cardIds: []
+    cardIds: [],
   };
 }
 
 // combat_stage 用の簡易フォーマッタ（暫定: UI は主に card_attack / creature_destroyed を詳細表示）
-function formatCombatStageLog(action: GameAction, playerName: string, _gameState: GameState): LogDisplayParts {
-  if (action.type !== 'combat_stage') throw new Error('Invalid action type for combat_stage formatter');
+function formatCombatStageLog(
+  action: GameAction,
+  playerName: string,
+  _gameState: GameState
+): LogDisplayParts {
+  if (action.type !== 'combat_stage')
+    throw new Error('Invalid action type for combat_stage formatter');
   const stage = action.data.stage;
   const attacker = action.data.attackerId;
   const attackerTemplateId = extractTemplateId(attacker);
   const target = action.data.targetId ?? 'player';
-  const targetTemplateId = action.data.targetId ? extractTemplateId(action.data.targetId) : undefined;
-  
+  const targetTemplateId = action.data.targetId
+    ? extractTemplateId(action.data.targetId)
+    : undefined;
+
   return {
     type: 'combat_stage',
     iconName: 'Swords',
     playerName,
     message: `[${stage}] ${attacker} -> ${target}`,
-    cardIds: targetTemplateId ? [attackerTemplateId, targetTemplateId] : [attackerTemplateId]
+    cardIds: targetTemplateId ? [attackerTemplateId, targetTemplateId] : [attackerTemplateId],
   };
 }
 
@@ -482,10 +540,7 @@ export function reconstructStateAtSequence(
   let stepCount = 0;
   const maxSteps = 1000; // 無限ループ防止
 
-  while (
-    state.actionLog.length < actionsToReplay.length &&
-    stepCount < maxSteps
-  ) {
+  while (state.actionLog.length < actionsToReplay.length && stepCount < maxSteps) {
     const nextState = processGameStep(state);
 
     // 進行しなくなった場合（エラー状態）は停止
@@ -541,11 +596,8 @@ export function getLogDisplayParts(action: GameAction, gameState: GameState): Lo
 /**
  * アクションを詳細なテキスト形式に変換（共通ロジック）
  */
-export function formatActionAsText(
-  action: GameAction,
-  gameState: GameState
-): string {
-  const seq = `#${action.sequence.toString().padStart(3, "0")}`;
+export function formatActionAsText(action: GameAction, gameState: GameState): string {
+  const seq = `#${action.sequence.toString().padStart(3, '0')}`;
   const parts = getLogDisplayParts(action, gameState);
 
   let text = `${seq} [${parts.playerName}] ${parts.message}`;
@@ -564,7 +616,7 @@ export function generateBattleReport(gameState: GameState): string {
   const result = gameState.result;
 
   if (!result) {
-    return "戦闘が進行中です";
+    return '戦闘が進行中です';
   }
 
   // 基本情報
@@ -572,13 +624,13 @@ export function generateBattleReport(gameState: GameState): string {
   const matchup = `${getFactionName(player1.faction)} vs ${getFactionName(player2.faction)}\n`;
 
   // 勝敗
-  let winnerText = "";
-  if (result.winner === "player1") {
-    winnerText = "あなたの勝利！";
-  } else if (result.winner === "player2") {
-    winnerText = "相手の勝利";
+  let winnerText = '';
+  if (result.winner === 'player1') {
+    winnerText = 'あなたの勝利！';
+  } else if (result.winner === 'player2') {
+    winnerText = '相手の勝利';
   } else {
-    winnerText = "引き分け";
+    winnerText = '引き分け';
   }
 
   const resultInfo = `勝者: ${winnerText} | ターン: ${
@@ -591,8 +643,7 @@ export function generateBattleReport(gameState: GameState): string {
 
   // 主要アクション（ダメージの大きい攻撃など）
   const keyActions = generateKeyActions(gameState);
-  const actionsText =
-    keyActions.length > 0 ? `\n🎯 主要アクション:\n${keyActions}\n` : "";
+  const actionsText = keyActions.length > 0 ? `\n🎯 主要アクション:\n${keyActions}\n` : '';
 
   return header + matchup + resultInfo + statsText + actionsText;
 }
@@ -606,16 +657,16 @@ export function generateShareableText(gameState: GameState): string {
   const result = gameState.result;
 
   if (!result) {
-    return "Ashenhall戦闘進行中";
+    return 'Ashenhall戦闘進行中';
   }
 
-  let winnerText = "";
-  if (result.winner === "player1") {
-    winnerText = "勝利";
-  } else if (result.winner === "player2") {
-    winnerText = "敗北";
+  let winnerText = '';
+  if (result.winner === 'player1') {
+    winnerText = '勝利';
+  } else if (result.winner === 'player2') {
+    winnerText = '敗北';
   } else {
-    winnerText = "引き分け";
+    winnerText = '引き分け';
   }
 
   return `🏆 Ashenhall ${winnerText}！\n${getFactionName(
@@ -631,12 +682,12 @@ function generateBattleStatistics(gameState: GameState): string {
   const player2 = gameState.players.player2;
 
   // ダメージ統計
-  const player1Damage = calculateTotalDamageDealt(gameState, "player1");
-  const player2Damage = calculateTotalDamageDealt(gameState, "player2");
+  const player1Damage = calculateTotalDamageDealt(gameState, 'player1');
+  const player2Damage = calculateTotalDamageDealt(gameState, 'player2');
 
   // カード使用統計
-  const player1CardsPlayed = countCardsPlayed(gameState, "player1");
-  const player2CardsPlayed = countCardsPlayed(gameState, "player2");
+  const player1CardsPlayed = countCardsPlayed(gameState, 'player1');
+  const player2CardsPlayed = countCardsPlayed(gameState, 'player2');
 
   const lines = [
     `- 総ダメージ: あなた${player1Damage} vs 相手${player2Damage}`,
@@ -645,7 +696,7 @@ function generateBattleStatistics(gameState: GameState): string {
     `- 残り手札: ${player1.hand.length}枚 vs ${player2.hand.length}枚`,
   ];
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /**
@@ -656,18 +707,15 @@ function generateKeyActions(gameState: GameState): string {
 
   // 大ダメージ攻撃（5以上）を抽出
   gameState.actionLog.forEach((action) => {
-    if (action.type === "card_attack") {
+    if (action.type === 'card_attack') {
       const attackData = action.data;
       if (attackData.damage >= 5) {
         const turnNumber = estimateTurnNumber(gameState, action.sequence);
         const attackerName = getCardDisplayName(attackData.attackerCardId);
         const isPlayerTarget =
-          attackData.targetId === "player1" ||
-          attackData.targetId === "player2";
-        const target = isPlayerTarget
-          ? "プレイヤー"
-          : getCardDisplayName(attackData.targetId);
-        const playerName = action.playerId === "player1" ? "あなた" : "相手";
+          attackData.targetId === 'player1' || attackData.targetId === 'player2';
+        const target = isPlayerTarget ? 'プレイヤー' : getCardDisplayName(attackData.targetId);
+        const playerName = action.playerId === 'player1' ? 'あなた' : '相手';
 
         keyActions.push(
           `- T${turnNumber}: [${playerName}] ${attackerName} → ${target} (${attackData.damage}ダメージ)`
@@ -678,13 +726,10 @@ function generateKeyActions(gameState: GameState): string {
 
   // 決定打（最後のライフダメージ）
   const finalAttack = gameState.actionLog
-    .filter((action) => action.type === "card_attack")
+    .filter((action) => action.type === 'card_attack')
     .filter((action) => {
-      if (action.type === "card_attack") {
-        return (
-          action.data.targetId === "player1" ||
-          action.data.targetId === "player2"
-        );
+      if (action.type === 'card_attack') {
+        return action.data.targetId === 'player1' || action.data.targetId === 'player2';
       }
       return false;
     })
@@ -692,34 +737,29 @@ function generateKeyActions(gameState: GameState): string {
 
   if (
     finalAttack &&
-    finalAttack.type === "card_attack" &&
-    gameState.result?.reason === "life_zero"
+    finalAttack.type === 'card_attack' &&
+    gameState.result?.reason === 'life_zero'
   ) {
     const turnNumber = estimateTurnNumber(gameState, finalAttack.sequence);
     const attackerName = getCardDisplayName(finalAttack.data.attackerCardId);
-    const playerName = finalAttack.playerId === "player1" ? "あなた" : "相手";
+    const playerName = finalAttack.playerId === 'player1' ? 'あなた' : '相手';
 
     keyActions.push(
       `🏆 決定打: T${turnNumber} [${playerName}] ${attackerName}の直接攻撃 (${finalAttack.data.damage}ダメージ)`
     );
   }
 
-  return keyActions.slice(0, 5).join("\n"); // 最大5個まで
+  return keyActions.slice(0, 5).join('\n'); // 最大5個まで
 }
 
 /**
  * プレイヤーの総ダメージ量を計算
  */
-function calculateTotalDamageDealt(
-  gameState: GameState,
-  playerId: string
-): number {
+function calculateTotalDamageDealt(gameState: GameState, playerId: string): number {
   return gameState.actionLog
-    .filter(
-      (action) => action.type === "card_attack" && action.playerId === playerId
-    )
+    .filter((action) => action.type === 'card_attack' && action.playerId === playerId)
     .reduce((total, action) => {
-      if (action.type === "card_attack") {
+      if (action.type === 'card_attack') {
         return total + action.data.damage;
       }
       return total;
@@ -731,7 +771,7 @@ function calculateTotalDamageDealt(
  */
 function countCardsPlayed(gameState: GameState, playerId: string): number {
   return gameState.actionLog.filter(
-    (action) => action.type === "card_play" && action.playerId === playerId
+    (action) => action.type === 'card_play' && action.playerId === playerId
   ).length;
 }
 
@@ -742,7 +782,7 @@ function estimateTurnNumber(gameState: GameState, sequence: number): number {
   // そのsequence以前のターン開始アクションを探す
   for (let i = sequence; i >= 0; i--) {
     const action = gameState.actionLog[i];
-    if (action?.type === "phase_change" && action.data.toPhase === "draw") {
+    if (action?.type === 'phase_change' && action.data.toPhase === 'draw') {
       return Math.floor((action.sequence + 1) / 5) + 1;
     }
   }
@@ -776,10 +816,10 @@ function getFactionName(faction: string): string {
  */
 function getReasonText(reason: string): string {
   const reasons: Record<string, string> = {
-    life_zero: "ライフ0",
-    timeout: "時間切れ",
-    deck_empty: "デッキ切れ",
-    surrender: "降参",
+    life_zero: 'ライフ0',
+    timeout: '時間切れ',
+    deck_empty: 'デッキ切れ',
+    surrender: '降参',
   };
   return reasons[reason] || reason;
 }
@@ -788,8 +828,10 @@ function getReasonText(reason: string): string {
  * カード攻撃がプレイヤーを対象としているかを判定する型ガード関数
  */
 function isCardAttackToPlayer(action: GameAction): action is GameAction & { type: 'card_attack' } {
-  return action.type === 'card_attack' && 
-         (action.data.targetId === 'player1' || action.data.targetId === 'player2');
+  return (
+    action.type === 'card_attack' &&
+    (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+  );
 }
 
 /**
@@ -799,10 +841,8 @@ function isLifeDamageEffect(action: GameAction): action is GameAction & { type: 
   if (action.type !== 'effect_trigger' || action.data.effectType !== 'damage') {
     return false;
   }
-  
-  return Object.values(action.data.targets).some(t => 
-    t.life && t.life.before > t.life.after
-  );
+
+  return Object.values(action.data.targets).some((t) => t.life && t.life.before > t.life.after);
 }
 
 /**
@@ -816,21 +856,21 @@ function hasDamage(action: GameAction & { type: 'card_attack' }): boolean {
  * 決定打アクションを特定する関数（複雑度最適化済み）
  */
 export function findDecisiveAction(gameState: GameState): GameAction | null {
-  if (!gameState.result || gameState.result.reason !== "life_zero") return null;
+  if (!gameState.result || gameState.result.reason !== 'life_zero') return null;
 
   // 最後のライフダメージを与えたアクションを逆順検索
   for (let i = gameState.actionLog.length - 1; i >= 0; i--) {
     const action = gameState.actionLog[i];
-    
+
     if (isCardAttackToPlayer(action) && hasDamage(action)) {
       return action;
     }
-    
+
     if (isLifeDamageEffect(action)) {
       return action;
     }
   }
-  
+
   return null;
 }
 

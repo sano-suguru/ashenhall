@@ -1,6 +1,6 @@
 /**
  * Ashenhall ゲームシステム型定義 - Barrel Export
- * 
+ *
  * 設計方針:
  * - 全ての型の一元的な再エクスポート
  * - 後方互換性の完全保持
@@ -8,11 +8,7 @@
  */
 
 // === 基本型（コア・識別子） ===
-export type {
-  PlayerId,
-  Faction,
-  GamePhase,
-} from './core';
+export type { PlayerId, Faction, GamePhase } from './core';
 
 // === 効果システム型 ===
 export type {
@@ -55,33 +51,19 @@ export type {
   EndStageActionData,
   GameAction,
   GameResult,
-  GameState
+  GameState,
 } from './game-state';
 
 // === 統計・分析型 ===
-export type {
-  LocalStats,
-} from './statistics';
+export type { LocalStats } from './statistics';
 
 // === UI・ユーティリティ型 ===
-export type {
-  LogDisplayParts,
-  CustomDeck,
-  DeckCollection,
-} from './ui-utils';
+export type { LogDisplayParts, CustomDeck, DeckCollection } from './ui-utils';
 
 // === アニメーション型 ===
-export type {
-  CardAnimationState
-} from './animation';
+export type { CardAnimationState } from './animation';
 
-export {
-  ANIMATION_NONE,
-} from './animation';
+export { ANIMATION_NONE } from './animation';
 
 // === 定数の再エクスポート ===
-export {
-  GAME_CONSTANTS,
-  FACTION_DESCRIPTIONS,
-  AI_EVALUATION_WEIGHTS,
-} from './constants';
+export { GAME_CONSTANTS, FACTION_DESCRIPTIONS, AI_EVALUATION_WEIGHTS } from './constants';

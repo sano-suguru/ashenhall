@@ -1,6 +1,6 @@
 /**
  * カードコンポーネント - 個別カードの表示
- * 
+ *
  * 設計方針:
  * - 場のカードと手札のカード両方で使用可能
  * - プレースホルダー画像で各勢力の特色表現
@@ -12,12 +12,7 @@
 
 import React from 'react';
 import type { Card, FieldCard, CreatureCard } from '@/types/game';
-import { 
-  FACTION_COLORS, 
-  SIZE_CLASSES, 
-  KEYWORD_ICONS,
-  KEYWORD_LABELS
-} from '@/lib/card-constants';
+import { FACTION_COLORS, SIZE_CLASSES, KEYWORD_ICONS, KEYWORD_LABELS } from '@/lib/card-constants';
 import { useCardTooltip } from '@/hooks/useCardTooltip';
 import { useCardState } from '@/hooks/useCardState';
 import { useCardAnimation } from '@/hooks/useCardAnimation';
@@ -37,7 +32,6 @@ interface CardComponentProps {
   // 統合アニメーション状態
   animationState?: CardAnimationState;
 }
-
 
 // === 内部ユーティリティ関数（旧card-style-utils.tsから統合） ===
 
@@ -78,7 +72,7 @@ const getCardContainerClasses = ({
 
   // 状態による追加クラス
   const conditionalClasses = [];
-  
+
   if (isOpponent) {
     conditionalClasses.push('opacity-90');
   } else {
@@ -97,7 +91,11 @@ const getCardContainerClasses = ({
 /**
  * カードアート部分のコンポーネント
  */
-const CardArt = ({ card, size, factionStyle }: {
+const CardArt = ({
+  card,
+  size,
+  factionStyle,
+}: {
   card: Card;
   size: 'small' | 'medium' | 'large';
   factionStyle: { accent: string };
@@ -117,16 +115,18 @@ const CardArt = ({ card, size, factionStyle }: {
 /**
  * カード本体（名前・タイプ）のコンポーネント
  */
-const CardBody = ({ card, sizeStyle, factionStyle }: {
+const CardBody = ({
+  card,
+  sizeStyle,
+  factionStyle,
+}: {
   card: Card;
   sizeStyle: { text: string };
   factionStyle: { accent: string };
 }) => {
   return (
     <div className="px-2 py-1">
-      <h3 className={`${sizeStyle.text} font-bold text-center leading-tight`}>
-        {card.name}
-      </h3>
+      <h3 className={`${sizeStyle.text} font-bold text-center leading-tight`}>{card.name}</h3>
       <p className={`text-xs text-center ${factionStyle.accent} opacity-80`}>
         {CARD_TYPE_JP[card.type]}
       </p>
@@ -155,16 +155,17 @@ const CardHeader = ({ card }: { card: Card }) => {
 /**
  * カードオーバーレイ（ターン数など）のコンポーネント
  */
-const CardOverlays = ({ isFieldCard, fieldCard }: {
+const CardOverlays = ({
+  isFieldCard,
+  fieldCard,
+}: {
   isFieldCard?: boolean;
   fieldCard: FieldCard | null;
 }) => {
   return (
     <>
       {isFieldCard && fieldCard && (
-        <div className="absolute top-2 left-2 text-xs text-gray-400">
-          T{fieldCard.summonTurn}
-        </div>
+        <div className="absolute top-2 left-2 text-xs text-gray-400">T{fieldCard.summonTurn}</div>
       )}
     </>
   );
@@ -175,35 +176,31 @@ const CardOverlays = ({ isFieldCard, fieldCard }: {
  */
 const KeywordOverlay = ({ keywords }: { keywords: string[] }) => {
   if (!keywords || keywords.length === 0) return null;
-  
+
   // 配置パターン（グリッド配置）
   const positions = [
-    'top-1/4 left-1/4',      // 1個目: 左上寄り
-    'top-1/3 right-1/4',     // 2個目: 右上寄り
-    'bottom-1/3 left-1/3',   // 3個目: 左下寄り
-    'bottom-1/4 right-1/3',  // 4個目: 右下寄り
+    'top-1/4 left-1/4', // 1個目: 左上寄り
+    'top-1/3 right-1/4', // 2個目: 右上寄り
+    'bottom-1/3 left-1/3', // 3個目: 左下寄り
+    'bottom-1/4 right-1/3', // 4個目: 右下寄り
   ];
-  
+
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {keywords.map((keyword, index) => {
         const Icon = KEYWORD_ICONS[keyword as keyof typeof KEYWORD_ICONS];
         if (!Icon) return null;
-        
+
         const label = KEYWORD_LABELS[keyword];
         const position = positions[index % positions.length];
-        
+
         return (
           <div
             key={`${keyword}-${index}`}
             className={`absolute ${position} transform -translate-x-1/2 -translate-y-1/2`}
             title={label}
           >
-            <Icon 
-              size={48} 
-              className="text-white opacity-15" 
-              strokeWidth={1.5}
-            />
+            <Icon size={48} className="text-white opacity-15" strokeWidth={1.5} />
           </div>
         );
       })}
@@ -216,16 +213,18 @@ const KeywordOverlay = ({ keywords }: { keywords: string[] }) => {
  */
 const calculateCardStats = (creatureCard: CreatureCard, fieldCard: FieldCard | null) => {
   const attack = fieldCard ? creatureCard.attack + fieldCard.attackModifier : creatureCard.attack;
-  const health = fieldCard ? `${fieldCard.currentHealth}/${creatureCard.health + fieldCard.healthModifier}` : creatureCard.health;
+  const health = fieldCard
+    ? `${fieldCard.currentHealth}/${creatureCard.health + fieldCard.healthModifier}`
+    : creatureCard.health;
   return { attack, health };
 };
 
 /**
  * 状態チェックヘルパー関数群（複雑度削減用）
  */
-const hasStun = (fc: FieldCard) => fc.statusEffects?.some(e => e.type === 'stun');
+const hasStun = (fc: FieldCard) => fc.statusEffects?.some((e) => e.type === 'stun');
 const hasSilenced = (fc: FieldCard) => fc.isSilenced;
-const hasPoison = (fc: FieldCard) => fc.statusEffects?.some(e => e.type === 'poison');
+const hasPoison = (fc: FieldCard) => fc.statusEffects?.some((e) => e.type === 'poison');
 const hasBuffs = (fc: FieldCard) => fc.attackModifier > 0 || fc.healthModifier > 0;
 const hasDebuffs = (fc: FieldCard) => fc.attackModifier < 0 || fc.healthModifier < 0;
 
@@ -235,23 +234,28 @@ const hasDebuffs = (fc: FieldCard) => fc.attackModifier < 0 || fc.healthModifier
  */
 const getCardStateClasses = (fieldCard: FieldCard | null): string => {
   if (!fieldCard) return '';
-  
+
   if (hasStun(fieldCard)) return 'card-state-stunned';
   if (hasSilenced(fieldCard)) return 'card-state-silenced';
   if (hasPoison(fieldCard)) return 'card-state-poisoned';
   if (hasBuffs(fieldCard)) return 'card-state-buffed';
   if (hasDebuffs(fieldCard)) return 'card-state-debuffed';
-  
+
   return '';
 };
 
 /**
  * CSS クラス名を構築するヘルパー関数
  */
-const buildStatsClassNames = (sizeStyle: { stats: string }, isEnhanced: boolean, isDamaged: boolean, fieldCard: FieldCard | null) => {
+const buildStatsClassNames = (
+  sizeStyle: { stats: string },
+  isEnhanced: boolean,
+  isDamaged: boolean,
+  fieldCard: FieldCard | null
+) => {
   const shouldHighlightAttack = isEnhanced && fieldCard?.attackModifier !== 0;
   const attackClassName = `${sizeStyle.stats} font-bold ${shouldHighlightAttack ? 'text-green-400' : ''}`;
-  
+
   let healthClassName;
   if (isDamaged) {
     healthClassName = `${sizeStyle.stats} font-bold text-red-400`;
@@ -259,14 +263,20 @@ const buildStatsClassNames = (sizeStyle: { stats: string }, isEnhanced: boolean,
     const shouldHighlightHealth = isEnhanced && fieldCard?.healthModifier !== 0;
     healthClassName = `${sizeStyle.stats} font-bold ${shouldHighlightHealth ? 'text-green-400' : ''}`;
   }
-  
+
   return { attackClassName, healthClassName };
 };
 
 /**
  * カードステータス（攻撃力・体力）のコンポーネント
  */
-const CardStats = ({ card, isFieldCard, sizeStyle, isEnhanced, isDamaged }: {
+const CardStats = ({
+  card,
+  isFieldCard,
+  sizeStyle,
+  isEnhanced,
+  isDamaged,
+}: {
   card: Card;
   isFieldCard?: boolean;
   sizeStyle: { stats: string };
@@ -279,23 +289,24 @@ const CardStats = ({ card, isFieldCard, sizeStyle, isEnhanced, isDamaged }: {
 
   const creatureCard = card as CreatureCard;
   const fieldCard = isFieldCard ? (card as FieldCard) : null;
-  
+
   const { attack, health } = calculateCardStats(creatureCard, fieldCard);
-  const { attackClassName, healthClassName } = buildStatsClassNames(sizeStyle, isEnhanced, isDamaged, fieldCard);
+  const { attackClassName, healthClassName } = buildStatsClassNames(
+    sizeStyle,
+    isEnhanced,
+    isDamaged,
+    fieldCard
+  );
 
   return (
     <div className="absolute bottom-2 left-2 right-2 flex justify-between">
       <div className="flex items-center space-x-1">
         <Sword size={12} className="text-orange-400" />
-        <span className={attackClassName}>
-          {attack}
-        </span>
+        <span className={attackClassName}>{attack}</span>
       </div>
       <div className="flex items-center space-x-1">
         <Heart size={12} className="text-red-400" />
-        <span className={healthClassName}>
-          {health}
-        </span>
+        <span className={healthClassName}>{health}</span>
       </div>
     </div>
   );
@@ -313,17 +324,12 @@ export default function CardComponent({
 }: CardComponentProps) {
   const factionStyle = FACTION_COLORS[card.faction];
   const sizeStyle = SIZE_CLASSES[size];
-  
-  const { 
-    showTooltip, 
-    tooltipStyle, 
-    tooltipRef, 
-    handleMouseEnter, 
-    handleMouseLeave 
-  } = useCardTooltip();
-  
+
+  const { showTooltip, tooltipStyle, tooltipRef, handleMouseEnter, handleMouseLeave } =
+    useCardTooltip();
+
   const { fieldCard, isDamaged, isEnhanced } = useCardState(card, isFieldCard);
-  
+
   // 統合アニメーション状態（デフォルト値はANIMATION_NONE）
   const finalAnimationState = animationState || { kind: 'none' as const };
 
@@ -332,9 +338,14 @@ export default function CardComponent({
   });
 
   const tooltipContent = (
-    <CardTooltip card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} tooltipStyle={tooltipStyle} />
+    <CardTooltip
+      card={card}
+      isFieldCard={isFieldCard}
+      fieldCard={fieldCard}
+      tooltipStyle={tooltipStyle}
+    />
   );
-  
+
   const { portalElement } = useCardPortal(showTooltip, tooltipContent);
 
   const cardContainerClasses = getCardContainerClasses({
@@ -358,20 +369,15 @@ export default function CardComponent({
         <CardArt card={card} size={size} factionStyle={factionStyle} />
         <CardBody card={card} sizeStyle={sizeStyle} factionStyle={factionStyle} />
         <CardStats
-          card={card} 
-          isFieldCard={isFieldCard} 
-          sizeStyle={sizeStyle} 
-          isEnhanced={isEnhanced} 
-          isDamaged={isDamaged} 
+          card={card}
+          isFieldCard={isFieldCard}
+          sizeStyle={sizeStyle}
+          isEnhanced={isEnhanced}
+          isDamaged={isDamaged}
         />
-        <CardOverlays 
-          isFieldCard={isFieldCard} 
-          fieldCard={fieldCard} 
-        />
+        <CardOverlays isFieldCard={isFieldCard} fieldCard={fieldCard} />
         {/* Phase 2: キーワードオーバーレイ（シャドウバース風） */}
-        {isFieldCard && fieldCard && (
-          <KeywordOverlay keywords={fieldCard.keywords} />
-        )}
+        {isFieldCard && fieldCard && <KeywordOverlay keywords={fieldCard.keywords} />}
       </div>
 
       {damagePopupElement}

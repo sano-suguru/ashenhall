@@ -39,7 +39,10 @@ export default function StatsPage() {
             <BarChart2 className="mr-4" />
             戦績ダッシュボード
           </h1>
-          <Link href="/" className="flex items-center text-blue-400 hover:text-blue-300 transition-colors">
+          <Link
+            href="/"
+            className="flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+          >
             <ArrowLeft className="mr-2" size={20} />
             ゲームに戻る
           </Link>
@@ -69,9 +72,13 @@ export default function StatsPage() {
           </h2>
           <div className="space-y-4">
             {Object.entries(stats.factionStats).map(([faction, factionStats]) => {
-              const winRate = factionStats.games > 0 ? (factionStats.wins / factionStats.games) * 100 : 0;
+              const winRate =
+                factionStats.games > 0 ? (factionStats.wins / factionStats.games) * 100 : 0;
               return (
-                <div key={faction} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center justify-between">
+                <div
+                  key={faction}
+                  className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center justify-between"
+                >
                   <h3 className="text-xl font-bold">{FACTION_NAMES[faction as Faction]}</h3>
                   <div className="flex items-center space-x-8">
                     <div className="text-center">

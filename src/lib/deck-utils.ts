@@ -1,6 +1,6 @@
 /**
  * カスタムデッキ管理ユーティリティ
- * 
+ *
  * 設計方針:
  * - localStorageとのやり取りを抽象化
  * - デッキデータのCRUD操作を提供
@@ -60,9 +60,8 @@ function areArraysEqual(a: string[], b: string[]): boolean {
 
 export function normalizeDeckCoreCards(deck: CustomDeck): CustomDeck {
   const sanitizedCoreCardIds = sanitizeCoreCardIds(deck.coreCardIds, deck.cards);
-  const trimmedCoreCardIds = sanitizedCoreCardIds.length > 3
-    ? sanitizedCoreCardIds.slice(0, 3)
-    : sanitizedCoreCardIds;
+  const trimmedCoreCardIds =
+    sanitizedCoreCardIds.length > 3 ? sanitizedCoreCardIds.slice(0, 3) : sanitizedCoreCardIds;
 
   if (areArraysEqual(trimmedCoreCardIds, deck.coreCardIds)) {
     return deck;
@@ -78,8 +77,9 @@ export function normalizeDeckCoreCards(deck: CustomDeck): CustomDeck {
  * 乱数生成器（簡易的なUUID用）
  */
 function uuidv4(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c == 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -103,7 +103,12 @@ export function loadDeckCollection(): DeckCollection {
     if (storedDecks) {
       const parsed = JSON.parse(storedDecks) as DeckCollection;
       const normalizedDecks = parsed.decks.map(normalizeDeckCoreCards);
-      if (areArraysEqual(normalizedDecks.map(d => d.id), parsed.decks.map(d => d.id))) {
+      if (
+        areArraysEqual(
+          normalizedDecks.map((d) => d.id),
+          parsed.decks.map((d) => d.id)
+        )
+      ) {
         let requiresUpdate = false;
         const updatedDecks = parsed.decks.map((deck, index) => {
           const normalized = normalizedDecks[index];
@@ -145,10 +150,7 @@ export function saveDeckCollection(deckCollection: DeckCollection): void {
 /**
  * 新しいカスタムデッキを作成
  */
-export function createNewDeck(
-  name: string,
-  faction: Faction
-): CustomDeck {
+export function createNewDeck(name: string, faction: Faction): CustomDeck {
   const newDeck: CustomDeck = {
     id: uuidv4(),
     name,
@@ -164,10 +166,7 @@ export function createNewDeck(
 /**
  * デッキをコレクションに追加
  */
-export function addDeckToCollection(
-  collection: DeckCollection,
-  deck: CustomDeck
-): DeckCollection {
+export function addDeckToCollection(collection: DeckCollection, deck: CustomDeck): DeckCollection {
   const deckToStore = normalizeDeckCoreCards(deck);
   const newCollection = { ...collection, decks: [...collection.decks, deckToStore] };
   return newCollection;
@@ -184,7 +183,7 @@ export function updateDeckInCollection(
     ...normalizeDeckCoreCards(updatedDeck),
     updatedAt: new Date().toISOString(),
   };
-  const newDecks = collection.decks.map(deck =>
+  const newDecks = collection.decks.map((deck) =>
     deck.id === updatedDeck.id ? deckToStore : deck
   );
   return { ...collection, decks: newDecks };
@@ -197,7 +196,7 @@ export function deleteDeckFromCollection(
   collection: DeckCollection,
   deckId: string
 ): DeckCollection {
-  const newDecks = collection.decks.filter(deck => deck.id !== deckId);
+  const newDecks = collection.decks.filter((deck) => deck.id !== deckId);
   const newActiveDeckIds = { ...collection.activeDeckIds };
 
   // 削除したデッキがアクティブだった場合は解除
@@ -242,7 +241,9 @@ export function validateDeck(deck: CustomDeck): { isValid: boolean; errors: stri
 
   // デッキ枚数チェック
   if (deck.cards.length !== GAME_CONSTANTS.DECK_SIZE) {
-    errors.push(`デッキの枚数は${GAME_CONSTANTS.DECK_SIZE}枚である必要があります。 (現在: ${deck.cards.length}枚)`);
+    errors.push(
+      `デッキの枚数は${GAME_CONSTANTS.DECK_SIZE}枚である必要があります。 (現在: ${deck.cards.length}枚)`
+    );
   }
 
   if (duplicateCoreCardIds.length > 0) {
@@ -254,10 +255,13 @@ export function validateDeck(deck: CustomDeck): { isValid: boolean; errors: stri
   }
 
   // 同名カード制限チェック
-  const cardCounts = deck.cards.reduce((acc, cardId) => {
-    acc[cardId] = (acc[cardId] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const cardCounts = deck.cards.reduce(
+    (acc, cardId) => {
+      acc[cardId] = (acc[cardId] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   Object.entries(cardCounts).forEach(([cardId, count]) => {
     const isCore = coreCardSet.has(cardId);

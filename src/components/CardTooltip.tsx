@@ -26,35 +26,34 @@ interface CreatureStatsData {
 }
 
 function useCreatureStatsData(
-  card: Card, 
-  isFieldCard: boolean, 
+  card: Card,
+  isFieldCard: boolean,
   fieldCard: FieldCard | null
 ): CreatureStatsData | null {
   return useMemo(() => {
     if (card.type !== 'creature') {
       return null;
     }
-    
+
     const hasFieldModifiers = isFieldCard && fieldCard;
-    
-    const attackValue = hasFieldModifiers 
-      ? card.attack + fieldCard.attackModifier 
-      : card.attack;
-      
+
+    const attackValue = hasFieldModifiers ? card.attack + fieldCard.attackModifier : card.attack;
+
     const healthValue = card.health + (hasFieldModifiers ? fieldCard.healthModifier : 0);
-      
+
     const attackModifier = hasFieldModifiers ? fieldCard.attackModifier : 0;
     const healthModifier = hasFieldModifiers ? fieldCard.healthModifier : 0;
-    
-    const hasModifiers = Boolean(hasFieldModifiers && 
-      (fieldCard!.attackModifier !== 0 || fieldCard!.healthModifier !== 0));
-    
+
+    const hasModifiers = Boolean(
+      hasFieldModifiers && (fieldCard!.attackModifier !== 0 || fieldCard!.healthModifier !== 0)
+    );
+
     return {
       attackValue,
       healthValue,
       attackModifier,
       healthModifier,
-      hasModifiers
+      hasModifiers,
     };
   }, [card, isFieldCard, fieldCard]);
 }
@@ -63,13 +62,10 @@ function useCreatureStatsData(
 
 const TooltipHeader = ({ card }: { card: Card }) => {
   const FactionIcon = FACTION_ICONS[card.faction];
-  
+
   return (
     <div className="flex items-center gap-2 mb-3 border-b border-gray-600 pb-2">
-      <FactionIcon 
-        size={16} 
-        className={`${FACTION_COLORS[card.faction].accent} drop-shadow-sm`} 
-      />
+      <FactionIcon size={16} className={`${FACTION_COLORS[card.faction].accent} drop-shadow-sm`} />
       <div className="text-base font-bold text-white flex-1">《{card.name}》</div>
       <div className="flex items-center gap-1">
         <Zap size={16} className="text-blue-400 drop-shadow-sm" />
@@ -79,7 +75,15 @@ const TooltipHeader = ({ card }: { card: Card }) => {
   );
 };
 
-const TooltipCreatureStats = ({ card, isFieldCard, fieldCard }: { card: Card; isFieldCard: boolean; fieldCard: FieldCard | null }) => {
+const TooltipCreatureStats = ({
+  card,
+  isFieldCard,
+  fieldCard,
+}: {
+  card: Card;
+  isFieldCard: boolean;
+  fieldCard: FieldCard | null;
+}) => {
   const statsData = useCreatureStatsData(card, isFieldCard, fieldCard);
 
   if (card.type !== 'creature' || !statsData) return null;
@@ -88,13 +92,17 @@ const TooltipCreatureStats = ({ card, isFieldCard, fieldCard }: { card: Card; is
     <div className="flex items-center gap-6 mb-3">
       <div className="flex items-center gap-1.5">
         <Sword size={16} className="text-red-400 drop-shadow-sm" />
-        <span className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}>
+        <span
+          className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}
+        >
           {statsData.attackValue}
         </span>
       </div>
       <div className="flex items-center gap-1.5">
         <Heart size={16} className="text-green-400 drop-shadow-sm" />
-        <span className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}>
+        <span
+          className={`font-semibold ${statsData.hasModifiers ? 'text-yellow-300 drop-shadow-sm' : 'text-white'}`}
+        >
           {statsData.healthValue}
         </span>
       </div>
@@ -141,16 +149,17 @@ const TooltipFlavor = ({ card }: { card: Card }) => {
 
   return (
     <div className="border-t border-gray-600 pt-2 mt-3">
-      <div className="text-xs text-gray-300 italic">
-        {card.flavor}
-      </div>
+      <div className="text-xs text-gray-300 italic">{card.flavor}</div>
     </div>
   );
 };
 
 export const CardTooltip = ({ card, isFieldCard, fieldCard, tooltipStyle }: TooltipProps) => {
   return (
-    <div style={tooltipStyle} className="fixed transition-all duration-300 pointer-events-none z-50">
+    <div
+      style={tooltipStyle}
+      className="fixed transition-all duration-300 pointer-events-none z-50"
+    >
       <div className="px-4 py-3 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white text-xs rounded-xl shadow-2xl w-96 text-left leading-relaxed border border-gray-500/50 backdrop-blur-sm">
         <TooltipHeader card={card} />
         <TooltipCreatureStats card={card} isFieldCard={isFieldCard} fieldCard={fieldCard} />

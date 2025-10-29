@@ -1,6 +1,6 @@
 /**
  * useLocalStats フック ユニットテスト
- * 
+ *
  * テスト方針:
  * - localStorage操作の正常系・異常系テスト
  * - 統計更新ロジックの正確性確認
@@ -50,7 +50,9 @@ import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-uti
 
 const mockLoadStats = loadStats as jest.MockedFunction<typeof loadStats>;
 const mockSaveStats = saveStats as jest.MockedFunction<typeof saveStats>;
-const mockUpdateStatsWithGameResult = updateStatsWithGameResult as jest.MockedFunction<typeof updateStatsWithGameResult>;
+const mockUpdateStatsWithGameResult = updateStatsWithGameResult as jest.MockedFunction<
+  typeof updateStatsWithGameResult
+>;
 
 describe('useLocalStats', () => {
   // コンソールモック用スパイ
@@ -87,9 +89,9 @@ describe('useLocalStats', () => {
 
   // テスト用ゲーム状態
   const createTestGameState = (winner: 'player1' | 'player2' | null = 'player1'): GameState => {
-    const deck1 = necromancerCards.slice(0, 20).map(t => createCardInstance(t));
-    const deck2 = berserkerCards.slice(0, 20).map(t => createCardInstance(t));
-    
+    const deck1 = necromancerCards.slice(0, 20).map((t) => createCardInstance(t));
+    const deck2 = berserkerCards.slice(0, 20).map((t) => createCardInstance(t));
+
     const gameState = createInitialGameState(
       'test-game',
       deck1,
@@ -98,7 +100,7 @@ describe('useLocalStats', () => {
       'berserker',
       'test-seed'
     );
-    
+
     // ゲーム結果を設定
     gameState.result = {
       winner,
@@ -107,19 +109,19 @@ describe('useLocalStats', () => {
       durationSeconds: 240,
       endTime: Date.now(),
     };
-    
+
     return gameState;
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockLocalStorage.clear();
-    
+
     // コンソール出力をモック（クリーンなテスト出力のため）
     consoleSpy = {
       warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
       error: jest.spyOn(console, 'error').mockImplementation(() => {}),
-      log: jest.spyOn(console, 'log').mockImplementation(() => {})
+      log: jest.spyOn(console, 'log').mockImplementation(() => {}),
     };
   });
 
@@ -138,7 +140,7 @@ describe('useLocalStats', () => {
 
       // 非同期処理完了まで待機（長めの時間設定）
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       });
 
       expect(result.current.localStats).toEqual(mockInitialStats);
@@ -156,13 +158,13 @@ describe('useLocalStats', () => {
       const { result } = renderHook(() => useLocalStats());
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
       expect(result.current.localStats).toBeNull();
       expect(result.current.loadError).toEqual(mockError);
       expect(result.current.isLoading).toBe(false);
-      
+
       // console.errorが正しく呼ばれたことを検証
       expect(consoleSpy.error).toHaveBeenCalledWith('Failed to load stats:', mockError);
     });
@@ -186,7 +188,7 @@ describe('useLocalStats', () => {
       const { result } = renderHook(() => useLocalStats());
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
       expect(result.current.localStats!.totalGames).toBe(0);
@@ -203,7 +205,7 @@ describe('useLocalStats', () => {
 
       // 非同期初期化完了まで待機
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       expect(result.current.localStats).toEqual(mockInitialStats);
@@ -217,7 +219,7 @@ describe('useLocalStats', () => {
       const { result } = renderHook(() => useLocalStats());
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       const testGameState = createTestGameState('player1');
@@ -242,12 +244,12 @@ describe('useLocalStats', () => {
       const { result } = renderHook(() => useLocalStats());
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       expect(result.current.localStats).toBeNull();
       expect(result.current.loadError).toEqual(mockError);
-      
+
       // console.errorが正しく呼ばれたことを検証
       expect(consoleSpy.error).toHaveBeenCalledWith('Failed to load stats:', mockError);
     });
@@ -258,7 +260,7 @@ describe('useLocalStats', () => {
       const { result } = renderHook(() => useLocalStats());
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
       const incompleteGameState = createTestGameState();
@@ -270,9 +272,11 @@ describe('useLocalStats', () => {
 
       // スキップされることを確認
       expect(mockUpdateStatsWithGameResult).not.toHaveBeenCalled();
-      
+
       // console.warnが正しく呼ばれたことを検証
-      expect(consoleSpy.warn).toHaveBeenCalledWith('ゲーム結果が未確定のため統計更新をスキップします');
+      expect(consoleSpy.warn).toHaveBeenCalledWith(
+        'ゲーム結果が未確定のため統計更新をスキップします'
+      );
     });
   });
 });

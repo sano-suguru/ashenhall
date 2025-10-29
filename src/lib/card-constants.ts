@@ -1,12 +1,4 @@
-import {
-  Skull,
-  Zap,
-  Sparkles,
-  Shield,
-  Eye,
-  Swords,
-  Droplet,
-} from 'lucide-react';
+import { Skull, Zap, Sparkles, Shield, Eye, Swords, Droplet } from 'lucide-react';
 
 // 勢力ごとの色設定
 export const FACTION_COLORS = {
@@ -40,11 +32,15 @@ export const FACTION_COLORS = {
 // 勢力ごとのホバー効果クラス設定（全カード用）
 // ring: 縁グロー, shadow: 下方向影, drop-shadow: 全方向グロー
 export const FACTION_HOVER_CLASSES = {
-  necromancer: 'group-hover:ring-2 group-hover:ring-purple-400/60 group-hover:shadow-purple-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
-  berserker: 'group-hover:ring-2 group-hover:ring-red-400/60 group-hover:shadow-red-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
+  necromancer:
+    'group-hover:ring-2 group-hover:ring-purple-400/60 group-hover:shadow-purple-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
+  berserker:
+    'group-hover:ring-2 group-hover:ring-red-400/60 group-hover:shadow-red-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
   mage: 'group-hover:ring-2 group-hover:ring-blue-400/60 group-hover:shadow-blue-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
-  knight: 'group-hover:ring-2 group-hover:ring-yellow-400/60 group-hover:shadow-yellow-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
-  inquisitor: 'group-hover:ring-2 group-hover:ring-gray-300/60 group-hover:shadow-gray-400/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
+  knight:
+    'group-hover:ring-2 group-hover:ring-yellow-400/60 group-hover:shadow-yellow-500/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
+  inquisitor:
+    'group-hover:ring-2 group-hover:ring-gray-300/60 group-hover:shadow-gray-400/40 group-hover:shadow-2xl group-hover:drop-shadow-lg',
 } as const;
 
 // 勢力アイコン
@@ -61,7 +57,6 @@ export const CARD_TYPE_JP = {
   creature: 'クリーチャー',
   spell: 'スペル',
 };
-
 
 // キーワード表示設定（シャドウバース風：アイコンのみ）
 export const KEYWORD_ICONS = {

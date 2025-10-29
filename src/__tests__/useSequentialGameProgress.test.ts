@@ -1,6 +1,6 @@
 /**
  * useSequentialGameProgress フック テスト
- * 
+ *
  * テスト方針:
  * - 完了待機原則の動作確認
  * - 直列処理の順序保証確認
@@ -8,7 +8,10 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useSequentialGameProgress, type SequentialGameProgressConfig } from '@/hooks/useSequentialGameProgress';
+import {
+  useSequentialGameProgress,
+  type SequentialGameProgressConfig,
+} from '@/hooks/useSequentialGameProgress';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import { necromancerCards, berserkerCards } from '@/data/cards/base-cards';
 import { createCardInstance } from '@/test-helpers/card-test-helpers';
@@ -27,9 +30,9 @@ describe('useSequentialGameProgress', () => {
   let consoleSpy: jest.SpyInstance;
 
   const createTestGameState = (): GameState => {
-    const deck1 = necromancerCards.slice(0, 20).map(t => createCardInstance(t));
-    const deck2 = berserkerCards.slice(0, 20).map(t => createCardInstance(t));
-    
+    const deck1 = necromancerCards.slice(0, 20).map((t) => createCardInstance(t));
+    const deck2 = berserkerCards.slice(0, 20).map((t) => createCardInstance(t));
+
     return createInitialGameState(
       'test-game',
       deck1,
@@ -40,7 +43,9 @@ describe('useSequentialGameProgress', () => {
     );
   };
 
-  const createBasicConfig = (overrides: Partial<SequentialGameProgressConfig> = {}): SequentialGameProgressConfig => ({
+  const createBasicConfig = (
+    overrides: Partial<SequentialGameProgressConfig> = {}
+  ): SequentialGameProgressConfig => ({
     gameState: createTestGameState(),
     isPlaying: true,
     currentTurn: -1,
@@ -55,7 +60,7 @@ describe('useSequentialGameProgress', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.useFakeTimers();
-    
+
     consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -96,9 +101,9 @@ describe('useSequentialGameProgress', () => {
 
     test('最新ターン表示時はdisplayState = gameState', () => {
       const testGameState = createTestGameState();
-      const config = createBasicConfig({ 
+      const config = createBasicConfig({
         gameState: testGameState,
-        currentTurn: -1 
+        currentTurn: -1,
       });
 
       const { result } = renderHook(() => useSequentialGameProgress(config));
@@ -111,13 +116,13 @@ describe('useSequentialGameProgress', () => {
     test('完了待機原則による順次実行', async () => {
       const initialGameState = createTestGameState();
       const nextGameState = { ...initialGameState, turnNumber: 2 };
-      
+
       mockProcessGameStep.mockReturnValue(nextGameState);
-      
+
       const onGameStateChangeMock = jest.fn();
-      const config = createBasicConfig({ 
+      const config = createBasicConfig({
         gameState: initialGameState,
-        onGameStateChange: onGameStateChangeMock
+        onGameStateChange: onGameStateChangeMock,
       });
 
       const { result } = renderHook(() => useSequentialGameProgress(config));
@@ -144,17 +149,17 @@ describe('useSequentialGameProgress', () => {
           totalTurns: 5,
           durationSeconds: 120,
           endTime: Date.now(),
-        }
+        },
       };
-      
+
       mockProcessGameStep.mockReturnValue(finishedGameState);
-      
+
       const onGameFinishedMock = jest.fn();
       const onStatsUpdateMock = jest.fn();
-      const config = createBasicConfig({ 
+      const config = createBasicConfig({
         gameState: initialGameState,
         onGameFinished: onGameFinishedMock,
-        onStatsUpdate: onStatsUpdateMock
+        onStatsUpdate: onStatsUpdateMock,
       });
 
       renderHook(() => useSequentialGameProgress(config));
@@ -173,7 +178,7 @@ describe('useSequentialGameProgress', () => {
     test('エラーハンドリング', () => {
       const initialGameState = createTestGameState();
       const mockError = new Error('シーケンシャル処理エラー');
-      
+
       mockProcessGameStep.mockImplementation(() => {
         throw mockError;
       });
@@ -252,9 +257,9 @@ describe('useSequentialGameProgress', () => {
       const gameState = createTestGameState();
       gameState.turnNumber = 5;
 
-      const config = createBasicConfig({ 
+      const config = createBasicConfig({
         gameState,
-        currentTurn: 3  // 過去ターン表示
+        currentTurn: 3, // 過去ターン表示
       });
 
       renderHook(() => useSequentialGameProgress(config));
@@ -273,14 +278,14 @@ describe('useSequentialGameProgress', () => {
       const { result } = renderHook(() => useSequentialGameProgress(config));
 
       const animationState = result.current.getCardAnimationState('test-card');
-      
-  // 統合型システムの新しい戻り値形式を確認
+
+      // 統合型システムの新しい戻り値形式を確認
       expect(animationState).toHaveProperty('kind');
       expect(animationState).toHaveProperty('value');
-      
+
       expect(typeof animationState.kind).toBe('string');
       expect(typeof animationState.value).toBe('number');
-      
+
       // 初期状態では 'none' が返される
       expect(animationState.kind).toBe('none');
       expect(animationState.value).toBe(0);
@@ -289,7 +294,7 @@ describe('useSequentialGameProgress', () => {
     test('displayStateの形式が従来と一致', () => {
       const testGameState = createTestGameState();
       const config = createBasicConfig({ gameState: testGameState });
-      
+
       const { result } = renderHook(() => useSequentialGameProgress(config));
 
       expect(result.current.displayState).toBe(testGameState);

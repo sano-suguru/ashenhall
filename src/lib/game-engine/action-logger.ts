@@ -1,6 +1,6 @@
 /**
  * Ashenhall ゲームアクションログシステム
- * 
+ *
  * 設計方針:
  * - 型安全な統合アクションログ関数
  * - 重複コードの削除
@@ -23,7 +23,7 @@ import type {
   CardDrawActionData,
   EnergyRefillActionData,
   EndStageActionData,
-} from "@/types/game";
+} from '@/types/game';
 
 /**
  * 統合アクションログ関数
@@ -42,7 +42,7 @@ export function addAction<T extends GameAction['type']>(
     data,
     timestamp: Date.now(),
   } as GameAction;
-  
+
   state.actionLog.push(action);
 }
 
@@ -55,7 +55,7 @@ export function addCardPlayAction(
   playerId: PlayerId,
   data: CardPlayActionData
 ): void {
-  addAction(state, playerId, "card_play", data);
+  addAction(state, playerId, 'card_play', data);
 }
 
 export function addCardAttackAction(
@@ -63,7 +63,7 @@ export function addCardAttackAction(
   playerId: PlayerId,
   data: CardAttackActionData
 ): void {
-  addAction(state, playerId, "card_attack", data);
+  addAction(state, playerId, 'card_attack', data);
 }
 
 export function addCreatureDestroyedAction(
@@ -75,8 +75,11 @@ export function addCreatureDestroyedAction(
   if (!data.cardSnapshot) {
     // 盤面上から対象カードを探索（除去前である想定）
     const player = state.players[playerId];
-    const found = player.field.find(c => c.templateId === data.destroyedCardId)
-      || state.players[playerId === 'player1' ? 'player2' : 'player1'].field.find(c => c.templateId === data.destroyedCardId);
+    const found =
+      player.field.find((c) => c.templateId === data.destroyedCardId) ||
+      state.players[playerId === 'player1' ? 'player2' : 'player1'].field.find(
+        (c) => c.templateId === data.destroyedCardId
+      );
     if (found) {
       data.cardSnapshot = {
         id: found.templateId,
@@ -91,7 +94,7 @@ export function addCreatureDestroyedAction(
       };
     }
   }
-  addAction(state, playerId, "creature_destroyed", data);
+  addAction(state, playerId, 'creature_destroyed', data);
 }
 
 export function addEffectTriggerAction(
@@ -99,7 +102,7 @@ export function addEffectTriggerAction(
   playerId: PlayerId,
   data: EffectTriggerActionData
 ): void {
-  addAction(state, playerId, "effect_trigger", data);
+  addAction(state, playerId, 'effect_trigger', data);
 }
 
 export function addTriggerEventAction(
@@ -107,7 +110,7 @@ export function addTriggerEventAction(
   playerId: PlayerId,
   data: TriggerEventActionData
 ): void {
-  addAction(state, playerId, "trigger_event", data);
+  addAction(state, playerId, 'trigger_event', data);
 }
 
 export function addEnergyUpdateAction(
@@ -115,7 +118,7 @@ export function addEnergyUpdateAction(
   playerId: PlayerId,
   data: EnergyUpdateActionData
 ): void {
-  addAction(state, playerId, "energy_update", data);
+  addAction(state, playerId, 'energy_update', data);
 }
 
 export function addPhaseChangeAction(
@@ -123,15 +126,15 @@ export function addPhaseChangeAction(
   playerId: PlayerId,
   data: PhaseChangeActionData
 ): void {
-  addAction(state, playerId, "phase_change", data);
+  addAction(state, playerId, 'phase_change', data);
 }
 
 export function addKeywordTriggerAction(
   state: GameState,
-  playerId: PlayerId,  
+  playerId: PlayerId,
   data: KeywordTriggerActionData
 ): void {
-  addAction(state, playerId, "keyword_trigger", data);
+  addAction(state, playerId, 'keyword_trigger', data);
 }
 
 export function addCombatStageAction(

@@ -7,16 +7,16 @@
 
 import { useState, useEffect, useMemo, createContext, useContext } from 'react';
 import type { Faction, DeckCollection, CustomDeck, Card } from '@/types/game';
-import { 
-  loadDeckCollection, 
-  saveDeckCollection, 
+import {
+  loadDeckCollection,
+  saveDeckCollection,
   createNewDeck,
   addDeckToCollection,
   updateDeckInCollection,
   deleteDeckFromCollection,
   setActiveDeckForFaction,
   validateDeck,
-  normalizeDeckCoreCards
+  normalizeDeckCoreCards,
 } from '@/lib/deck-utils';
 import { decodeDeck } from '@/lib/deck-sharing';
 import { getCardTemplateById, createCardFromTemplate } from '@/data/cards/card-registry';
@@ -31,7 +31,7 @@ interface GameSetupContextType {
   editingDeck: CustomDeck | null;
   activeDeckId?: string;
   factionDecks: CustomDeck[];
-  
+
   // Actions
   setSelectedFaction: (faction: Faction) => void;
   handleCreateNewDeck: () => void;
@@ -58,7 +58,10 @@ interface GameSetupProviderProps {
 
 export function GameSetupProvider({ children }: GameSetupProviderProps) {
   const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
-  const [deckCollection, setDeckCollection] = useState<DeckCollection>({ decks: [], activeDeckIds: {} });
+  const [deckCollection, setDeckCollection] = useState<DeckCollection>({
+    decks: [],
+    activeDeckIds: {},
+  });
   const [editingDeck, setEditingDeck] = useState<CustomDeck | null>(null);
 
   // 初期化処理
@@ -83,7 +86,7 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     let collection = loadDeckCollection();
     // サンプルデッキが無い場合は初期化
     if (collection.decks.length === 0) {
-      sampleDecks.forEach(sampleDeck => {
+      sampleDecks.forEach((sampleDeck) => {
         const newDeck = normalizeDeckCoreCards({
           ...createNewDeck(sampleDeck.name, sampleDeck.faction),
           cards: [...sampleDeck.cardIds],
@@ -100,14 +103,14 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
   // 計算プロパティ
   const factionDecks = useMemo(() => {
     if (!selectedFaction) return [];
-    return deckCollection.decks.filter(d => d.faction === selectedFaction);
+    return deckCollection.decks.filter((d) => d.faction === selectedFaction);
   }, [deckCollection.decks, selectedFaction]);
 
   const activeDeckId = selectedFaction ? deckCollection.activeDeckIds[selectedFaction] : undefined;
 
   // Actions
   const handleSaveDeck = (deckToSave: CustomDeck) => {
-    const existingDeck = deckCollection.decks.find(d => d.id === deckToSave.id);
+    const existingDeck = deckCollection.decks.find((d) => d.id === deckToSave.id);
     let newCollection;
     if (existingDeck) {
       newCollection = updateDeckInCollection(deckCollection, deckToSave);
@@ -150,7 +153,7 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
   const createUniqueCardDeck = (cardIds: string[]): Card[] => {
     const cardObjects: Card[] = [];
     const cardCountMap = new Map<string, number>();
-    
+
     for (let index = 0; index < cardIds.length; index++) {
       const cardId = cardIds[index];
       const template = getCardTemplateById(cardId);
@@ -158,25 +161,21 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
         // 同一カードの通し番号を管理
         const currentCount = cardCountMap.get(cardId) || 0;
         cardCountMap.set(cardId, currentCount + 1);
-        
+
         // 決定論的instanceId生成: templateId-deck-position-cardCount
-        const instanceId = generateDeckInstanceId(
-          template.templateId,
-          index,
-          currentCount
-        );
-        
+        const instanceId = generateDeckInstanceId(template.templateId, index, currentCount);
+
         const cardInstance = createCardFromTemplate(template, instanceId);
         cardObjects.push(cardInstance);
       }
     }
-    
+
     return cardObjects;
   };
 
   const handleStart = (onGameStart: (faction: Faction, deck: Card[]) => void) => {
     if (selectedFaction) {
-      const activeDeck = deckCollection.decks.find(d => d.id === activeDeckId);
+      const activeDeck = deckCollection.decks.find((d) => d.id === activeDeckId);
       if (activeDeck && validateDeck(activeDeck).isValid) {
         // 一意ID付与システムを使用
         const cardObjects = createUniqueCardDeck(activeDeck.cards);
@@ -194,7 +193,7 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     editingDeck,
     activeDeckId,
     factionDecks,
-    
+
     // Actions
     setSelectedFaction,
     handleCreateNewDeck,
@@ -205,9 +204,5 @@ export function GameSetupProvider({ children }: GameSetupProviderProps) {
     handleStart,
   };
 
-  return (
-    <GameSetupContext.Provider value={contextValue}>
-      {children}
-    </GameSetupContext.Provider>
-  );
+  return <GameSetupContext.Provider value={contextValue}>{children}</GameSetupContext.Provider>;
 }

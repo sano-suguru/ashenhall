@@ -14,7 +14,7 @@ const dummyCard: Card = {
   health: 1,
   keywords: [],
   effects: [],
-  flavor: ''
+  flavor: '',
 };
 
 function baseState(): GameState {

@@ -7,8 +7,45 @@ import { GAME_CONSTANTS, ANIMATION_NONE } from '@/types/game';
 import BattleLogModal from './BattleLogModal';
 // 旧game-board/ディレクトリのコンポーネントを内部統合
 import type { PlayerId, GamePhase, PlayerState } from '@/types/game';
-import { CreditCard, Zap, Target, Swords, Flag, Handshake, ScrollText, Share, Trophy, X, FileText, Bot, User, Heart, Shield, ArrowDown, Users, Sparkles, RotateCcw, MicOff, AlertCircle, Skull, Repeat, Trash2, ShieldOff, AlertTriangle, Star, TrendingUp, TrendingDown, Layers, WalletCards as Wallet } from 'lucide-react';
-import { getLogDisplayParts, generateBattleReport, generateShareableText, INTERNAL_LOG_TYPES } from '@/lib/game-state-utils';
+import {
+  CreditCard,
+  Zap,
+  Target,
+  Swords,
+  Flag,
+  Handshake,
+  ScrollText,
+  Share,
+  Trophy,
+  X,
+  FileText,
+  Bot,
+  User,
+  Heart,
+  Shield,
+  ArrowDown,
+  Users,
+  Sparkles,
+  RotateCcw,
+  MicOff,
+  AlertCircle,
+  Skull,
+  Repeat,
+  Trash2,
+  ShieldOff,
+  AlertTriangle,
+  Star,
+  TrendingUp,
+  TrendingDown,
+  Layers,
+  WalletCards as Wallet,
+} from 'lucide-react';
+import {
+  getLogDisplayParts,
+  generateBattleReport,
+  generateShareableText,
+  INTERNAL_LOG_TYPES,
+} from '@/lib/game-state-utils';
 import { getCardById } from '@/data/cards/base-cards';
 import CardNameWithTooltip from './CardNameWithTooltip';
 import CardComponent from './CardComponent';
@@ -60,7 +97,16 @@ const PHASE_DATA = {
   end: { name: '終了', icon: Flag, color: 'text-purple-400' },
 } as const;
 
-const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturnToSetup, onToggleLog, phaseTransition, resultChange }: {
+const GameHeader = ({
+  turnNumber,
+  phase,
+  currentPlayerId,
+  isLogVisible,
+  onReturnToSetup,
+  onToggleLog,
+  phaseTransition,
+  resultChange,
+}: {
   turnNumber: number;
   phase: GamePhase;
   currentPlayerId: PlayerId;
@@ -74,7 +120,9 @@ const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturn
   const currentPlayerName = currentPlayerId === 'player1' ? 'あなた' : '相手';
 
   return (
-    <div className={`bg-gray-800/90 border-b border-gray-700 p-4 ${phaseTransition ? 'phase-transition' : ''}`}>
+    <div
+      className={`bg-gray-800/90 border-b border-gray-700 p-4 ${phaseTransition ? 'phase-transition' : ''}`}
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
@@ -85,7 +133,7 @@ const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturn
           </button>
           <h1 className="text-2xl font-bold">ASHENHALL</h1>
         </div>
-        
+
         <div className="flex items-center space-x-6">
           <div className="text-center">
             <div className="text-sm text-gray-400">ターン</div>
@@ -123,7 +171,17 @@ const GameHeader = ({ turnNumber, phase, currentPlayerId, isLogVisible, onReturn
 /**
  * GameSidebar - ゲームサイドバー部分
  */
-const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurrentTurn, gameSpeed, setGameSpeed, onShowDetailedLog, onReturnToSetup }: {
+const GameSidebar = ({
+  gameState,
+  isPlaying,
+  setIsPlaying,
+  currentTurn,
+  setCurrentTurn,
+  gameSpeed,
+  setGameSpeed,
+  onShowDetailedLog,
+  onReturnToSetup,
+}: {
   gameState: GameState;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
@@ -136,20 +194,26 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
 }) => {
   const handleGenerateReport = () => {
     const report = generateBattleReport(gameState);
-    navigator.clipboard.writeText(report).then(() => {
-      alert('戦闘レポートをクリップボードにコピーしました！');
-    }).catch(() => {
-      alert('クリップボードへのコピーに失敗しました。');
-    });
+    navigator.clipboard
+      .writeText(report)
+      .then(() => {
+        alert('戦闘レポートをクリップボードにコピーしました！');
+      })
+      .catch(() => {
+        alert('クリップボードへのコピーに失敗しました。');
+      });
   };
 
   const handleShareResult = () => {
     const shareText = generateShareableText(gameState);
-    navigator.clipboard.writeText(shareText).then(() => {
-      alert('共有用テキストをクリップボードにコピーしました！');
-    }).catch(() => {
-      alert(shareText);
-    });
+    navigator.clipboard
+      .writeText(shareText)
+      .then(() => {
+        alert('共有用テキストをクリップボードにコピーしました！');
+      })
+      .catch(() => {
+        alert(shareText);
+      });
   };
 
   return (
@@ -160,11 +224,17 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
           <div className="text-center space-y-2">
             <div className="text-2xl font-bold flex items-center justify-center space-x-2">
               {gameState.result.winner === 'player1' ? (
-                <><Trophy className="text-yellow-400" size={24} /> <span>あなたの勝利!</span></>
+                <>
+                  <Trophy className="text-yellow-400" size={24} /> <span>あなたの勝利!</span>
+                </>
               ) : gameState.result.winner === 'player2' ? (
-                <><X className="text-red-400" size={24} /> <span>相手の勝利</span></>
+                <>
+                  <X className="text-red-400" size={24} /> <span>相手の勝利</span>
+                </>
               ) : (
-                <><Handshake className="text-blue-400" size={24} /> <span>引き分け</span></>
+                <>
+                  <Handshake className="text-blue-400" size={24} /> <span>引き分け</span>
+                </>
               )}
             </div>
             <div className="text-sm text-gray-200">
@@ -208,7 +278,7 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
             <ScrollText size={16} />
             <span>詳細ログを見る</span>
           </button>
-          
+
           {gameState.result && (
             <>
               <button
@@ -218,7 +288,7 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
                 <FileText size={16} />
                 <span>戦闘レポート</span>
               </button>
-              
+
               <button
                 onClick={handleShareResult}
                 className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors text-white"
@@ -237,7 +307,16 @@ const GameSidebar = ({ gameState, isPlaying, setIsPlaying, currentTurn, setCurre
 /**
  * PlayerArea - プレイヤーエリア部分
  */
-const StatusDisplay = ({ icon: Icon, label, value, colorClassName = 'text-white', sizeClassName = 'text-lg', iconSize = 18, diff, diffClassName }: {
+const StatusDisplay = ({
+  icon: Icon,
+  label,
+  value,
+  colorClassName = 'text-white',
+  sizeClassName = 'text-lg',
+  iconSize = 18,
+  diff,
+  diffClassName,
+}: {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   value: string | number;
@@ -249,55 +328,79 @@ const StatusDisplay = ({ icon: Icon, label, value, colorClassName = 'text-white'
 }) => (
   <div className="text-center">
     <div className="text-sm text-gray-400">{label}</div>
-    <div className={`flex items-center justify-center space-x-1 font-bold ${sizeClassName} ${colorClassName}`}>
+    <div
+      className={`flex items-center justify-center space-x-1 font-bold ${sizeClassName} ${colorClassName}`}
+    >
       <Icon size={iconSize} className="inline-block" />
       <span>{value}</span>
       {typeof diff === 'number' && diff !== 0 && (
-        <span className={`ml-2 text-sm ${diffClassName ?? (diff > 0 ? 'text-green-300' : 'text-red-400')} animate-bounce`}>{diff > 0 ? `+${diff}` : diff}</span>
+        <span
+          className={`ml-2 text-sm ${diffClassName ?? (diff > 0 ? 'text-green-300' : 'text-red-400')} animate-bounce`}
+        >
+          {diff > 0 ? `+${diff}` : diff}
+        </span>
       )}
     </div>
   </div>
 );
 
-const PlayerStatus = ({ player, energyLimit, isOpponent, lifePulseDiff, energyPulseDiff }: { player: PlayerState; energyLimit: number; isOpponent: boolean; lifePulseDiff?: number; energyPulseDiff?: number }) => (
+const PlayerStatus = ({
+  player,
+  energyLimit,
+  isOpponent,
+  lifePulseDiff,
+  energyPulseDiff,
+}: {
+  player: PlayerState;
+  energyLimit: number;
+  isOpponent: boolean;
+  lifePulseDiff?: number;
+  energyPulseDiff?: number;
+}) => (
   <div className="flex items-center space-x-6">
-    <StatusDisplay 
-      icon={Heart} 
-      label="ライフ" 
-      value={player.life} 
-      colorClassName={lifePulseDiff ? `${lifePulseDiff < 0 ? 'text-red-400' : 'text-green-200'} animate-pulse` : player.life <= 5 ? 'text-red-400' : 'text-green-400'}
+    <StatusDisplay
+      icon={Heart}
+      label="ライフ"
+      value={player.life}
+      colorClassName={
+        lifePulseDiff
+          ? `${lifePulseDiff < 0 ? 'text-red-400' : 'text-green-200'} animate-pulse`
+          : player.life <= 5
+            ? 'text-red-400'
+            : 'text-green-400'
+      }
       sizeClassName="text-2xl"
       iconSize={22}
       diff={lifePulseDiff}
     />
-    <StatusDisplay 
-      icon={Zap} 
-      label="エネルギー" 
-      value={`${player.energy}/${energyLimit}`} 
+    <StatusDisplay
+      icon={Zap}
+      label="エネルギー"
+      value={`${player.energy}/${energyLimit}`}
       colorClassName={energyPulseDiff ? 'text-blue-200 animate-pulse' : 'text-blue-400'}
       sizeClassName="text-xl"
       iconSize={20}
       diff={energyPulseDiff}
       diffClassName="text-blue-300"
     />
-    <StatusDisplay 
-      icon={Layers} 
-      label="デッキ" 
-      value={player.deck.length} 
+    <StatusDisplay
+      icon={Layers}
+      label="デッキ"
+      value={player.deck.length}
       colorClassName="text-purple-400"
     />
     {isOpponent ? (
-      <StatusDisplay 
-        icon={Wallet} 
-        label="手札" 
-        value={player.hand.length} 
+      <StatusDisplay
+        icon={Wallet}
+        label="手札"
+        value={player.hand.length}
         colorClassName="text-yellow-400"
       />
     ) : (
-      <StatusDisplay 
-        icon={Skull} 
-        label="墓地" 
-        value={player.graveyard.length} 
+      <StatusDisplay
+        icon={Skull}
+        label="墓地"
+        value={player.graveyard.length}
         colorClassName="text-gray-400"
       />
     )}
@@ -315,15 +418,21 @@ const PlayerInfo = ({ player, isOpponent }: { player: PlayerState; isOpponent: b
       </div>
       <div>
         <div className="font-bold">{isOpponent ? 'AI対戦相手' : 'あなた'}</div>
-        <div className="text-sm text-gray-400">
-          {player.faction}
-        </div>
+        <div className="text-sm text-gray-400">{player.faction}</div>
       </div>
     </div>
   );
 };
 
-const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getCardAnimationState, lifePulse, energyPulse }: {
+const PlayerArea = ({
+  player,
+  energyLimit,
+  isOpponent,
+  currentAttackAction,
+  getCardAnimationState,
+  lifePulse,
+  energyPulse,
+}: {
   player: PlayerState;
   energyLimit: number;
   isOpponent: boolean;
@@ -338,7 +447,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
     if (getCardAnimationState) {
       return getCardAnimationState(cardId);
     }
-    
+
     // 従来システムとの後方互換性（段階的廃止予定）
     if (!currentAttackAction || currentAttackAction.type !== 'card_attack') {
       return ANIMATION_NONE;
@@ -347,7 +456,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
     const attackData = currentAttackAction.data;
     if (attackData.attackerCardId === cardId) return { kind: 'attacking' };
     if (attackData.targetId === cardId) return { kind: 'being_attacked', value: attackData.damage };
-    
+
     return ANIMATION_NONE;
   };
 
@@ -366,7 +475,9 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
 
   const fieldArea = (
     <div className="mb-2">
-      <div className="text-sm text-gray-400 mb-2">{isOpponent ? '相手' : 'あなた'}の場 ({player.field.length}/5)</div>
+      <div className="text-sm text-gray-400 mb-2">
+        {isOpponent ? '相手' : 'あなた'}の場 ({player.field.length}/5)
+      </div>
       <div className="flex justify-center space-x-2 min-h-[112px]">
         {player.field.length === 0 ? (
           <div className="flex items-center justify-center text-gray-500 text-sm">
@@ -429,9 +540,7 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
 
   return (
     <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 flex-1 flex flex-col">
-      <div className="flex-1">
-        {fieldArea}
-      </div>
+      <div className="flex-1">{fieldArea}</div>
       {handArea}
       {playerInfo}
     </div>
@@ -442,10 +551,27 @@ const PlayerArea = ({ player, energyLimit, isOpponent, currentAttackAction, getC
  * RecentLog - 最近のログ表示部分
  */
 const ICONS = {
-  CreditCard, Zap, Target, Swords, Flag,
-  TrendingUp, TrendingDown, Heart, Shield, ArrowDown, Users, Sparkles,
-  RotateCcw, MicOff, AlertCircle, Skull, Repeat, Trash2, ShieldOff,
-  AlertTriangle, Star,
+  CreditCard,
+  Zap,
+  Target,
+  Swords,
+  Flag,
+  TrendingUp,
+  TrendingDown,
+  Heart,
+  Shield,
+  ArrowDown,
+  Users,
+  Sparkles,
+  RotateCcw,
+  MicOff,
+  AlertCircle,
+  Skull,
+  Repeat,
+  Trash2,
+  ShieldOff,
+  AlertTriangle,
+  Star,
 } as const;
 
 function formatAction(action: GameAction, gameState: GameState): React.ReactElement {
@@ -455,7 +581,7 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
   const messageWithTooltips = parts.message.split(/(《.*?》)/g).map((segment, index) => {
     if (segment.startsWith('《') && segment.endsWith('》')) {
       const cardName = segment.substring(1, segment.length - 1);
-      const cardId = parts.cardIds.find(id => getCardById(id)?.name === cardName);
+      const cardId = parts.cardIds.find((id) => getCardById(id)?.name === cardName);
       if (cardId) {
         return (
           <CardNameWithTooltip key={index} cardId={cardId} showBrackets={true}>
@@ -485,13 +611,13 @@ const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: G
   const visibleActions = actions.filter((action) => {
     // 内部処理ログを除外
     if (INTERNAL_LOG_TYPES.includes(action.type)) return false;
-    
+
     // phase_change: ターン開始（toPhase='draw'）のみ表示
     // 理由: 他のフェーズ遷移は召喚/攻撃ログから推測可能
     if (action.type === 'phase_change') {
       return action.data.toPhase === 'draw';
     }
-    
+
     return true;
   });
 
@@ -504,7 +630,9 @@ const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: G
         ) : (
           visibleActions.map((action) => (
             <div key={action.sequence} className="text-gray-300 flex items-center space-x-2">
-              <span className="text-xs font-mono text-gray-500">#{action.sequence.toString().padStart(3, '0')}</span>
+              <span className="text-xs font-mono text-gray-500">
+                #{action.sequence.toString().padStart(3, '0')}
+              </span>
               {formatAction(action, gameState)}
             </div>
           ))
@@ -516,9 +644,9 @@ const RecentLog = ({ actions, gameState }: { actions: GameAction[]; gameState: G
 
 // === メインコンポーネント ===
 
-export default function GameBoard({ 
-  gameState, 
-  onReturnToSetup, 
+export default function GameBoard({
+  gameState,
+  onReturnToSetup,
   isPlaying,
   setIsPlaying,
   currentTurn,
@@ -527,7 +655,7 @@ export default function GameBoard({
   setGameSpeed,
   currentAttackAction,
   getCardAnimationState,
-  currentAnimationState
+  currentAnimationState,
 }: GameBoardProps) {
   const [showLog, setShowLog] = useState(false);
   const [showDetailedLog, setShowDetailedLog] = useState(false);
@@ -539,11 +667,12 @@ export default function GameBoard({
   const recentActions = displayState.actionLog.slice(-10).reverse();
 
   // 視覚的フィードバック管理
-  const {
-    effectState,
-  } = useGameEffects(displayState);
+  const { effectState } = useGameEffects(displayState);
 
-  const getPulseDiff = (pulses: Array<{ playerId: PlayerId; diff: number }>, playerId: PlayerId) => {
+  const getPulseDiff = (
+    pulses: Array<{ playerId: PlayerId; diff: number }>,
+    playerId: PlayerId
+  ) => {
     const matches = pulses.filter((pulse) => pulse.playerId === playerId);
     if (matches.length === 0) return undefined;
     const total = matches.reduce((sum, entry) => sum + entry.diff, 0);
@@ -574,7 +703,6 @@ export default function GameBoard({
     setShowDetailedLog(false);
   };
 
-
   useEffect(() => {
     if (gameState.result) {
       const currentStats = loadStats();
@@ -598,11 +726,10 @@ export default function GameBoard({
 
       <div className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
-          
           <div className="lg:col-span-3 flex flex-col space-y-4 relative">
-            <PlayerArea 
-              player={displayState.players.player2} 
-              energyLimit={currentEnergyLimit} 
+            <PlayerArea
+              player={displayState.players.player2}
+              energyLimit={currentEnergyLimit}
               isOpponent={true}
               lifePulse={player2LifePulse}
               energyPulse={player2EnergyPulse}
@@ -610,9 +737,9 @@ export default function GameBoard({
               getCardAnimationState={getCardAnimationState}
             />
             {showLog && <RecentLog actions={recentActions} gameState={gameState} />}
-            <PlayerArea 
-              player={displayState.players.player1} 
-              energyLimit={currentEnergyLimit} 
+            <PlayerArea
+              player={displayState.players.player1}
+              energyLimit={currentEnergyLimit}
               isOpponent={false}
               lifePulse={player1LifePulse}
               energyPulse={player1EnergyPulse}
@@ -620,11 +747,12 @@ export default function GameBoard({
               getCardAnimationState={getCardAnimationState}
             />
             {/* 破壊アニメーション中のゴースト表示 (displayState側では既に除去済み) */}
-            {currentAnimationState?.animationType === 'destroy' && currentAnimationState.destroySnapshot && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <DestroyedCardGhost snapshot={currentAnimationState.destroySnapshot} />
-              </div>
-            )}
+            {currentAnimationState?.animationType === 'destroy' &&
+              currentAnimationState.destroySnapshot && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <DestroyedCardGhost snapshot={currentAnimationState.destroySnapshot} />
+                </div>
+              )}
           </div>
 
           <GameSidebar
@@ -647,7 +775,6 @@ export default function GameBoard({
         onClose={() => setShowDetailedLog(false)}
         onJumpToAction={handleJumpToAction}
       />
-
     </div>
   );
 }

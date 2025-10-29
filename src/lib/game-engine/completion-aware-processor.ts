@@ -1,6 +1,6 @@
 /**
  * 完了待機シーケンシャルプロセッサー
- * 
+ *
  * 設計方針:
  * - 論理処理完了 → 演出処理開始 → 演出完了 → 次処理開始の厳格な順序制御
  * - 並行実行の完全排除
@@ -11,15 +11,25 @@
 import type { GameState, GameAction } from '@/types/game';
 import { processGameStep } from './core';
 import { createBattleIterator, type BattleIterator } from './battle-iterator';
-import { buildAnimationTasksFromActions, type AnimationTask } from '@/lib/animation/animation-tasks';
-
+import {
+  buildAnimationTasksFromActions,
+  type AnimationTask,
+} from '@/lib/animation/animation-tasks';
 
 /**
  * アニメーション設定
  */
 export interface AnimationState {
   isAnimating: boolean;
-  animationType: 'attack' | 'damage' | 'destroy' | 'summon' | 'draw' | 'spell_cast' | 'heal' | 'none';
+  animationType:
+    | 'attack'
+    | 'damage'
+    | 'destroy'
+    | 'summon'
+    | 'draw'
+    | 'spell_cast'
+    | 'heal'
+    | 'none';
   sourceCardId: string | undefined;
   targetCardId: string | undefined;
   value?: number; // ダメージ量・回復量など
@@ -36,7 +46,6 @@ export interface AnimationState {
   };
 }
 
-
 /**
  * 完了待機シーケンシャルプロセッサー
  */
@@ -47,7 +56,7 @@ export class CompletionAwareProcessor {
   private pendingActionQueue: GameAction[] = [];
   private pendingTaskQueue: AnimationTask[] = [];
   private activeBattleIterator: BattleIterator | null = null;
-  
+
   // 自律的スケジューリング管理（循環参照解消の核心）
   private schedulerRef: NodeJS.Timeout | null = null;
   private autonomousConfig: {
@@ -75,7 +84,6 @@ export class CompletionAwareProcessor {
     return this.isProcessing;
   }
 
-
   /**
    * ゲーム進行ステップの作成（簡略化）
    */
@@ -92,8 +100,6 @@ export class CompletionAwareProcessor {
     };
   }
 
-
-
   /**
    * 自律的スケジューリング：次の処理をスケジュール（循環参照解消）
    */
@@ -101,7 +107,7 @@ export class CompletionAwareProcessor {
     if (this.schedulerRef) {
       clearTimeout(this.schedulerRef);
     }
-    
+
     this.schedulerRef = setTimeout(() => {
       this.executeAutonomousStep();
     }, delay);
@@ -168,22 +174,24 @@ export class CompletionAwareProcessor {
    */
   private canExecuteAutonomousStep(): boolean {
     const config = this.autonomousConfig;
-    
+
     if (!config?.isPlaying || !config?.gameState || config.gameState.result) {
       return false;
     }
-    
+
     if (config.currentTurn !== -1 && config.currentTurn < config.gameState.turnNumber) {
       return false;
     }
-    
+
     return !this.isProcessing;
   }
 
   /**
    * ゲームステップ実行とアニメーション処理
    */
-  private async executeGameStepWithAnimation(config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
+  private async executeGameStepWithAnimation(
+    config: NonNullable<typeof this.autonomousConfig>
+  ): Promise<void> {
     // battle_attack フェーズでは常に BattleIterator でアクション単位進行
     if (config.gameState?.phase === 'battle_attack') {
       const produced = this.executeIteratorAction(config);
@@ -257,17 +265,20 @@ export class CompletionAwareProcessor {
   /**
    * アニメーションなし時の後処理
    */
-  private handleNoAnimationCase(nextState: GameState, config: NonNullable<typeof this.autonomousConfig>): void {
+  private handleNoAnimationCase(
+    nextState: GameState,
+    config: NonNullable<typeof this.autonomousConfig>
+  ): void {
     this.isProcessing = false;
-    
+
     // 防御的プログラミング：nextStateの安全性確認
     if (!nextState) {
       console.warn('Invalid nextState in handleNoAnimationCase');
       return;
     }
-    
+
     const basicDelay = Math.max(50, 250 / this.gameSpeed);
-    
+
     if (!nextState.result) {
       this.scheduleNextProcessing(basicDelay);
     } else {
@@ -279,13 +290,15 @@ export class CompletionAwareProcessor {
   /**
    * 実行エラー時のハンドリング
    */
-  private handleExecutionError(error: unknown, config: NonNullable<typeof this.autonomousConfig>): void {
+  private handleExecutionError(
+    error: unknown,
+    config: NonNullable<typeof this.autonomousConfig>
+  ): void {
     console.error('Autonomous game step processing failed:', error);
-    
-    const errorInstance = error instanceof Error 
-      ? error 
-      : new Error('自律的ゲーム進行でエラーが発生しました');
-    
+
+    const errorInstance =
+      error instanceof Error ? error : new Error('自律的ゲーム進行でエラーが発生しました');
+
     // テスト環境では同期的にエラーコールバックを実行
     if (process.env.NODE_ENV === 'test') {
       // アニメーション状態リセット（同期）
@@ -295,7 +308,7 @@ export class CompletionAwareProcessor {
         sourceCardId: undefined,
         targetCardId: undefined,
       });
-      
+
       // エラー通知（同期）
       config.onError?.(errorInstance);
     } else {
@@ -306,10 +319,10 @@ export class CompletionAwareProcessor {
         sourceCardId: undefined,
         targetCardId: undefined,
       });
-      
+
       config.onError?.(errorInstance);
     }
-    
+
     this.isProcessing = false;
   }
 
@@ -320,17 +333,17 @@ export class CompletionAwareProcessor {
     if (!this.canExecuteAutonomousStep()) {
       return;
     }
-    
+
     const config = this.autonomousConfig!;
-    
+
     // テスト環境では従来システムと同様に即座処理（setTimeout経由を回避）
     if (process.env.NODE_ENV === 'test') {
       this.isProcessing = true;
-      
+
       try {
         const step = this.createGameProgressStep(config.gameState!, config.onStateChange);
         const nextState = step.logicHandler(); // 直接実行（エラー時は即座例外）
-        
+
         // 成功時の処理は簡略化
         this.isProcessing = false;
         if (nextState.result) {
@@ -341,20 +354,19 @@ export class CompletionAwareProcessor {
           this.scheduleNextProcessing(0);
         }
       } catch (error) {
-        const errorInstance = error instanceof Error 
-          ? error 
-          : new Error('自律的ゲーム進行でエラーが発生しました');
-        
+        const errorInstance =
+          error instanceof Error ? error : new Error('自律的ゲーム進行でエラーが発生しました');
+
         // 同期的にエラー状態を設定（従来システム準拠）
         config.onError?.(errorInstance);
         this.isProcessing = false;
       }
       return;
     }
-    
+
     // 本番環境では通常の非同期処理
     this.isProcessing = true;
-    
+
     try {
       await this.executeGameStepWithAnimation(config);
     } catch (error) {
@@ -423,7 +435,10 @@ export class CompletionAwareProcessor {
     this.finalizeAnimationProcessing(nextState, config);
   }
 
-  private async executeAnimationTask(task: AnimationTask, config: NonNullable<typeof this.autonomousConfig>): Promise<void> {
+  private async executeAnimationTask(
+    task: AnimationTask,
+    config: NonNullable<typeof this.autonomousConfig>
+  ): Promise<void> {
     if (task.kind === 'attack') {
       await this.playSimple(task, config, 'attack');
       return;
@@ -440,7 +455,7 @@ export class CompletionAwareProcessor {
         targetCardId: task.targetId,
         destroySnapshot: task.snapshot,
       });
-      await new Promise(r => setTimeout(r, task.duration / this.gameSpeed));
+      await new Promise((r) => setTimeout(r, task.duration / this.gameSpeed));
       config.onAnimationStateChange?.({
         isAnimating: false,
         animationType: 'none',
@@ -468,7 +483,11 @@ export class CompletionAwareProcessor {
     }
   }
 
-  private async playSimple(task: AnimationTask, config: NonNullable<typeof this.autonomousConfig>, animationType: AnimationState['animationType']): Promise<void> {
+  private async playSimple(
+    task: AnimationTask,
+    config: NonNullable<typeof this.autonomousConfig>,
+    animationType: AnimationState['animationType']
+  ): Promise<void> {
     config.onAnimationStateChange?.({
       isAnimating: true,
       animationType,
@@ -476,11 +495,11 @@ export class CompletionAwareProcessor {
       targetCardId: task.targetId,
       value: task.damage, // ダメージ量・回復量を渡す
     });
-    
+
     // CSS演出完了を確実に待機：base duration + 余裕時間
     const safeDuration = (task.duration + 50) / this.gameSpeed;
-    await new Promise(r => setTimeout(r, safeDuration));
-    
+    await new Promise((r) => setTimeout(r, safeDuration));
+
     config.onAnimationStateChange?.({
       isAnimating: false,
       animationType: 'none',
@@ -495,7 +514,7 @@ export class CompletionAwareProcessor {
    * アニメーション処理完了後の処理（簡素化版）
    */
   private finalizeAnimationProcessing(
-    nextState: GameState, 
+    nextState: GameState,
     config: NonNullable<typeof this.autonomousConfig>
   ): void {
     // アニメーション状態リセット
@@ -514,7 +533,7 @@ export class CompletionAwareProcessor {
       const frameDelay = Math.max(16, 32 / this.gameSpeed);
       this.scheduleNextProcessing(frameDelay);
     }
-    
+
     this.isProcessing = false;
   }
 

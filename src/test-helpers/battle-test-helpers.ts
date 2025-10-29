@@ -1,6 +1,6 @@
 /**
  * 戦闘テスト専用ヘルパー関数
- * 
+ *
  * 複雑な戦闘シナリオのセットアップと検証を簡素化し、
  * ESLint複雑度制限に準拠したテスト作成を支援する。
  */
@@ -29,7 +29,7 @@ const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
   testGameId: 'battle-test-001',
   testSeed: 'battle-test-seed',
   player1Faction: 'berserker',
-  player2Faction: 'necromancer'
+  player2Faction: 'necromancer',
 };
 
 /**
@@ -38,7 +38,7 @@ const DEFAULT_BATTLE_CONFIG: BattleTestConfig = {
 function createStandardTestDeck(): Card[] {
   const deck: Card[] = [];
   const availableCards = necromancerCards.slice(0, 4);
-  
+
   availableCards.forEach((card, cardIndex) => {
     for (let i = 0; i < 5; i++) {
       const instanceId = `test-${card.templateId}_${cardIndex}_${i}`;
@@ -46,7 +46,7 @@ function createStandardTestDeck(): Card[] {
       deck.push(cardInstance);
     }
   });
-  
+
   return deck;
 }
 
@@ -69,10 +69,10 @@ function setupMultipleGuardBattleScenario(
 ): GuardBattleSetup {
   const finalConfig = { ...DEFAULT_BATTLE_CONFIG, ...config };
   const testSeed = `${finalConfig.testSeed}_multi_guard_${attemptNumber}`;
-  
+
   const deck1 = createStandardTestDeck();
   const deck2 = createStandardTestDeck();
-  
+
   const gameState = createInitialGameState(
     finalConfig.testGameId,
     deck1,
@@ -84,21 +84,35 @@ function setupMultipleGuardBattleScenario(
 
   // 攻撃者カードを取得してインスタンス化
   const attackerTemplate = findCreatureTemplateById(berserkerCards, 'ber_warrior', '攻撃者カード');
-  const attackerCard = createCardFromTemplate(attackerTemplate, `test-attacker-${attemptNumber}`) as CreatureCard;
+  const attackerCard = createCardFromTemplate(
+    attackerTemplate,
+    `test-attacker-${attemptNumber}`
+  ) as CreatureCard;
 
   // 守護カードを取得してインスタンス化
-  const guardCard1Template = necromancerCards.find(c => c.templateId === 'necro_skeleton');
-  const guardCard2Template = necromancerCards.find(c => c.templateId === 'necro_wraith');
-  const [guard1Template, guard2Template] = ensureTwoCreatureTemplates(guardCard1Template, guardCard2Template, '守護カード1', '守護カード2');
-  
-  const guard1 = createCardFromTemplate(guard1Template, `test-guard1-${attemptNumber}`) as CreatureCard;
-  const guard2 = createCardFromTemplate(guard2Template, `test-guard2-${attemptNumber}`) as CreatureCard;
+  const guardCard1Template = necromancerCards.find((c) => c.templateId === 'necro_skeleton');
+  const guardCard2Template = necromancerCards.find((c) => c.templateId === 'necro_wraith');
+  const [guard1Template, guard2Template] = ensureTwoCreatureTemplates(
+    guardCard1Template,
+    guardCard2Template,
+    '守護カード1',
+    '守護カード2'
+  );
+
+  const guard1 = createCardFromTemplate(
+    guard1Template,
+    `test-guard1-${attemptNumber}`
+  ) as CreatureCard;
+  const guard2 = createCardFromTemplate(
+    guard2Template,
+    `test-guard2-${attemptNumber}`
+  ) as CreatureCard;
 
   return {
     gameState,
     attackerCard,
     guardCards: [guard1, guard2],
-    normalCards: []
+    normalCards: [],
   };
 }
 
@@ -106,9 +120,9 @@ function setupMultipleGuardBattleScenario(
  * 戦闘場にクリーチャーを配置
  */
 export function placeCreatureOnField(
-  gameState: GameState, 
+  gameState: GameState,
   playerId: 'player1' | 'player2',
-  creature: CreatureCard, 
+  creature: CreatureCard,
   options: {
     id?: string;
     position?: number;
@@ -121,9 +135,7 @@ export function placeCreatureOnField(
     ...creature,
     templateId: effectiveTemplateId,
     instanceId: generateFieldInstanceId(effectiveTemplateId, gameState, playerId),
-    keywords: options.addGuardKeyword 
-      ? [...creature.keywords, 'guard'] 
-      : creature.keywords,
+    keywords: options.addGuardKeyword ? [...creature.keywords, 'guard'] : creature.keywords,
     owner: playerId,
     currentHealth: options.currentHealth ?? creature.health,
     attackModifier: 0,
@@ -152,7 +164,7 @@ export function executeBattlePhaseCompletely(gameState: GameState): GameState {
 
   // battle → battle_attack への移行
   currentState = processGameStep(currentState);
-  
+
   // 全攻撃者を処理するまでループ
   while (currentState.phase === 'battle_attack' && !currentState.result) {
     currentState = processGameStep(currentState);
@@ -165,10 +177,10 @@ export function executeBattlePhaseCompletely(gameState: GameState): GameState {
  * 攻撃ログからターゲット情報を抽出
  */
 function extractAttackTargets(gameState: GameState): string[] {
-  const attackActions = gameState.actionLog.filter(action => action.type === 'card_attack');
-  
+  const attackActions = gameState.actionLog.filter((action) => action.type === 'card_attack');
+
   return attackActions
-    .map(action => {
+    .map((action) => {
       if (action.type === 'card_attack') {
         return action.data.targetId;
       }
@@ -198,7 +210,7 @@ export function runMultipleGuardSelectionTest(
       placeCreatureOnField(setup.gameState, 'player2', guardCard, {
         id: `guard_${index + 1}_${attempt}`,
         position: index,
-        addGuardKeyword: true
+        addGuardKeyword: true,
       });
       // placeCreatureOnField後に実際のinstanceIdを取得
       const placedCard = setup.gameState.players.player2.field[index];
@@ -213,7 +225,7 @@ export function runMultipleGuardSelectionTest(
     // 攻撃対象を記録（実際のinstanceIdを使用）
     const attackTargets = extractAttackTargets(finalState);
 
-    attackTargets.forEach(targetId => {
+    attackTargets.forEach((targetId) => {
       if (actualGuardIds.includes(targetId)) {
         targetCounts.set(targetId, (targetCounts.get(targetId) || 0) + 1);
       }
@@ -241,7 +253,7 @@ export function testDirectAttackWhenFieldEmpty(
   const finalConfig = { ...DEFAULT_BATTLE_CONFIG, ...config };
   const deck1 = createStandardTestDeck();
   const deck2 = createStandardTestDeck();
-  
+
   let gameState = createInitialGameState(
     finalConfig.testGameId,
     deck1,
@@ -252,19 +264,19 @@ export function testDirectAttackWhenFieldEmpty(
   );
 
   const maxSteps = 100;
-  
+
   for (let steps = 0; steps < maxSteps && !gameState.result; steps++) {
     gameState = processGameStep(gameState);
 
     // 理想的なシナリオ：player1がカードを持ち、player2が空の場合
     const hasTargetScenario = checkDirectAttackScenario(gameState);
-    
+
     if (hasTargetScenario) {
       const result = executeDirectAttackScenario(gameState);
       return {
         foundTargetScenario: true,
         attackOccurred: result.attackOccurred,
-        gameCompleted: true
+        gameCompleted: true,
       };
     }
   }
@@ -272,7 +284,7 @@ export function testDirectAttackWhenFieldEmpty(
   return {
     foundTargetScenario: false,
     attackOccurred: false,
-    gameCompleted: !!gameState.result
+    gameCompleted: !!gameState.result,
   };
 }
 
@@ -295,22 +307,23 @@ function executeDirectAttackScenario(gameState: GameState): { attackOccurred: bo
   const initialPlayer2Life = gameState.players.player2.life;
   const processedState = processGameStep(gameState);
   const finalPlayer2Life = processedState.players.player2.life;
-  
+
   // 攻撃が発生したかチェック
   const attackOccurred = finalPlayer2Life < initialPlayer2Life;
-  
+
   if (attackOccurred) {
     // 直接攻撃ログの存在確認
-    const attackActions = processedState.actionLog.filter(action => 
-      action.type === 'card_attack' && 
-      (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+    const attackActions = processedState.actionLog.filter(
+      (action) =>
+        action.type === 'card_attack' &&
+        (action.data.targetId === 'player1' || action.data.targetId === 'player2')
     );
-    
+
     if (attackActions.length === 0) {
       throw new Error('ライフが減少したが攻撃ログが見つからない');
     }
   }
-  
+
   return { attackOccurred };
 }
 
@@ -323,7 +336,7 @@ export function setupNoGuardBattleScenario(
   const finalConfig = { ...DEFAULT_BATTLE_CONFIG, ...config };
   const deck1 = createStandardTestDeck();
   const deck2 = createStandardTestDeck();
-  
+
   const gameState = createInitialGameState(
     finalConfig.testGameId,
     deck1,
@@ -335,7 +348,10 @@ export function setupNoGuardBattleScenario(
 
   // 攻撃者カードを取得してインスタンス化
   const attackerTemplate = findCreatureTemplateById(berserkerCards, 'ber_warrior', '攻撃者カード');
-  const attackerCard = createCardFromTemplate(attackerTemplate, 'test-attacker-no-guard') as CreatureCard;
+  const attackerCard = createCardFromTemplate(
+    attackerTemplate,
+    'test-attacker-no-guard'
+  ) as CreatureCard;
 
   // 通常カード（守護なし）を取得してインスタンス化
   const normalTemplate = findCreatureTemplateById(necromancerCards, 'necro_wraith', '通常カード');
@@ -345,7 +361,7 @@ export function setupNoGuardBattleScenario(
     gameState,
     attackerCard,
     guardCards: [],
-    normalCards: [normalCard]
+    normalCards: [normalCard],
   };
 }
 
@@ -368,16 +384,17 @@ export function verifyNoGuardAttackResult(
 ): AttackVerificationResult {
   const finalPlayer2Life = gameState.players.player2.life;
   const finalNormalHealth = gameState.players.player2.field[0]?.currentHealth || 0;
-  
+
   const playerAttacked = finalPlayer2Life < initialPlayer2Life;
   const creatureAttacked = finalNormalHealth < initialNormalHealth;
-  
+
   // どちらか一方が攻撃されている（両方はありえない）
-  const isValidResult = (playerAttacked || creatureAttacked) && !(playerAttacked && creatureAttacked);
-  
+  const isValidResult =
+    (playerAttacked || creatureAttacked) && !(playerAttacked && creatureAttacked);
+
   return {
     playerAttacked,
     creatureAttacked,
-    isValidResult
+    isValidResult,
   };
 }

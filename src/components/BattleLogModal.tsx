@@ -1,6 +1,6 @@
 /**
  * 詳細戦闘ログモーダル - 全アクションログの表示と分析
- * 
+ *
  * 設計方針:
  * - 全actionLogの制限なし表示
  * - ターン別グルーピング
@@ -17,12 +17,36 @@ import { useBattleLog } from '@/hooks/useBattleLog';
 import type { PlayerId } from '@/types/game';
 import { getLogDisplayParts, getCardName, getFinalGameState } from '@/lib/game-state-utils';
 import CardNameWithTooltip from './CardNameWithTooltip';
-import { 
-  X, Copy, Check, Search,
-  Zap, User, Bot, AlertTriangle, CreditCard, Swords, Target, Flag,
-  TrendingUp, TrendingDown, Heart, Shield, ArrowDown, Users, RotateCcw,
-  MicOff, AlertCircle, Skull, Repeat, Trash2, ShieldOff, Star,
-  Crown, Trophy, BarChart3
+import {
+  X,
+  Copy,
+  Check,
+  Search,
+  Zap,
+  User,
+  Bot,
+  AlertTriangle,
+  CreditCard,
+  Swords,
+  Target,
+  Flag,
+  TrendingUp,
+  TrendingDown,
+  Heart,
+  Shield,
+  ArrowDown,
+  Users,
+  RotateCcw,
+  MicOff,
+  AlertCircle,
+  Skull,
+  Repeat,
+  Trash2,
+  ShieldOff,
+  Star,
+  Crown,
+  Trophy,
+  BarChart3,
 } from 'lucide-react';
 
 interface BattleLogModalProps {
@@ -35,10 +59,26 @@ interface BattleLogModalProps {
 // === 内部コンポーネント定義（旧battle-log/ディレクトリから統合） ===
 
 const ICONS = {
-  CreditCard, Zap, Target, Swords, Flag,
-  TrendingUp, TrendingDown, Heart, Shield, ArrowDown, Users,
-  RotateCcw, MicOff, AlertCircle, Skull, Repeat, Trash2, ShieldOff,
-  AlertTriangle, Star,
+  CreditCard,
+  Zap,
+  Target,
+  Swords,
+  Flag,
+  TrendingUp,
+  TrendingDown,
+  Heart,
+  Shield,
+  ArrowDown,
+  Users,
+  RotateCcw,
+  MicOff,
+  AlertCircle,
+  Skull,
+  Repeat,
+  Trash2,
+  ShieldOff,
+  AlertTriangle,
+  Star,
 } as const;
 
 function getPlayerIcon(playerId: PlayerId) {
@@ -53,7 +93,7 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
   const messageWithTooltips = parts.message.split(/(《.*?》)/g).map((segment, index) => {
     if (segment.startsWith('《') && segment.endsWith('》')) {
       const cardName = segment.substring(1, segment.length - 1);
-      const cardId = parts.cardIds.find(id => getCardName(id) === cardName);
+      const cardId = parts.cardIds.find((id) => getCardName(id) === cardName);
       if (cardId) {
         return (
           <CardNameWithTooltip key={index} cardId={cardId} showBrackets={true}>
@@ -67,7 +107,10 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
 
   return (
     <div className="flex items-center space-x-2">
-      <PlayerIcon size={14} className={action.playerId === 'player1' ? 'text-blue-400' : 'text-red-400'} />
+      <PlayerIcon
+        size={14}
+        className={action.playerId === 'player1' ? 'text-blue-400' : 'text-red-400'}
+      />
       <IconComponent size={14} />
       <span>
         <span className="font-semibold">[{parts.playerName}]</span> {messageWithTooltips}
@@ -81,7 +124,12 @@ function formatAction(action: GameAction, gameState: GameState): React.ReactElem
 /**
  * BattleLogHeader - ヘッダー部分
  */
-const BattleLogHeader = ({ onClose, copySuccess, onCopy, isFiltered }: {
+const BattleLogHeader = ({
+  onClose,
+  copySuccess,
+  onCopy,
+  isFiltered,
+}: {
   onClose: () => void;
   copySuccess: boolean;
   onCopy: (useFiltered: boolean) => void;
@@ -108,7 +156,7 @@ const BattleLogHeader = ({ onClose, copySuccess, onCopy, isFiltered }: {
             </>
           )}
         </button>
-        
+
         {isFiltered && (
           <button
             onClick={() => onCopy(true)}
@@ -119,11 +167,8 @@ const BattleLogHeader = ({ onClose, copySuccess, onCopy, isFiltered }: {
             <span>表示中のみ</span>
           </button>
         )}
-        
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-        >
+
+        <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
           <X size={20} className="text-gray-400" />
         </button>
       </div>
@@ -134,7 +179,14 @@ const BattleLogHeader = ({ onClose, copySuccess, onCopy, isFiltered }: {
 /**
  * BattleLogControls - コントロール部分
  */
-const BattleLogControls = ({ searchTerm, filterType, filterPlayer, onSearchChange, onFilterTypeChange, onFilterPlayerChange }: {
+const BattleLogControls = ({
+  searchTerm,
+  filterType,
+  filterPlayer,
+  onSearchChange,
+  onFilterTypeChange,
+  onFilterPlayerChange,
+}: {
   searchTerm: string;
   filterType: string;
   filterPlayer: string;
@@ -145,7 +197,10 @@ const BattleLogControls = ({ searchTerm, filterType, filterPlayer, onSearchChang
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
       <div className="relative">
-        <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <Search
+          size={18}
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+        />
         <input
           type="text"
           placeholder="アクション検索..."
@@ -154,7 +209,7 @@ const BattleLogControls = ({ searchTerm, filterType, filterPlayer, onSearchChang
           className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
         />
       </div>
-      
+
       <select
         value={filterType}
         onChange={onFilterTypeChange}
@@ -170,7 +225,7 @@ const BattleLogControls = ({ searchTerm, filterType, filterPlayer, onSearchChang
         <option value="trigger_event">トリガーイベント</option>
         <option value="creature_destroyed">クリーチャー破壊</option>
       </select>
-      
+
       <select
         value={filterPlayer}
         onChange={onFilterPlayerChange}
@@ -187,7 +242,11 @@ const BattleLogControls = ({ searchTerm, filterType, filterPlayer, onSearchChang
 /**
  * BattleLogStats - 統計部分
  */
-const BattleLogStats = ({ totalActions, filteredCount, currentTurn }: {
+const BattleLogStats = ({
+  totalActions,
+  filteredCount,
+  currentTurn,
+}: {
   totalActions: number;
   filteredCount: number;
   currentTurn: number;
@@ -210,7 +269,12 @@ const BattleLogStats = ({ totalActions, filteredCount, currentTurn }: {
 /**
  * ActionList - アクションリスト部分
  */
-const ActionList = ({ groupedActions, gameState, decisiveAction, onJumpToAction }: {
+const ActionList = ({
+  groupedActions,
+  gameState,
+  decisiveAction,
+  onJumpToAction,
+}: {
   groupedActions: Record<number, GameAction[]>;
   gameState: GameState;
   decisiveAction: GameAction | null;
@@ -218,9 +282,7 @@ const ActionList = ({ groupedActions, gameState, decisiveAction, onJumpToAction 
 }) => {
   if (Object.keys(groupedActions).length === 0) {
     return (
-      <div className="text-center text-gray-500 py-8">
-        条件に一致するアクションがありません
-      </div>
+      <div className="text-center text-gray-500 py-8">条件に一致するアクションがありません</div>
     );
   }
 
@@ -231,20 +293,19 @@ const ActionList = ({ groupedActions, gameState, decisiveAction, onJumpToAction 
         .map(([turnNumber, actions]) => (
           <div key={turnNumber} className="mb-6">
             <div className="sticky top-0 bg-gray-900/90 backdrop-blur-sm py-2 mb-3 border-b border-gray-700">
-              <h3 className="text-lg font-bold text-amber-300">
-                ターン {turnNumber}
-              </h3>
+              <h3 className="text-lg font-bold text-amber-300">ターン {turnNumber}</h3>
             </div>
-            
+
             <div className="space-y-2">
               {actions.map((action) => {
-                const isDecisiveAction = decisiveAction && action.sequence === decisiveAction.sequence;
+                const isDecisiveAction =
+                  decisiveAction && action.sequence === decisiveAction.sequence;
                 return (
                   <div
                     key={action.sequence}
                     className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                      isDecisiveAction 
-                        ? 'bg-red-900/30 border-red-500/50 hover:bg-red-900/40' 
+                      isDecisiveAction
+                        ? 'bg-red-900/30 border-red-500/50 hover:bg-red-900/40'
                         : 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-800/70'
                     }`}
                   >
@@ -258,12 +319,10 @@ const ActionList = ({ groupedActions, gameState, decisiveAction, onJumpToAction 
                             <Zap size={16} className="text-red-400 animate-pulse" />
                           </div>
                         )}
-                        <div className="flex-1">
-                          {formatAction(action, gameState)}
-                        </div>
+                        <div className="flex-1">{formatAction(action, gameState)}</div>
                       </div>
                     </div>
-                    
+
                     {onJumpToAction && (
                       <button
                         onClick={() => onJumpToAction(action.sequence)}
@@ -286,7 +345,10 @@ const ActionList = ({ groupedActions, gameState, decisiveAction, onJumpToAction 
 /**
  * GameResultSection - ゲーム結果部分
  */
-const GameResultSection = ({ gameState, decisiveAction }: {
+const GameResultSection = ({
+  gameState,
+  decisiveAction,
+}: {
   gameState: GameState;
   decisiveAction: GameAction | null;
 }) => {
@@ -342,9 +404,7 @@ const GameResultSection = ({ gameState, decisiveAction }: {
               <span className="text-xs font-mono text-gray-500">
                 #{decisiveAction.sequence.toString().padStart(3, '0')}
               </span>
-              <div className="flex-1">
-                {formatAction(decisiveAction, gameState)}
-              </div>
+              <div className="flex-1">{formatAction(decisiveAction, gameState)}</div>
             </div>
           </div>
         )}
@@ -363,7 +423,9 @@ const GameResultSection = ({ gameState, decisiveAction }: {
               <div className="text-sm space-y-1 ml-6">
                 <div className="flex justify-between">
                   <span className="text-gray-400">ライフ:</span>
-                  <span className={`font-bold ${finalState.player1.life <= 0 ? 'text-red-400' : 'text-white'}`}>
+                  <span
+                    className={`font-bold ${finalState.player1.life <= 0 ? 'text-red-400' : 'text-white'}`}
+                  >
                     {finalState.player1.life}
                   </span>
                 </div>
@@ -389,7 +451,9 @@ const GameResultSection = ({ gameState, decisiveAction }: {
               <div className="text-sm space-y-1 ml-6">
                 <div className="flex justify-between">
                   <span className="text-gray-400">ライフ:</span>
-                  <span className={`font-bold ${finalState.player2.life <= 0 ? 'text-red-400' : 'text-white'}`}>
+                  <span
+                    className={`font-bold ${finalState.player2.life <= 0 ? 'text-red-400' : 'text-white'}`}
+                  >
                     {finalState.player2.life}
                   </span>
                 </div>
@@ -416,11 +480,11 @@ const GameResultSection = ({ gameState, decisiveAction }: {
 
 // === メインコンポーネント ===
 
-export default function BattleLogModal({ 
-  gameState, 
-  isOpen, 
-  onClose, 
-  onJumpToAction 
+export default function BattleLogModal({
+  gameState,
+  isOpen,
+  onClose,
+  onJumpToAction,
 }: BattleLogModalProps) {
   const {
     searchTerm,
@@ -472,10 +536,7 @@ export default function BattleLogModal({
             decisiveAction={decisiveAction}
             onJumpToAction={onJumpToAction}
           />
-          <GameResultSection
-            gameState={gameState}
-            decisiveAction={decisiveAction}
-          />
+          <GameResultSection gameState={gameState} decisiveAction={decisiveAction} />
         </div>
 
         {/* フッター */}
@@ -484,14 +545,20 @@ export default function BattleLogModal({
             <div>
               {gameState.result ? (
                 <span>
-                  ゲーム終了: <span className="text-white">{gameState.result.reason === 'life_zero' ? 'ライフ0' : '時間切れ'}</span>
+                  ゲーム終了:{' '}
+                  <span className="text-white">
+                    {gameState.result.reason === 'life_zero' ? 'ライフ0' : '時間切れ'}
+                  </span>
                 </span>
               ) : (
                 <span>ゲーム進行中</span>
               )}
             </div>
             <div>
-              経過時間: <span className="text-white">{Math.floor((Date.now() - gameState.startTime) / 1000)}秒</span>
+              経過時間:{' '}
+              <span className="text-white">
+                {Math.floor((Date.now() - gameState.startTime) / 1000)}秒
+              </span>
             </div>
           </div>
         </div>

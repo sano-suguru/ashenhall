@@ -109,10 +109,12 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
     expect(score).toBeCloseTo((3 + 3) / 3);
   });
 
-
   it('should give bonus to necromancer for echo card based on graveyard size', () => {
     gameState.players.player1.faction = 'necromancer';
-    gameState.players.player1.graveyard = [createMockCard({ type: 'creature' }), createMockCard({ type: 'creature' })];
+    gameState.players.player1.graveyard = [
+      createMockCard({ type: 'creature' }),
+      createMockCard({ type: 'creature' }),
+    ];
     const card = createMockCard({ type: 'creature', keywords: ['echo'] });
     const score = evaluateCardForPlay(card, gameState, playerId);
     const baseScore = (3 + 3) / 3;
@@ -123,9 +125,7 @@ describe('evaluateCardForPlay (Before Refactoring)', () => {
   it('should give bonus to knight for formation card based on field size', () => {
     gameState.players.player1.faction = 'knight';
     const creatureCard = createMockCard({ type: 'creature' }) as CreatureCard;
-    gameState.players.player1.field = [
-      createMockFieldCard(creatureCard, 'player1', 0)
-    ];
+    gameState.players.player1.field = [createMockFieldCard(creatureCard, 'player1', 0)];
     const card = createMockCard({ keywords: ['formation'], type: 'creature' });
     const score = evaluateCardForPlay(card, gameState, playerId);
     const baseScore = (3 + 3) / 3;
@@ -155,7 +155,9 @@ describe('AI Tactics Scorers (After Refactoring)', () => {
   describe('calculateBaseScore', () => {
     it('calculates score for spell card', () => {
       const card = createMockCard({ type: 'spell', cost: 4 });
-      expect(calculateBaseScore(card)).toBe(4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER);
+      expect(calculateBaseScore(card)).toBe(
+        4 * AI_EVALUATION_WEIGHTS.BASE_SCORE.SPELL_COST_MULTIPLIER
+      );
     });
 
     it('calculates base score for creature using balanced logic', () => {
@@ -170,13 +172,17 @@ describe('AI Tactics Scorers (After Refactoring)', () => {
       gameState.players.player1.faction = 'necromancer';
       gameState.players.player1.graveyard = [createMockCard({}), createMockCard({})];
       const card = createMockCard({ keywords: ['echo'] });
-      expect(calculateFactionBonus(card, gameState, playerId)).toBe(2 * AI_EVALUATION_WEIGHTS.FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD);
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(
+        2 * AI_EVALUATION_WEIGHTS.FACTION_BONUSES.NECROMANCER.ECHO_PER_GRAVEYARD
+      );
     });
 
     it('calculates bonus for Knight', () => {
       gameState.players.player1.faction = 'knight';
       const card = createMockCard({ keywords: ['guard'] });
-      expect(calculateFactionBonus(card, gameState, playerId)).toBe(AI_EVALUATION_WEIGHTS.FACTION_BONUSES.KNIGHT.GUARD);
+      expect(calculateFactionBonus(card, gameState, playerId)).toBe(
+        AI_EVALUATION_WEIGHTS.FACTION_BONUSES.KNIGHT.GUARD
+      );
     });
 
     it('returns 0 for a faction with no specific bonus for the card', () => {

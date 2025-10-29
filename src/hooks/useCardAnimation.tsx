@@ -1,6 +1,6 @@
 /**
  * カード演出フック
- * 
+ *
  * CardComponentから演出関連のロジックを分離し、
  * 複雑度を削減するためのフック
  */
@@ -22,9 +22,7 @@ interface UseCardAnimationProps {
   animationState: CardAnimationState;
 }
 
-export function useCardAnimation({
-  animationState,
-}: UseCardAnimationProps): AnimationResult {
+export function useCardAnimation({ animationState }: UseCardAnimationProps): AnimationResult {
   // CSS演出クラス名を取得
   const animationClasses = useMemo(() => {
     return getAnimationCssClass(animationState);
@@ -52,7 +50,7 @@ export function useCardAnimation({
         </div>
       );
     }
-    
+
     if (showHealPopup) {
       const healAmount = animationState.value || 0;
       return (
@@ -63,7 +61,7 @@ export function useCardAnimation({
         </div>
       );
     }
-    
+
     return null;
   }, [showDamagePopup, showHealPopup, animationState.value]);
 

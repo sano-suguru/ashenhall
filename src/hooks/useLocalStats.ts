@@ -1,6 +1,6 @@
 /**
  * ローカル統計管理フック
- * 
+ *
  * 設計方針:
  * - localStorage操作の完全な抽象化
  * - エラーハンドリングの統一実装
@@ -14,15 +14,15 @@ import { loadStats, saveStats, updateStatsWithGameResult } from '@/lib/stats-uti
 interface LocalStatsReturn {
   // 統計データ
   localStats: LocalStats | null;
-  
+
   // 統計更新関数
   updateWithGameResult: (gameState: GameState) => void;
   refreshStats: () => void;
-  
+
   // エラー状態
   loadError: Error | null;
   saveError: Error | null;
-  
+
   // ローディング状態
   isLoading: boolean;
 }
@@ -41,14 +41,15 @@ export const useLocalStats = (): LocalStatsReturn => {
   const refreshStats = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
-    
+
     try {
       // 非同期処理として実装（テスト可能）
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       const stats = loadStats();
       setLocalStats(stats);
     } catch (error) {
-      const errorObj = error instanceof Error ? error : new Error('統計データの読み込みに失敗しました');
+      const errorObj =
+        error instanceof Error ? error : new Error('統計データの読み込みに失敗しました');
       setLoadError(errorObj);
       console.error('Failed to load stats:', errorObj);
     } finally {
@@ -65,39 +66,43 @@ export const useLocalStats = (): LocalStatsReturn => {
   }, [refreshStats]);
 
   // ゲーム結果による統計更新
-  const updateWithGameResult = useCallback((gameState: GameState) => {
-    if (!gameState.result) {
-      console.warn('ゲーム結果が未確定のため統計更新をスキップします');
-      return;
-    }
-    
-    if (!localStats) {
-      console.warn('統計データが読み込まれていないため統計更新をスキップします');
-      return;
-    }
+  const updateWithGameResult = useCallback(
+    (gameState: GameState) => {
+      if (!gameState.result) {
+        console.warn('ゲーム結果が未確定のため統計更新をスキップします');
+        return;
+      }
 
-    setSaveError(null);
+      if (!localStats) {
+        console.warn('統計データが読み込まれていないため統計更新をスキップします');
+        return;
+      }
 
-    try {
-      // 統計更新
-      const updatedStats = updateStatsWithGameResult(localStats, gameState);
-      
-      // localStorage保存
-      saveStats(updatedStats);
-      
-      // 状態更新
-      setLocalStats(updatedStats);
-      
-      console.log('統計データが正常に更新されました');
-    } catch (error) {
-      const errorObj = error instanceof Error ? error : new Error('統計データの保存に失敗しました');
-      setSaveError(errorObj);
-      console.error('Failed to save stats:', errorObj);
-      
-      // 保存失敗時は統計データを元に戻す（整合性確保）
-      refreshStats();
-    }
-  }, [localStats, refreshStats]);
+      setSaveError(null);
+
+      try {
+        // 統計更新
+        const updatedStats = updateStatsWithGameResult(localStats, gameState);
+
+        // localStorage保存
+        saveStats(updatedStats);
+
+        // 状態更新
+        setLocalStats(updatedStats);
+
+        console.log('統計データが正常に更新されました');
+      } catch (error) {
+        const errorObj =
+          error instanceof Error ? error : new Error('統計データの保存に失敗しました');
+        setSaveError(errorObj);
+        console.error('Failed to save stats:', errorObj);
+
+        // 保存失敗時は統計データを元に戻す（整合性確保）
+        refreshStats();
+      }
+    },
+    [localStats, refreshStats]
+  );
 
   return {
     localStats,

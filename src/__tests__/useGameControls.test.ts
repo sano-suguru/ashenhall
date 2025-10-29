@@ -1,6 +1,6 @@
 /**
  * useGameControls フック ユニットテスト
- * 
+ *
  * テスト方針:
  * - 基本的な状態管理の動作確認
  * - BattlePlaybackControlsとの連携インターフェース検証

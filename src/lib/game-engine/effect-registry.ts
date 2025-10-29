@@ -6,18 +6,10 @@
  * - カード固有のロジックを`executeCardEffect`から分離する
  */
 
-import type {
-  GameState,
-  Card,
-  FieldCard,
-  CardEffect,
-  PlayerId,
-  EffectAction,
-} from "@/types/game";
-import { SeededRandom } from "./seeded-random";
+import type { GameState, Card, FieldCard, CardEffect, PlayerId, EffectAction } from '@/types/game';
+import { SeededRandom } from './seeded-random';
 // 効果実行関数のインポート - 統合版
 import {
-  getOpponentId,
   executeDamageEffect,
   executeHealEffect,
   executeBuffAttackEffect,
@@ -29,7 +21,7 @@ import {
   executeHandDiscardEffect,
   executeDestroyAllCreaturesEffect,
   executeBanishEffect,
-} from "./effects/core-effects";
+} from './effects/core-effects';
 import {
   executeSummonEffect,
   executeResurrectEffect,
@@ -40,12 +32,11 @@ import {
   executeApplyBrandEffect,
   executeDeckSearchEffect,
   executeChainEffect,
-} from "./effects/specialized-effects";
-import {
-  getBrandedCreatureCount,
-} from "./brand-utils";
-import { GraveyardLookup, fieldLookup } from "./field-search-cache";
-import type { DynamicValueDescriptor } from "@/types/cards";
+} from './effects/specialized-effects';
+import { getOpponentId } from './effect-utils';
+import { getBrandedCreatureCount } from './brand-utils';
+import { GraveyardLookup, fieldLookup } from './field-search-cache';
+import type { DynamicValueDescriptor } from '@/types/cards';
 
 /**
  * 全ての効果ハンドラが従うべき関数シグネチャ。
@@ -83,27 +74,27 @@ function executeDamageWithChain(
   value: number
 ): void {
   // HP記録（キル判定用）
-  const targetsHealthBefore = targets.map(t => ({
+  const targetsHealthBefore = targets.map((t) => ({
     card: t,
     health: t.currentHealth,
     instanceId: t.instanceId,
   }));
-  
+
   // 初期ダメージ実行
   const opponentId = getOpponentId(sourcePlayerId);
-  if (effect.target === "player") {
+  if (effect.target === 'player') {
     executeDamageEffect(state, [], opponentId, value, sourceCard.templateId);
-  } else if (effect.target === "self_player") {
+  } else if (effect.target === 'self_player') {
     executeDamageEffect(state, [], sourcePlayerId, value, sourceCard.templateId);
   } else {
     executeDamageEffect(state, targets, null, value, sourceCard.templateId);
   }
-  
+
   // キル判定
   const killedTargets = targetsHealthBefore
     .filter(({ card, health }) => health > 0 && card.currentHealth <= 0)
     .map(({ card }) => card);
-  
+
   // 連鎖効果発動
   if (killedTargets.length > 0 && effect.chainOnKill) {
     executeChainEffect(
@@ -113,7 +104,7 @@ function executeDamageWithChain(
       sourcePlayerId,
       random,
       killedTargets,
-      1,  // 初回連鎖は深度1
+      1, // 初回連鎖は深度1
       effectHandlers
     );
   }
@@ -209,30 +200,36 @@ function calculateNewDynamicValue(
   const sourcePlayer = state.players[sourcePlayerId];
   const opponentId = getOpponentId(sourcePlayerId);
   const opponent = state.players[opponentId];
-  
+
   let calculatedValue = 0;
-  
+
   switch (descriptor.source) {
     case 'graveyard':
       if (descriptor.filter === 'creatures') {
         calculatedValue = GraveyardLookup.countCreatures(state, sourcePlayerId);
       } else if (descriptor.filter === 'exclude_self') {
-        calculatedValue = GraveyardLookup.countExcludingSelf(state, sourcePlayerId, sourceCard.templateId);
+        calculatedValue = GraveyardLookup.countExcludingSelf(
+          state,
+          sourcePlayerId,
+          sourceCard.templateId
+        );
       } else {
         calculatedValue = sourcePlayer.graveyard.length;
       }
       break;
-      
+
     case 'field':
       if (descriptor.filter === 'alive') {
         calculatedValue = fieldLookup.findAliveCreatures(state, sourcePlayerId).length;
       } else if (descriptor.filter === 'exclude_self') {
-        calculatedValue = sourcePlayer.field.filter(c => c.templateId !== sourceCard.templateId).length;
+        calculatedValue = sourcePlayer.field.filter(
+          (c) => c.templateId !== sourceCard.templateId
+        ).length;
       } else {
         calculatedValue = sourcePlayer.field.length;
       }
       break;
-      
+
     case 'enemy_field':
       if (descriptor.filter === 'has_brand') {
         calculatedValue = getBrandedCreatureCount(opponent.field);
@@ -240,14 +237,13 @@ function calculateNewDynamicValue(
         calculatedValue = opponent.field.length;
       }
       break;
-      
+
     default:
       calculatedValue = 0;
   }
-  
+
   return calculatedValue + (descriptor.baseValue || 0);
 }
-
 
 /**
  * カード固有の動的な効果パラメータを解決する

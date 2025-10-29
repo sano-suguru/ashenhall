@@ -1,4 +1,11 @@
-import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, ConditionOperator, EffectTarget } from '@/types/game';
+import type {
+  CardEffect,
+  EffectAction,
+  EffectCondition,
+  ConditionSubject,
+  ConditionOperator,
+  EffectTarget,
+} from '@/types/game';
 
 /**
  * 動的効果値を持つカードの専用テキスト定義
@@ -6,17 +13,17 @@ import type { CardEffect, EffectAction, EffectCondition, ConditionSubject, Condi
  */
 const DYNAMIC_EFFECT_TEXTS: Record<string, string> = {
   // 味方クリーチャー数依存
-  'kni_sanctuary_prayer': '使用時: 味方全体を味方クリーチャー数分回復する。',
-  
+  kni_sanctuary_prayer: '使用時: 味方全体を味方クリーチャー数分回復する。',
+
   // 墓地枚数依存
-  'necro_soul_vortex': '使用時: 墓地の枚数分だけ1/1の骸骨トークンを召喚する。',
-  'necro_grave_giant': '召喚時: 墓地のクリーチャー数分、自身の攻撃力を+Xする。',
-  
+  necro_soul_vortex: '使用時: 墓地の枚数分だけ1/1の骸骨トークンを召喚する。',
+  necro_grave_giant: '召喚時: 墓地のクリーチャー数分、自身の攻撃力を+Xする。',
+
   // 烙印持ち敵数依存
-  'inq_collective_confession': '使用時: 相手プレイヤーを2+烙印を持つ敵の数分回復する。',
-  
+  inq_collective_confession: '使用時: 相手プレイヤーを2+烙印を持つ敵の数分回復する。',
+
   // 他の味方数依存（パッシブ効果）
-  'kni_galleon': '常時: 他の味方クリーチャー数分、自身の攻撃力を+Xする。',
+  kni_galleon: '常時: 他の味方クリーチャー数分、自身の攻撃力を+Xする。',
 };
 
 /**
@@ -32,7 +39,9 @@ function getSpecialEffectText(cardId: string): string | null {
 /**
  * プロパティルール値の型ガード関数
  */
-function isPropertyRuleValue(value: unknown): value is { property: string; expectedValue: unknown } {
+function isPropertyRuleValue(
+  value: unknown
+): value is { property: string; expectedValue: unknown } {
   return typeof value === 'object' && value !== null && 'property' in value;
 }
 
@@ -41,11 +50,14 @@ function isPropertyRuleValue(value: unknown): value is { property: string; expec
  */
 function formatBrandRule(rule: import('@/types/cards').FilterRule): string | null {
   if (rule.type !== 'brand') return null;
-  
+
   switch (rule.operator) {
-    case 'has': return '烙印を刻まれた';
-    case 'not_has': return '烙印を刻まれていない';
-    default: return null;
+    case 'has':
+      return '烙印を刻まれた';
+    case 'not_has':
+      return '烙印を刻まれていない';
+    default:
+      return null;
   }
 }
 
@@ -55,7 +67,7 @@ function formatBrandRule(rule: import('@/types/cards').FilterRule): string | nul
 function formatPropertyRule(rule: import('@/types/cards').FilterRule): string | null {
   if (rule.type !== 'property') return null;
   if (!isPropertyRuleValue(rule.value)) return null;
-  
+
   const propRule = rule.value;
   if (propRule.property === 'type') {
     return `${propRule.expectedValue}タイプの`;
@@ -93,18 +105,18 @@ function formatFactionRule(rule: import('@/types/cards').FilterRule): string | n
  */
 const getSelectionRulesText = (rules?: import('@/types/cards').FilterRule[]): string => {
   if (!rules || rules.length === 0) return '';
-  
+
   const formatters = [
     formatBrandRule,
-    formatPropertyRule, 
+    formatPropertyRule,
     formatCostRule,
     formatCardTypeRule,
-    formatFactionRule
+    formatFactionRule,
   ];
-  
+
   const filters: string[] = [];
-  
-  rules.forEach(rule => {
+
+  rules.forEach((rule) => {
     for (const formatter of formatters) {
       const result = formatter(rule);
       if (result) {
@@ -113,10 +125,9 @@ const getSelectionRulesText = (rules?: import('@/types/cards').FilterRule[]): st
       }
     }
   });
-  
+
   return filters.join('');
 };
-
 
 const getTargetText = (target: CardEffect['target']): string => {
   // 全てのEffectTargetを網羅的に定義し、型安全性を確保
@@ -198,9 +209,7 @@ const formatBrandedEnemyCondition = (condition: EffectCondition): string | null 
   if (condition.subject !== 'hasBrandedEnemy' || condition.operator !== 'eq') {
     return null;
   }
-  return condition.value === 1 
-    ? '烙印を刻まれた敵がいる場合、'
-    : '烙印を刻まれた敵がいない場合、';
+  return condition.value === 1 ? '烙印を刻まれた敵がいる場合、' : '烙印を刻まれた敵がいない場合、';
 };
 
 /**
@@ -210,15 +219,15 @@ const formatLifeComparisonCondition = (condition: EffectCondition): string | nul
   if (condition.subject !== 'playerLife' || condition.value !== 'opponentLife') {
     return null;
   }
-  
+
   const comparisonMap: Record<ConditionOperator, string> = {
     lt: '相手よりライフが少ない場合、',
-    gt: '相手よりライフが多い場合、', 
+    gt: '相手よりライフが多い場合、',
     eq: '相手とライフが同じ場合、',
     gte: '相手以上のライフの場合、',
     lte: '相手以下のライフの場合、',
   };
-  
+
   return comparisonMap[condition.operator] || null;
 };
 
@@ -246,9 +255,8 @@ const formatNumericCondition = (condition: EffectCondition): string => {
 
   const subjectText = subjectMap[condition.subject] || condition.subject;
   const operatorText = operatorMap[condition.operator] || condition.operator;
-  const valueText = typeof condition.value === 'number' 
-    ? condition.value.toString()
-    : '相手のライフ';
+  const valueText =
+    typeof condition.value === 'number' ? condition.value.toString() : '相手のライフ';
 
   return `${subjectText}が${valueText}${operatorText}の場合、`;
 };
@@ -260,17 +268,17 @@ const getConditionText = (condition: EffectCondition): string => {
   // 特殊ケース1: hasBrandedEnemy処理
   const brandedResult = formatBrandedEnemyCondition(condition);
   if (brandedResult) return brandedResult;
-  
-  // 特殊ケース2: ライフ比較処理  
+
+  // 特殊ケース2: ライフ比較処理
   const lifeComparisonResult = formatLifeComparisonCondition(condition);
   if (lifeComparisonResult) return lifeComparisonResult;
-  
+
   // 標準ケース: 数値比較処理
   return formatNumericCondition(condition);
 };
 
 export const getEffectText = (
-  effect: CardEffect, 
+  effect: CardEffect,
   cardType: 'creature' | 'spell',
   cardId?: string
 ): string => {
@@ -295,9 +303,7 @@ export const getEffectText = (
   const triggerText = triggerMap[effect.trigger] || `[未定義トリガー: ${effect.trigger}]`;
 
   const generator = actionTextGenerator[effect.action];
-  const effectDescription = generator
-    ? generator(effect)
-    : `[未定義アクション: ${effect.action}]`;
+  const effectDescription = generator ? generator(effect) : `[未定義アクション: ${effect.action}]`;
 
   // 効果発動条件がある場合は条件テキストを追加
   const activationCondition = effect.activationCondition;
@@ -318,6 +324,9 @@ export const KEYWORD_DEFINITIONS: Record<string, { name: string; description: st
   echo: { name: '残響', description: 'あなたの墓地にあるカード枚数を参照する' },
   formation: { name: '連携', description: 'あなたの場にいる味方クリーチャーの数を参照する' },
   rush: { name: '速攻', description: '召喚されたターンに攻撃できる' },
-  trample: { name: '貫通', description: 'ブロックしたクリーチャーの体力を超えたダメージを敵プレイヤーに与える' },
+  trample: {
+    name: '貫通',
+    description: 'ブロックしたクリーチャーの体力を超えたダメージを敵プレイヤーに与える',
+  },
   untargetable: { name: '対象不可', description: '相手のスペルや効果の対象にならない' },
 };

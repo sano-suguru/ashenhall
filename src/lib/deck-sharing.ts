@@ -1,6 +1,6 @@
 /**
  * デッキ共有ユーティリティ
- * 
+ *
  * 設計方針:
  * - デッキデータをURLセーフな文字列にエンコード/デコードする機能を提供
  * - サーバーサイドとクライアントサイドの両方で利用可能な純粋関数として実装
@@ -8,11 +8,11 @@
  */
 
 import type { CustomDeck, Faction } from '@/types/game';
-import { 
+import {
   cardIdToIntegerMap,
   integerToCardIdMap,
   factionToIntegerMap,
-  integerToFactionMap
+  integerToFactionMap,
 } from './card-id-manager';
 import { sanitizeCoreCardIds } from './deck-utils';
 
@@ -28,8 +28,8 @@ const CARD_SEPARATOR = ',';
  */
 export function encodeDeck(deck: Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'>): string {
   const factionInt = factionToIntegerMap.get(deck.faction);
-  const coreInts = deck.coreCardIds.map(id => cardIdToIntegerMap.get(id));
-  const cardInts = deck.cards.map(id => cardIdToIntegerMap.get(id));
+  const coreInts = deck.coreCardIds.map((id) => cardIdToIntegerMap.get(id));
+  const cardInts = deck.cards.map((id) => cardIdToIntegerMap.get(id));
 
   if (factionInt === undefined || coreInts.includes(undefined) || cardInts.includes(undefined)) {
     throw new Error('Invalid card or faction ID found during encoding.');
@@ -37,13 +37,8 @@ export function encodeDeck(deck: Pick<CustomDeck, 'faction' | 'coreCardIds' | 'c
 
   const coreStr = coreInts.join(CARD_SEPARATOR);
   const cardsStr = cardInts.join(CARD_SEPARATOR);
-  
-  const rawDeckString = [
-    DECK_CODE_VERSION,
-    factionInt,
-    coreStr,
-    cardsStr
-  ].join(PART_SEPARATOR);
+
+  const rawDeckString = [DECK_CODE_VERSION, factionInt, coreStr, cardsStr].join(PART_SEPARATOR);
 
   if (typeof window !== 'undefined') {
     // Browser environment
@@ -101,11 +96,7 @@ function parseDeckCodeParts(decodedString: string): {
  * @param parsedData - パースされたデッキデータ
  * @returns 変換されたデッキデータ、またはエラーの場合はnull
  */
-function convertDeckData(parsedData: {
-  factionStr: string;
-  coreStr: string;
-  cardsStr: string;
-}): {
+function convertDeckData(parsedData: { factionStr: string; coreStr: string; cardsStr: string }): {
   faction: Faction;
   coreCardIds: string[];
   cards: string[];
@@ -113,7 +104,7 @@ function convertDeckData(parsedData: {
   originalCardParts: string[];
 } | null {
   const { factionStr, coreStr, cardsStr } = parsedData;
-  
+
   const factionInt = parseInt(factionStr, 10);
   const faction = integerToFactionMap.get(factionInt);
 
@@ -125,8 +116,12 @@ function convertDeckData(parsedData: {
   const originalCoreParts = coreStr ? coreStr.split(CARD_SEPARATOR) : [];
   const originalCardParts = cardsStr ? cardsStr.split(CARD_SEPARATOR) : [];
 
-  const coreCardIds = originalCoreParts.map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined);
-  const cards = originalCardParts.map(s => integerToCardIdMap.get(parseInt(s, 10))).filter((s): s is string => s !== undefined);
+  const coreCardIds = originalCoreParts
+    .map((s) => integerToCardIdMap.get(parseInt(s, 10)))
+    .filter((s): s is string => s !== undefined);
+  const cards = originalCardParts
+    .map((s) => integerToCardIdMap.get(parseInt(s, 10)))
+    .filter((s): s is string => s !== undefined);
 
   return {
     faction,
@@ -149,10 +144,12 @@ function validateDeckIntegrity(convertedData: {
   originalCardParts: string[];
 }): boolean {
   const { coreCardIds, cards, originalCoreParts, originalCardParts } = convertedData;
-  
+
   // IDの完全性を検証
-  if (coreCardIds.length !== originalCoreParts.length ||
-      cards.length !== originalCardParts.length) {
+  if (
+    coreCardIds.length !== originalCoreParts.length ||
+    cards.length !== originalCardParts.length
+  ) {
     console.error('Deck code contains invalid card IDs.');
     return false;
   }
@@ -165,21 +162,26 @@ function validateDeckIntegrity(convertedData: {
  * @param code - デコードするデッキコード文字列
  * @returns デコードされたデッキデータ、またはエラーの場合はnull
  */
-export function decodeDeck(code: string): Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'> | null {
+export function decodeDeck(
+  code: string
+): Pick<CustomDeck, 'faction' | 'coreCardIds' | 'cards'> | null {
   try {
     const decodedString = decodeBase64String(code);
     if (!decodedString) return null;
-    
+
     const parsedData = parseDeckCodeParts(decodedString);
     if (!parsedData) return null;
-    
+
     const convertedData = convertDeckData(parsedData);
     if (!convertedData) return null;
-    
+
     const isValid = validateDeckIntegrity(convertedData);
     if (!isValid) return null;
-    
-    const sanitizedCoreCardIds = sanitizeCoreCardIds(convertedData.coreCardIds, convertedData.cards);
+
+    const sanitizedCoreCardIds = sanitizeCoreCardIds(
+      convertedData.coreCardIds,
+      convertedData.cards
+    );
 
     return {
       faction: convertedData.faction,

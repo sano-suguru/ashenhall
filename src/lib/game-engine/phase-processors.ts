@@ -1,19 +1,15 @@
 /**
  * Ashenhall フェーズ処理システム
- * 
+ *
  * 設計方針:
  * - 各フェーズの処理を独立した関数として実装
  * - AI配置ロジックとカード効果処理の統合
  * - 決定論的な処理順序の保証
  */
 
-import type {
-  GameState,
-  PlayerId,
-  FieldCard,
-} from "@/types/game";
-import { GAME_CONSTANTS } from "@/types/game";
-import { advancePhase } from "./game-state";
+import type { GameState, PlayerId, FieldCard } from '@/types/game';
+import { GAME_CONSTANTS } from '@/types/game';
+import { advancePhase } from './game-state';
 import {
   addEffectTriggerAction,
   addEnergyUpdateAction,
@@ -21,33 +17,29 @@ import {
   addCardDrawAction,
   addEnergyRefillAction,
   addEndStageAction,
-} from "./action-logger";
+} from './action-logger';
 import { SYSTEM_EFFECT_SOURCES } from './system-effect-sources';
-import {
-  applyPassiveEffects,
-  processEffectTrigger,
-  handleCreatureDeath,
-} from "./card-effects";
-import { evaluateCardForPlay } from "./ai-tactics";
-import { checkAllConditions } from "./core/game-logic-utils";
-import { generateFieldInstanceId } from "@/lib/instance-id-generator";
-import type { Card } from "@/types/game";
+import { applyPassiveEffects, processEffectTrigger, handleCreatureDeath } from './card-effects';
+import { evaluateCardForPlay } from './ai-tactics';
+import { checkAllConditions } from './core/game-logic-utils';
+import { generateFieldInstanceId } from '@/lib/instance-id-generator';
+import type { Card } from '@/types/game';
 
 /**
  * カードがプレイ可能かどうかをチェックする（プレイ条件含む）
  */
 function canPlayCard(card: Card, state: GameState, playerId: PlayerId): boolean {
   const player = state.players[playerId];
-  
+
   // 基本条件: エネルギーとフィールド制限
   if (player.energy < card.cost) return false;
-  if (card.type === "creature" && player.field.length >= GAME_CONSTANTS.FIELD_LIMIT) return false;
-  
+  if (card.type === 'creature' && player.field.length >= GAME_CONSTANTS.FIELD_LIMIT) return false;
+
   // プレイ条件チェック（空打ち防止）
   if (card.playConditions && card.playConditions.length > 0) {
     return checkAllConditions(state, playerId, card.playConditions);
   }
-  
+
   return true;
 }
 
@@ -70,10 +62,9 @@ function playCardToField(
   // 統一されたプレイ可能性チェック
   if (!canPlayCard(card, state, playerId)) return false;
 
-  if (card.type === "creature") {
+  if (card.type === 'creature') {
     if (player.field.length >= GAME_CONSTANTS.FIELD_LIMIT) return false;
-    if (position < 0 || position > player.field.length)
-      position = player.field.length;
+    if (position < 0 || position > player.field.length) position = player.field.length;
   }
 
   const energyBefore = player.energy;
@@ -82,8 +73,7 @@ function playCardToField(
 
   player.hand.splice(cardIndex, 1);
 
-  if (card.type === "creature") {
-
+  if (card.type === 'creature') {
     const fieldCard: FieldCard = {
       ...card,
       instanceId: generateFieldInstanceId(card.templateId, state, playerId),
@@ -96,7 +86,7 @@ function playCardToField(
       summonTurn: state.turnNumber,
       position,
       hasAttacked: false,
-      isStealthed: card.keywords.includes("stealth"),
+      isStealthed: card.keywords.includes('stealth'),
       isSilenced: false,
       statusEffects: [],
       readiedThisTurn: false,
@@ -110,8 +100,8 @@ function playCardToField(
       initialStats: { attack: card.attack, health: card.health },
       playerEnergy: { before: energyBefore, after: energyAfter },
     });
-    processEffectTrigger(state, "on_play", fieldCard, playerId, fieldCard);
-  } else if (card.type === "spell") {
+    processEffectTrigger(state, 'on_play', fieldCard, playerId, fieldCard);
+  } else if (card.type === 'spell') {
     player.graveyard.push(card); // Move to graveyard before resolving effects
     // スペルでも手札のinstanceIdを記録
     addCardPlayAction(state, playerId, {
@@ -119,8 +109,8 @@ function playCardToField(
       position: -1,
       playerEnergy: { before: energyBefore, after: energyAfter },
     });
-    processEffectTrigger(state, "on_play", card, playerId, card);
-    processEffectTrigger(state, "on_spell_play", undefined, playerId, card);
+    processEffectTrigger(state, 'on_play', card, playerId, card);
+    processEffectTrigger(state, 'on_spell_play', undefined, playerId, card);
   }
 
   return true;
@@ -159,11 +149,11 @@ export function processDrawPhase(state: GameState): void {
       handSizeBefore: player.hand.length,
       handSizeAfter: player.hand.length, // 変化なし
       deckSizeAfter: player.deck.length,
-      fatigue: { lifeBefore, lifeAfter }
+      fatigue: { lifeBefore, lifeAfter },
     });
     addEffectTriggerAction(state, state.currentPlayer, {
       sourceCardId: SYSTEM_EFFECT_SOURCES.DECK_EMPTY,
-      effectType: "damage",
+      effectType: 'damage',
       effectValue: 1,
       targets: {
         [state.currentPlayer]: {
@@ -183,10 +173,7 @@ export function processDrawPhase(state: GameState): void {
 export function processEnergyPhase(state: GameState): void {
   const player = state.players[state.currentPlayer];
   const maxEnergyBefore = player.maxEnergy;
-  const maxEnergyAfter = Math.min(
-    player.maxEnergy + 1,
-    GAME_CONSTANTS.ENERGY_LIMIT
-  );
+  const maxEnergyAfter = Math.min(player.maxEnergy + 1, GAME_CONSTANTS.ENERGY_LIMIT);
 
   if (maxEnergyAfter > maxEnergyBefore) {
     player.maxEnergy = maxEnergyAfter;
@@ -215,11 +202,9 @@ export function processEnergyPhase(state: GameState): void {
 export function processDeployPhase(state: GameState): void {
   applyPassiveEffects(state);
   const player = state.players[state.currentPlayer];
-  
+
   // 配置可能なカードを評価（エネルギー・場・プレイ条件を含む）
-  const playableCards = player.hand.filter(
-    (card) => canPlayCard(card, state, state.currentPlayer)
-  );
+  const playableCards = player.hand.filter((card) => canPlayCard(card, state, state.currentPlayer));
 
   // 配置可能なカードがない場合はフェーズ終了
   if (playableCards.length === 0) {
@@ -240,19 +225,14 @@ export function processDeployPhase(state: GameState): void {
   const position = player.field.length; // 最後尾に配置
 
   // カードを配置（instanceIdを使用）
-  const success = playCardToField(
-    state,
-    state.currentPlayer,
-    bestCard.instanceId,
-    position
-  );
+  const success = playCardToField(state, state.currentPlayer, bestCard.instanceId, position);
 
   if (!success) {
     // 配置に失敗した場合はフェーズ終了（予期しない状況）
     advancePhase(state);
     return;
   }
-  
+
   // 配置成功→フェーズ継続（advancePhaseしない）
   // 次のprocessGameStep呼び出しで再度processDeployPhaseが実行され、
   // 次のカードの配置を試行する
@@ -263,8 +243,7 @@ export function processDeployPhase(state: GameState): void {
  */
 export function processEndPhase(state: GameState): void {
   const currentPlayer = state.players[state.currentPlayer];
-  const opponent =
-    state.players[state.currentPlayer === "player1" ? "player2" : "player1"];
+  const opponent = state.players[state.currentPlayer === 'player1' ? 'player2' : 'player1'];
 
   // ステージ: status_tick
   addEndStageAction(state, state.currentPlayer, { stage: 'status_tick' });
@@ -274,13 +253,13 @@ export function processEndPhase(state: GameState): void {
     player.field.forEach((card) => {
       // 状態異常処理
       card.statusEffects.forEach((effect) => {
-        if (effect.type === "poison") {
+        if (effect.type === 'poison') {
           const healthBefore = card.currentHealth;
           card.currentHealth -= effect.damage;
           const healthAfter = card.currentHealth;
           addEffectTriggerAction(state, player.id, {
             sourceCardId: SYSTEM_EFFECT_SOURCES.POISON,
-            effectType: "damage",
+            effectType: 'damage',
             effectValue: effect.damage,
             targets: {
               [card.templateId]: {
@@ -308,7 +287,7 @@ export function processEndPhase(state: GameState): void {
     if (poisonDeaths.length > 0) {
       addEndStageAction(state, state.currentPlayer, { stage: 'poison_damage' });
     }
-    poisonDeaths.forEach(deadCard => {
+    poisonDeaths.forEach((deadCard) => {
       handleCreatureDeath(state, deadCard, 'effect', SYSTEM_EFFECT_SOURCES.POISON);
     });
   });
@@ -317,7 +296,7 @@ export function processEndPhase(state: GameState): void {
   addEndStageAction(state, state.currentPlayer, { stage: 'cleanup' });
 
   // ターン終了効果
-  processEffectTrigger(state, "turn_end");
+  processEffectTrigger(state, 'turn_end');
   addEndStageAction(state, state.currentPlayer, { stage: 'turn_end_trigger' });
 
   advancePhase(state);

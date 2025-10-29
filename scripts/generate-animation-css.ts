@@ -59,7 +59,7 @@ async function main(): Promise<void> {
         return;
       }
     } catch {
-    // file missing or unreadable -> will write
+      // file missing or unreadable -> will write
     }
 
     await fs.writeFile(OUTPUT, css, 'utf8');

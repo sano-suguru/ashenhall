@@ -1,6 +1,6 @@
 /**
  * ゲーム制御フック - 再生・一時停止・ターン操作・速度制御
- * 
+ *
  * 設計方針:
  * - BattlePlaybackControlsとの完全インターフェース対応
  * - 自動一時停止ロジックの実装
@@ -17,7 +17,7 @@ interface GameControlsReturn {
   setCurrentTurn: (turn: number) => void;
   gameSpeed: number;
   setGameSpeed: (speed: number) => void;
-  
+
   // BattlePlaybackControls対応コールバック
   onPlayPause: () => void;
   onTurnChange: (turn: number) => void;
@@ -48,14 +48,17 @@ export const useGameControls = (config: GameControlsConfig = {}): GameControlsRe
   }, [isPlaying]);
 
   // ターン変更（自動一時停止ロジック付き）
-  const onTurnChange = useCallback((turn: number) => {
-    setCurrentTurn(turn);
-    // 過去ターンに移動した場合は自動一時停止
-    // この判定ロジックはBattlePlaybackControls.tsxの実装と一致
-    if (isPlaying && turn !== -1) {
-      setIsPlaying(false);
-    }
-  }, [isPlaying]);
+  const onTurnChange = useCallback(
+    (turn: number) => {
+      setCurrentTurn(turn);
+      // 過去ターンに移動した場合は自動一時停止
+      // この判定ロジックはBattlePlaybackControls.tsxの実装と一致
+      if (isPlaying && turn !== -1) {
+        setIsPlaying(false);
+      }
+    },
+    [isPlaying]
+  );
 
   // 速度変更
   const onSpeedChange = useCallback((speed: number) => {
@@ -75,29 +78,32 @@ export const useGameControls = (config: GameControlsConfig = {}): GameControlsRe
   }, []);
 
   // Phase B: 安定化されたAPIオブジェクト（参照不変性保証）
-  return useMemo(() => ({
-    // 基本状態
-    isPlaying,
-    setIsPlaying,
-    currentTurn,
-    setCurrentTurn,
-    gameSpeed,
-    setGameSpeed,
-    
-    // コールバック関数
-    onPlayPause,
-    onTurnChange,
-    onSpeedChange,
-    onJumpToStart,
-    onJumpToEnd,
-  }), [
-    isPlaying,
-    currentTurn,
-    gameSpeed,
-    onPlayPause,
-    onTurnChange,
-    onSpeedChange,
-    onJumpToStart,
-    onJumpToEnd,
-  ]);
+  return useMemo(
+    () => ({
+      // 基本状態
+      isPlaying,
+      setIsPlaying,
+      currentTurn,
+      setCurrentTurn,
+      gameSpeed,
+      setGameSpeed,
+
+      // コールバック関数
+      onPlayPause,
+      onTurnChange,
+      onSpeedChange,
+      onJumpToStart,
+      onJumpToEnd,
+    }),
+    [
+      isPlaying,
+      currentTurn,
+      gameSpeed,
+      onPlayPause,
+      onTurnChange,
+      onSpeedChange,
+      onJumpToStart,
+      onJumpToEnd,
+    ]
+  );
 };

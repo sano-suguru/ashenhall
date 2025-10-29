@@ -88,7 +88,7 @@ export function computeGameMetrics(state: GameState): GameActionMetricsSummary {
     totalTurns: state.turnNumber,
     aggregate,
     perTurn,
-    aggregatePhases: { totalByPhase: phaseTotals, ratioByPhase: phaseRatios }
+    aggregatePhases: { totalByPhase: phaseTotals, ratioByPhase: phaseRatios },
   };
 }
 
@@ -101,12 +101,12 @@ export function formatMetrics(summary: GameActionMetricsSummary): string {
   let phasesLine = '';
   if (summary.aggregatePhases) {
     const phaseEntries = Object.entries(summary.aggregatePhases.totalByPhase)
-      .sort((a,b) => b[1]-a[1])
-      .map(([p,c]) => `${p}:${c}`)
+      .sort((a, b) => b[1] - a[1])
+      .map(([p, c]) => `${p}:${c}`)
       .join(', ');
     phasesLine = `Phases ${phaseEntries}`;
   }
-  const perTurnLines = summary.perTurn.map(t => {
+  const perTurnLines = summary.perTurn.map((t) => {
     const detail = Object.entries(t.byType)
       .sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `${k}:${v}`)

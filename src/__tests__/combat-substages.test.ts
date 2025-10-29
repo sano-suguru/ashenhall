@@ -4,16 +4,13 @@ import type { CreatureCard, GameAction, GameState } from '@/types/game';
 import { placeCreatureOnField } from '@/test-helpers/battle-test-helpers';
 
 describe('Combat substages iterator', () => {
-  function setup(attackerCfg: Partial<CreatureCard> & { attack: number; health: number }, defenderCfg: Partial<CreatureCard> & { attack: number; health: number }, retaliate?: boolean): GameState {
+  function setup(
+    attackerCfg: Partial<CreatureCard> & { attack: number; health: number },
+    defenderCfg: Partial<CreatureCard> & { attack: number; health: number },
+    retaliate?: boolean
+  ): GameState {
     const empty: CreatureCard[] = [];
-    const gs = createInitialGameState(
-      'test',
-      empty,
-      empty,
-      'necromancer',
-      'berserker',
-      'seed-sub'
-    );
+    const gs = createInitialGameState('test', empty, empty, 'necromancer', 'berserker', 'seed-sub');
     const attacker: CreatureCard = {
       templateId: 'A1',
       instanceId: 'A1', // テスト用にtemplateIdと同じ値を使用
@@ -23,7 +20,7 @@ describe('Combat substages iterator', () => {
       cost: 1,
       effects: [],
       keywords: [],
-      ...attackerCfg
+      ...attackerCfg,
     } as CreatureCard;
     const defender: CreatureCard = {
       templateId: 'D1',
@@ -34,10 +31,16 @@ describe('Combat substages iterator', () => {
       cost: 1,
       effects: [],
       keywords: retaliate ? ['retaliate'] : [],
-      ...defenderCfg
+      ...defenderCfg,
     } as CreatureCard;
-    placeCreatureOnField(gs, 'player1', attacker, { id: attacker.templateId, currentHealth: attacker.health });
-    placeCreatureOnField(gs, 'player2', defender, { id: defender.templateId, currentHealth: defender.health });
+    placeCreatureOnField(gs, 'player1', attacker, {
+      id: attacker.templateId,
+      currentHealth: attacker.health,
+    });
+    placeCreatureOnField(gs, 'player2', defender, {
+      id: defender.templateId,
+      currentHealth: defender.health,
+    });
     gs.currentPlayer = 'player1'; // player1が攻撃側
     gs.turnNumber = 1; // 攻撃可能にするため
     gs.phase = 'battle_attack';
@@ -62,13 +65,15 @@ describe('Combat substages iterator', () => {
     const attackerInstanceId = state.players.player1.field[0]?.instanceId;
     const defenderInstanceId = state.players.player2.field[0]?.instanceId;
     const actions = collectActions(state);
-  const combatStages = actions.filter((a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage');
-  const stages = combatStages.map(a => a.data.stage);
+    const combatStages = actions.filter(
+      (a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage'
+    );
+    const stages = combatStages.map((a) => a.data.stage);
     expect(stages).toEqual(['attack_declare', 'damage_defender', 'damage_attacker', 'deaths']);
-  const deathStage = combatStages.find(a => a.data.stage === 'deaths');
+    const deathStage = combatStages.find((a) => a.data.stage === 'deaths');
     expect(deathStage).toBeTruthy();
     if (deathStage && deathStage.type === 'combat_stage') {
-  const destroyed = deathStage.data.values?.destroyed;
+      const destroyed = deathStage.data.values?.destroyed;
       expect(destroyed).toContain(defenderInstanceId);
       expect(destroyed).toContain(attackerInstanceId);
     }
@@ -80,13 +85,15 @@ describe('Combat substages iterator', () => {
     state.players.player2.field[0].keywords.push('guard');
     const defenderInstanceId = state.players.player2.field[0]?.instanceId;
     const actions = collectActions(state);
-  const combatStages = actions.filter((a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage');
-  const stages = combatStages.map(a => a.data.stage);
+    const combatStages = actions.filter(
+      (a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage'
+    );
+    const stages = combatStages.map((a) => a.data.stage);
     // attackerDamage stage may exist if defender attack >0 (1) so attacker takes 1 -> stage present
     expect(stages).toEqual(['attack_declare', 'damage_defender', 'damage_attacker', 'deaths']);
-  const deathStage = combatStages.find(a => a.data.stage === 'deaths');
+    const deathStage = combatStages.find((a) => a.data.stage === 'deaths');
     if (deathStage && deathStage.type === 'combat_stage') {
-  const destroyed = deathStage.data.values?.destroyed;
+      const destroyed = deathStage.data.values?.destroyed;
       expect(destroyed).toEqual([defenderInstanceId]);
     }
   });
@@ -95,18 +102,20 @@ describe('Combat substages iterator', () => {
     const state = setup({ attack: 3, health: 10 }, { attack: 0, health: 4 }, false); // defender to 1 HP, no retaliation/attack back
     // 守護キーワードを付与して確実にクリーチャーを攻撃するようにする
     state.players.player2.field[0].keywords.push('guard');
-    
+
     const actions = collectActions(state);
-    
-  const combatStages = actions.filter((a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage');
-  const stages = combatStages.map(a => a.data.stage);
-    
+
+    const combatStages = actions.filter(
+      (a): a is Extract<GameAction, { type: 'combat_stage' }> => a.type === 'combat_stage'
+    );
+    const stages = combatStages.map((a) => a.data.stage);
+
     // attacker side damage_attacker ステージは defender 攻撃力が0でも生成され得る実装（将来最適化余地）
     expect(stages[0]).toBe('attack_declare');
     expect(stages[1]).toBe('damage_defender');
     if (stages[2]) {
       expect(stages[2]).toBe('damage_attacker');
     }
-  expect(combatStages.some(a => a.data.stage === 'deaths')).toBe(false);
+    expect(combatStages.some((a) => a.data.stage === 'deaths')).toBe(false);
   });
 });

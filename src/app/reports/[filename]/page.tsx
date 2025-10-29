@@ -44,7 +44,11 @@ const WinRateBar = ({ winRate }: { winRate: number }) => {
   );
 };
 
-export default async function ReportDetailPage({ params }: { params: Promise<{ filename: string }> }) {
+export default async function ReportDetailPage({
+  params,
+}: {
+  params: Promise<{ filename: string }>;
+}) {
   const { filename } = await params;
   const reportPath = path.resolve(process.cwd(), 'simulation_reports', filename);
 
@@ -56,7 +60,10 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
     return notFound();
   }
 
-  const totalGames = reportData.results.reduce((acc, result) => acc + result.wins1 + result.wins2 + result.draws, 0);
+  const totalGames = reportData.results.reduce(
+    (acc, result) => acc + result.wins1 + result.wins2 + result.draws,
+    0
+  );
 
   // 勢力ごとの総合勝率を計算
   const overallStats: Record<Faction, OverallFactionStats> = {
@@ -67,7 +74,7 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
     inquisitor: { games: 0, wins: 0 },
   };
 
-  reportData.results.forEach(result => {
+  reportData.results.forEach((result) => {
     const totalMatchupGames = result.wins1 + result.wins2 + result.draws;
     overallStats[result.faction1].games += totalMatchupGames;
     overallStats[result.faction1].wins += result.wins1;
@@ -87,7 +94,9 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-slate-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-amber-300 font-serif">シミュレーションレポート詳細</h1>
+          <h1 className="text-5xl font-bold text-amber-300 font-serif">
+            シミュレーションレポート詳細
+          </h1>
           <p className="text-gray-400 mt-2 font-mono">{filename}</p>
         </header>
 
@@ -97,7 +106,9 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
             <Calendar className="text-blue-400" size={32} />
             <div>
               <div className="text-sm text-gray-400">実行日時</div>
-              <div className="text-lg font-bold">{new Date(reportData.simulationDate).toLocaleString('ja-JP')}</div>
+              <div className="text-lg font-bold">
+                {new Date(reportData.simulationDate).toLocaleString('ja-JP')}
+              </div>
             </div>
           </div>
           <div className="p-6 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center space-x-4">
@@ -117,12 +128,20 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {sortedFactionStats.map(({ faction, winRate, wins, games }) => (
-              <div key={faction} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 text-center">
+              <div
+                key={faction}
+                className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 text-center"
+              >
                 <h3 className="font-bold text-lg">{FACTION_NAMES[faction]}</h3>
-                <div className="text-3xl font-bold my-2" style={{ color: winRate >= 50 ? '#4ade80' : '#f87171' }}>
+                <div
+                  className="text-3xl font-bold my-2"
+                  style={{ color: winRate >= 50 ? '#4ade80' : '#f87171' }}
+                >
                   {winRate.toFixed(2)}%
                 </div>
-                <div className="text-xs text-gray-400">{wins}勝 / {games}戦</div>
+                <div className="text-xs text-gray-400">
+                  {wins}勝 / {games}戦
+                </div>
               </div>
             ))}
           </div>
@@ -146,8 +165,10 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
               <tbody>
                 {reportData.results.map((result, index) => {
                   const totalGamesInMatchup = result.wins1 + result.wins2 + result.draws;
-                  const winRate1 = totalGamesInMatchup > 0 ? (result.wins1 / totalGamesInMatchup) * 100 : 0;
-                  const winRate2 = totalGamesInMatchup > 0 ? (result.wins2 / totalGamesInMatchup) * 100 : 0;
+                  const winRate1 =
+                    totalGamesInMatchup > 0 ? (result.wins1 / totalGamesInMatchup) * 100 : 0;
+                  const winRate2 =
+                    totalGamesInMatchup > 0 ? (result.wins2 / totalGamesInMatchup) * 100 : 0;
                   return (
                     <tr key={index} className="border-t border-gray-700">
                       <td className="p-4 font-bold">
@@ -163,7 +184,9 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ f
                           <WinRateBar winRate={winRate2} />
                         </div>
                       </td>
-                      <td className="p-4 text-center font-mono text-lg">{result.averageTurns.toFixed(2)}</td>
+                      <td className="p-4 text-center font-mono text-lg">
+                        {result.averageTurns.toFixed(2)}
+                      </td>
                     </tr>
                   );
                 })}

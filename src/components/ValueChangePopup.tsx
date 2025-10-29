@@ -1,6 +1,6 @@
 /**
  * 値変化ポップアップコンポーネント
- * 
+ *
  * 設計方針:
  * - ライフ/エネルギーの増減を視覚的に表示
  * - ポップアップアニメーション後に自動消滅
@@ -22,12 +22,12 @@ interface ValueChangePopupProps {
   onComplete?: () => void;
 }
 
-export default function ValueChangePopup({ 
-  type, 
-  value, 
+export default function ValueChangePopup({
+  type,
+  value,
   position = { x: 0, y: 0 },
   isVisible,
-  onComplete 
+  onComplete,
 }: ValueChangePopupProps) {
   const [show, setShow] = useState(false);
 
@@ -47,17 +47,22 @@ export default function ValueChangePopup({
   const config = getTypeConfig(type);
 
   return (
-    <div 
+    <div
       className="fixed z-50 pointer-events-none"
-      style={{ 
-        left: `${position.x}px`, 
+      style={{
+        left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
       }}
     >
-      <div className={`value-change-popup flex items-center space-x-2 px-4 py-2 rounded-lg font-bold text-2xl ${config.bg} ${config.text} border-2 ${config.border} shadow-xl`}>
+      <div
+        className={`value-change-popup flex items-center space-x-2 px-4 py-2 rounded-lg font-bold text-2xl ${config.bg} ${config.text} border-2 ${config.border} shadow-xl`}
+      >
         <config.icon size={24} />
-        <span>{config.prefix}{Math.abs(value)}</span>
+        <span>
+          {config.prefix}
+          {Math.abs(value)}
+        </span>
       </div>
     </div>
   );

@@ -1,14 +1,14 @@
 /**
  * シンプル化されたターゲットフィルターシステム
- * 
+ *
  * 設計方針:
  * - 過度な抽象化を排除し、直接的で理解しやすい実装
  * - Card[]とFieldCard[]の両方に対応
  * - ジェネリクスを最小限に抑え、可読性を重視
  */
 
-import type { FieldCard, Card, Keyword, FilterRule } from "@/types/game";
-import { hasBrandedStatus } from "../brand-utils";
+import type { FieldCard, Card, Keyword, FilterRule } from '@/types/game';
+import { hasBrandedStatus } from '../brand-utils';
 
 // === Strategy Pattern: ルールタイプ別評価関数群（複雑度削減）===
 
@@ -68,7 +68,9 @@ function evaluateHealthRule(target: Card | FieldCard, rule: FilterRule): boolean
       const maxOk = rule.maxValue === undefined || target.currentHealth <= rule.maxValue;
       return minOk && maxOk;
     }
-    return rule.operator === 'eq' ? target.currentHealth === rule.value : target.currentHealth !== rule.value;
+    return rule.operator === 'eq'
+      ? target.currentHealth === rule.value
+      : target.currentHealth !== rule.value;
   }
   // Card（デッキ・手札）には現在体力なし
   return true;
@@ -77,7 +79,11 @@ function evaluateHealthRule(target: Card | FieldCard, rule: FilterRule): boolean
 /**
  * 自己除外ルール評価（複雑度: 1）
  */
-function evaluateExcludeSelfRule(target: Card | FieldCard, _rule: FilterRule, sourceCardId?: string): boolean {
+function evaluateExcludeSelfRule(
+  target: Card | FieldCard,
+  _rule: FilterRule,
+  sourceCardId?: string
+): boolean {
   return sourceCardId ? target.templateId !== sourceCardId : true;
 }
 
@@ -96,7 +102,10 @@ function evaluateFactionRule(target: Card | FieldCard, rule: FilterRule): boolea
 }
 
 // Factory Pattern: ルールタイプ→評価関数マッピング
-const ruleEvaluators: Record<FilterRule['type'], (target: Card | FieldCard, rule: FilterRule, sourceCardId?: string) => boolean> = {
+const ruleEvaluators: Record<
+  FilterRule['type'],
+  (target: Card | FieldCard, rule: FilterRule, sourceCardId?: string) => boolean
+> = {
   brand: evaluateBrandRule,
   property: evaluatePropertyRule,
   cost: evaluateCostRule,
@@ -136,7 +145,7 @@ export function filterTargets<T extends Card | FieldCard>(
   rules: FilterRule[],
   sourceCardId?: string
 ): T[] {
-  return targets.filter(target =>
-    rules.every(rule => evaluateFilterRule(target, rule, sourceCardId))
+  return targets.filter((target) =>
+    rules.every((rule) => evaluateFilterRule(target, rule, sourceCardId))
   );
 }

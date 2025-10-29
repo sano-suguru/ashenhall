@@ -1,71 +1,25 @@
 /**
  * コア効果 Executor - 統合版
- * 
+ *
  * 設計方針:
  * - 基本効果（ダメージ・回復）
  * - 修正効果（バフ・デバフ）
  * - 特殊効果（デッキ・手札操作、全体効果等）
  * - 決定論的な効果処理
- * 
+ *
  * 統合内容:
  * - base-effects.ts: executeDamageEffect, executeHealEffect
  * - modifier-effects.ts: executeBuffAttackEffect, executeBuffHealthEffect, executeDebuffAttackEffect, executeDebuffHealthEffect
  * - special-effects.ts: executeDestroyDeckTopEffect, executeSwapAttackHealthEffect, executeHandDiscardEffect, executeDestroyAllCreaturesEffect, executeBanishEffect
  */
 
-import type {
-  GameState,
-  FieldCard,
-  PlayerId,
-  ValueChange,
-  CardEffect,
-  EffectAction,
-} from "@/types/game";
-import type { FilterRule } from "@/types/cards";
-import { SeededRandom } from "../seeded-random";
-import { applyDamage as applyCardDamage } from '../health-utils';
+import type { GameState, FieldCard, PlayerId, ValueChange, CardEffect } from '@/types/game';
+import type { FilterRule } from '@/types/cards';
+import { SeededRandom } from '../seeded-random';
+import { applyDamageToCard } from '../health-utils';
 import { handleCreatureDeath } from '../card-effects';
-import {
-  addEffectTriggerAction as addEffectTriggerActionFromLogger,
-} from "../action-logger";
-import { filterTargets } from "../core/target-filter";
-
-// =============================================================================
-// SHARED UTILITIES
-// =============================================================================
-
-/**
- * 効果ログを追加のヘルパー関数
- * 全Effect Executorで共通使用
- */
-function addEffectTriggerAction(
-  state: GameState,
-  sourceCardId: string,
-  effectType: EffectAction,
-  effectValue: number,  
-  targets: Record<string, ValueChange>
-): void {
-  addEffectTriggerActionFromLogger(state, state.currentPlayer, {
-    sourceCardId,
-    effectType,
-    effectValue,
-    targets,
-  });
-}
-
-/**
- * プレイヤーID変換ユーティリティ
- */
-export function getOpponentId(playerId: PlayerId): PlayerId {
-  return playerId === "player1" ? "player2" : "player1";
-}
-
-/**
- * 値変化記録のヘルパー
- */
-function createValueChange(before: number, after: number): { before: number; after: number } {
-  return { before, after };
-}
+import { filterTargets } from '../core/target-filter';
+import { addEffectTriggerAction, getOpponentId, createValueChange } from '../effect-utils';
 
 // =============================================================================
 // BASE EFFECTS (from base-effects.ts)
@@ -111,7 +65,7 @@ function applyDamage(
 
   targets.forEach((target) => {
     const before = target.currentHealth;
-    applyCardDamage(target, damage);
+    applyDamageToCard(target, damage);
     const after = target.currentHealth;
     valueChanges[target.templateId] = { health: createValueChange(before, after) };
     // 即時破壊: 直接ダメージで 0 以下になった場合はここで破壊処理。
@@ -129,7 +83,7 @@ function applyDamage(
     valueChanges[targetPlayerId] = { life: createValueChange(before, after) };
   }
 
-  addEffectTriggerAction(state, sourceCardId, "damage", damage, valueChanges);
+  addEffectTriggerAction(state, sourceCardId, 'damage', damage, valueChanges);
 
   // 直接死亡は上で即時処理済み。連鎖的/間接的に 0HP へ落ちたカードは後続の trigger / passive / system sweep で回収される。
 }
@@ -147,8 +101,7 @@ function applyHeal(
   const valueChanges: Record<string, ValueChange> = {};
 
   targets.forEach((target) => {
-    const maxHealth =
-      target.health + target.healthModifier + target.passiveHealthModifier;
+    const maxHealth = target.health + target.healthModifier + target.passiveHealthModifier;
     const before = target.currentHealth;
     target.currentHealth = Math.min(maxHealth, target.currentHealth + healing);
     const after = target.currentHealth;
@@ -163,7 +116,7 @@ function applyHeal(
     valueChanges[targetPlayerId] = { life: createValueChange(before, after) };
   }
 
-  addEffectTriggerAction(state, sourceCardId, "heal", healing, valueChanges);
+  addEffectTriggerAction(state, sourceCardId, 'heal', healing, valueChanges);
 }
 
 // =============================================================================
@@ -180,14 +133,14 @@ export function executeBuffAttackEffect(
   sourceCardId: string,
   effect: CardEffect
 ): void {
-  if (effect.trigger === "passive") {
+  if (effect.trigger === 'passive') {
     // パッシブ効果：直接修正子を適用、ログは記録しない
     targets.forEach((target) => {
       target.passiveAttackModifier += value;
     });
   } else {
     // 通常のバフ効果
-    applyBuff(state, targets, "attack", value, sourceCardId);
+    applyBuff(state, targets, 'attack', value, sourceCardId);
   }
 }
 
@@ -201,7 +154,7 @@ export function executeBuffHealthEffect(
   sourceCardId: string,
   effect: CardEffect
 ): void {
-  if (effect.trigger === "passive") {
+  if (effect.trigger === 'passive') {
     // パッシブ効果：直接修正子を適用、ログは記録しない
     targets.forEach((target) => {
       target.passiveHealthModifier += value;
@@ -209,7 +162,7 @@ export function executeBuffHealthEffect(
     });
   } else {
     // 通常のバフ効果
-    applyBuff(state, targets, "health", value, sourceCardId);
+    applyBuff(state, targets, 'health', value, sourceCardId);
   }
 }
 
@@ -222,7 +175,7 @@ export function executeDebuffAttackEffect(
   value: number,
   sourceCardId: string
 ): void {
-  applyDebuff(state, targets, "attack", value, sourceCardId);
+  applyDebuff(state, targets, 'attack', value, sourceCardId);
 }
 
 /**
@@ -234,7 +187,7 @@ export function executeDebuffHealthEffect(
   value: number,
   sourceCardId: string
 ): void {
-  applyDebuff(state, targets, "health", value, sourceCardId);
+  applyDebuff(state, targets, 'health', value, sourceCardId);
 }
 
 /**
@@ -243,19 +196,17 @@ export function executeDebuffHealthEffect(
 function applyBuff(
   state: GameState,
   targets: FieldCard[],
-  buffType: "attack" | "health",
+  buffType: 'attack' | 'health',
   value: number,
   sourceCardId: string
 ): void {
   const valueChanges: Record<string, ValueChange> = {};
 
   targets.forEach((target) => {
-    if (buffType === "attack") {
-      const before =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
+    if (buffType === 'attack') {
+      const before = target.attack + target.attackModifier + target.passiveAttackModifier;
       target.attackModifier += value;
-      const after =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
+      const after = target.attack + target.attackModifier + target.passiveAttackModifier;
       valueChanges[target.templateId] = { attack: createValueChange(before, after) };
     } else {
       const before = target.currentHealth;
@@ -266,7 +217,7 @@ function applyBuff(
     }
   });
 
-  const effectType = buffType === "attack" ? "buff_attack" : "buff_health";
+  const effectType = buffType === 'attack' ? 'buff_attack' : 'buff_health';
   addEffectTriggerAction(state, sourceCardId, effectType, value, valueChanges);
 }
 
@@ -276,28 +227,22 @@ function applyBuff(
 function applyDebuff(
   state: GameState,
   targets: FieldCard[],
-  debuffType: "attack" | "health",
+  debuffType: 'attack' | 'health',
   value: number,
   sourceCardId: string
 ): void {
   const valueChanges: Record<string, ValueChange> = {};
 
   targets.forEach((target) => {
-    if (debuffType === "attack") {
-      const before =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
-      target.attackModifier = Math.max(
-        -target.attack,
-        target.attackModifier - value
-      );
-      const after =
-        target.attack + target.attackModifier + target.passiveAttackModifier;
+    if (debuffType === 'attack') {
+      const before = target.attack + target.attackModifier + target.passiveAttackModifier;
+      target.attackModifier = Math.max(-target.attack, target.attackModifier - value);
+      const after = target.attack + target.attackModifier + target.passiveAttackModifier;
       valueChanges[target.templateId] = { attack: createValueChange(before, after) };
     } else {
       const before = target.currentHealth;
       target.healthModifier -= value;
-      const maxHealth =
-        target.health + target.healthModifier + target.passiveHealthModifier;
+      const maxHealth = target.health + target.healthModifier + target.passiveHealthModifier;
       if (target.currentHealth > maxHealth) {
         target.currentHealth = maxHealth;
       }
@@ -306,15 +251,14 @@ function applyDebuff(
     }
   });
 
-  const effectType =
-    debuffType === "attack" ? "debuff_attack" : "debuff_health";
+  const effectType = debuffType === 'attack' ? 'debuff_attack' : 'debuff_health';
   addEffectTriggerAction(state, sourceCardId, effectType, value, valueChanges);
 
   // 体力デバフ適用後に死亡判定を行う
-  if (debuffType === "health") {
+  if (debuffType === 'health') {
     targets.forEach((target) => {
       if (target.currentHealth <= 0) {
-        handleCreatureDeath(state, target, "effect", sourceCardId);
+        handleCreatureDeath(state, target, 'effect', sourceCardId);
       }
     });
   }
@@ -341,13 +285,9 @@ export function executeDestroyDeckTopEffect(
     if (topCard.cost >= costThreshold) {
       const destroyedCard = opponent.deck.pop()!;
       opponent.graveyard.push(destroyedCard);
-      addEffectTriggerAction(
-        state,
-        sourceCardId,
-        "destroy_deck_top",
-        destroyedCard.cost,
-        { [opponentId]: {} }
-      );
+      addEffectTriggerAction(state, sourceCardId, 'destroy_deck_top', destroyedCard.cost, {
+        [opponentId]: {},
+      });
     }
   }
 }
@@ -362,10 +302,8 @@ export function executeSwapAttackHealthEffect(
 ): void {
   const valueChanges: Record<string, ValueChange> = {};
   targets.forEach((target) => {
-    const oldAttack =
-      target.attack + target.attackModifier + target.passiveAttackModifier;
-    const oldHealth =
-      target.health + target.healthModifier + target.passiveHealthModifier;
+    const oldAttack = target.attack + target.attackModifier + target.passiveAttackModifier;
+    const oldHealth = target.health + target.healthModifier + target.passiveHealthModifier;
     const oldCurrentHealth = target.currentHealth;
 
     // Swap base stats
@@ -387,12 +325,9 @@ export function executeSwapAttackHealthEffect(
 
     // Adjust current health proportionally
     const healthRatio = oldHealth > 0 ? oldCurrentHealth / oldHealth : 0;
-    target.currentHealth = Math.ceil(
-      (newBaseHealth + target.healthModifier) * healthRatio
-    );
+    target.currentHealth = Math.ceil((newBaseHealth + target.healthModifier) * healthRatio);
 
-    const newAttack =
-      target.attack + target.attackModifier + target.passiveAttackModifier;
+    const newAttack = target.attack + target.attackModifier + target.passiveAttackModifier;
     const newCurrentHealth = target.currentHealth;
 
     valueChanges[target.templateId] = {
@@ -400,13 +335,7 @@ export function executeSwapAttackHealthEffect(
       health: createValueChange(oldCurrentHealth, newCurrentHealth),
     };
   });
-  addEffectTriggerAction(
-    state,
-    sourceCardId,
-    "swap_attack_health",
-    1,
-    valueChanges
-  );
+  addEffectTriggerAction(state, sourceCardId, 'swap_attack_health', 1, valueChanges);
 }
 
 /**
@@ -437,7 +366,7 @@ export function executeHandDiscardEffect(
     if (cardToDiscard) {
       player.hand = player.hand.filter((c) => c.templateId !== cardToDiscard.templateId);
       player.graveyard.push(cardToDiscard);
-      addEffectTriggerAction(state, sourceCardId, "hand_discard", 1, {
+      addEffectTriggerAction(state, sourceCardId, 'hand_discard', 1, {
         [targetPlayerId]: {},
       });
     }
@@ -447,10 +376,7 @@ export function executeHandDiscardEffect(
 /**
  * 全クリーチャー破壊効果の処理
  */
-export function executeDestroyAllCreaturesEffect(
-  state: GameState,
-  sourceCardId: string
-): void {
+export function executeDestroyAllCreaturesEffect(state: GameState, sourceCardId: string): void {
   const valueChanges: Record<string, ValueChange> = {};
   const targets: FieldCard[] = [];
   state.players.player1.field.forEach((c) => targets.push(c));
@@ -462,13 +388,7 @@ export function executeDestroyAllCreaturesEffect(
     valueChanges[target.templateId] = { health: createValueChange(before, 0) };
   });
 
-  addEffectTriggerAction(
-    state,
-    sourceCardId,
-    "destroy_all_creatures",
-    1,
-    valueChanges
-  );
+  addEffectTriggerAction(state, sourceCardId, 'destroy_all_creatures', 1, valueChanges);
 }
 
 /**
@@ -480,13 +400,13 @@ export function executeBanishEffect(
   sourceCardId: string
 ): void {
   const valueChanges: Record<string, ValueChange> = {};
-  
+
   targets.forEach((target) => {
     const ownerId = target.owner;
     const player = state.players[ownerId];
-    
+
     // 場から除去（handleCreatureDeathは使わない - 死亡時効果を発動させない）
-    const cardIndex = player.field.findIndex(c => c.instanceId === target.instanceId);
+    const cardIndex = player.field.findIndex((c) => c.instanceId === target.instanceId);
     if (cardIndex !== -1) {
       const [removedCard] = player.field.splice(cardIndex, 1);
       // 墓地でなく消滅領域へ送る
@@ -499,11 +419,5 @@ export function executeBanishEffect(
   state.players.player1.field.forEach((c, i) => (c.position = i));
   state.players.player2.field.forEach((c, i) => (c.position = i));
 
-  addEffectTriggerAction(
-    state,
-    sourceCardId,
-    "banish",
-    1,
-    valueChanges
-  );
+  addEffectTriggerAction(state, sourceCardId, 'banish', 1, valueChanges);
 }

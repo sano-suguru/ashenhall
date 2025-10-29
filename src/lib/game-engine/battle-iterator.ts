@@ -1,7 +1,12 @@
 import type { GameState, GameAction, FieldCard, PlayerId } from '@/types/game';
-import { addCardAttackAction, addTriggerEventAction, addKeywordTriggerAction, addCombatStageAction } from './action-logger';
+import {
+  addCardAttackAction,
+  addTriggerEventAction,
+  addKeywordTriggerAction,
+  addCombatStageAction,
+} from './action-logger';
 import { processEffectTrigger, handleCreatureDeath } from './card-effects';
-import { applyDamage } from './health-utils';
+import { applyDamageToCard } from './health-utils';
 import { SeededRandom } from './seeded-random';
 import { chooseAttackTarget } from './ai-tactics';
 import { evaluatePendingDeaths } from './death-sweeper';
@@ -29,11 +34,13 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
 
   // 攻撃可能カードをスナップショット
   const currentPlayer = state.players[state.currentPlayer];
-  const snapshot: FieldCard[] = currentPlayer.field.filter(card =>
-    card.currentHealth > 0 &&
-    ((!card.isSilenced && card.keywords.includes('rush')) || card.summonTurn < state.turnNumber) &&
-    !card.hasAttacked &&
-    !card.statusEffects.some(e => e.type === 'stun')
+  const snapshot: FieldCard[] = currentPlayer.field.filter(
+    (card) =>
+      card.currentHealth > 0 &&
+      ((!card.isSilenced && card.keywords.includes('rush')) ||
+        card.summonTurn < state.turnNumber) &&
+      !card.hasAttacked &&
+      !card.statusEffects.some((e) => e.type === 'stun')
   );
 
   if (snapshot.length === 0) return null; // 無ければ既存ロジックに任せる
@@ -74,7 +81,9 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
       ctx.emittedForCurrent = undefined;
       return;
     }
-    const random = new SeededRandom(state.randomSeed + state.turnNumber + state.phase + attacker.instanceId);
+    const random = new SeededRandom(
+      state.randomSeed + state.turnNumber + state.phase + attacker.instanceId
+    );
     const { targetCard: target, targetPlayer } = chooseAttackTarget(attacker, state, random);
     const totalAttack = attacker.attack + attacker.attackModifier + attacker.passiveAttackModifier;
     const defenderDamage = Math.max(0, totalAttack);
@@ -82,8 +91,10 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     let attackerTotalDamage = 0;
     if (target) {
       const targetAttack = target.attack + target.attackModifier + target.passiveAttackModifier;
-      const retaliateDamage = !target.isSilenced && target.keywords.includes('retaliate')
-        ? Math.ceil(targetAttack / 2) : 0;
+      const retaliateDamage =
+        !target.isSilenced && target.keywords.includes('retaliate')
+          ? Math.ceil(targetAttack / 2)
+          : 0;
       retaliation = retaliateDamage;
       attackerTotalDamage = Math.max(0, targetAttack) + retaliateDamage;
     }
@@ -129,22 +140,22 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
 
     if (pc.stageCursor === 0) {
       handleStageDeclare(pc, currentPlayerId);
-      return; 
+      return;
     }
 
     if (pc.stageCursor === 1) {
       handleStageDefender(pc, currentPlayerId, opponentId, opponent);
-      return; 
+      return;
     }
 
     if (pc.stageCursor === 2) {
       handleStageAttacker(pc, currentPlayerId, opponentId);
-      return; 
+      return;
     }
 
     if (pc.stageCursor === 3) {
       handleStageDeaths(pc, currentPlayerId);
-      return; 
+      return;
     }
 
     if (pc.stageCursor >= 4) {
@@ -156,7 +167,10 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     }
   }
 
-  function handleStageDeclare(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId): void {
+  function handleStageDeclare(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId
+  ): void {
     if (pc.target) {
       addCombatStageAction(state, currentPlayerId, {
         stage: 'attack_declare',
@@ -173,12 +187,17 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     captureNewActions();
   }
 
-  function handleStageDefender(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentId: PlayerId, opponent: ReturnType<typeof Object['values']>[number]): void {
+  function handleStageDefender(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId,
+    opponentId: PlayerId,
+    opponent: ReturnType<(typeof Object)['values']>[number]
+  ): void {
     if (pc.target) {
-  const before = pc.target.currentHealth;
-	applyDamage(pc.target, pc.defenderDamage || 0);
-  const after = pc.target.currentHealth;
-  const actualDamage = Math.max(0, before - after);
+      const before = pc.target.currentHealth;
+      applyDamageToCard(pc.target, pc.defenderDamage || 0);
+      const after = pc.target.currentHealth;
+      const actualDamage = Math.max(0, before - after);
       addTriggerEventAction(state, currentPlayerId, {
         triggerType: 'on_damage_taken',
         sourceCardId: pc.attacker.instanceId, // instanceIdを使用
@@ -189,7 +208,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         stage: 'damage_defender',
         attackerId: pc.attacker.instanceId, // instanceIdを使用
         targetId: pc.target.instanceId, // instanceIdを使用
-        values: { damage: pc.defenderDamage }
+        values: { damage: pc.defenderDamage },
       });
       addCardAttackAction(state, currentPlayerId, {
         attackerCardId: pc.attacker.instanceId, // instanceIdを使用
@@ -197,7 +216,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         damage: pc.defenderDamage || 0,
         targetHealth: { before, after },
       });
-    applyOffensiveKeywords(pc, currentPlayerId, opponentId, before, actualDamage);
+      applyOffensiveKeywords(pc, currentPlayerId, opponentId, before, actualDamage);
       // 防御側ダメージ反映後チェーン効果で第三者死亡した可能性を回収
       evaluatePendingDeaths(state, 'system', pc.attacker.instanceId); // instanceIdを使用
     } else if (pc.targetPlayer) {
@@ -211,14 +230,20 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         targetPlayerLife: { before: playerLifeBefore, after: playerLifeAfter },
       });
       const actualPlayerDamage = Math.max(0, playerLifeBefore - playerLifeAfter);
-  applyDirectAttackKeywords(pc, currentPlayerId, opponent.id, actualPlayerDamage);
+      applyDirectAttackKeywords(pc, currentPlayerId, opponent.id, actualPlayerDamage);
       evaluatePendingDeaths(state, 'system', pc.attacker.instanceId); // instanceIdを使用
     }
     pc.stageCursor = 2;
     captureNewActions();
   }
 
-  function applyOffensiveKeywords(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentId: PlayerId, defenderBefore: number, actualDamage: number): void {
+  function applyOffensiveKeywords(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId,
+    opponentId: PlayerId,
+    defenderBefore: number,
+    actualDamage: number
+  ): void {
     if (actualDamage > 0 && !pc.attacker.isSilenced && pc.attacker.keywords.includes('lifesteal')) {
       const owner = state.players[currentPlayerId];
       owner.life += actualDamage;
@@ -253,8 +278,17 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     }
   }
 
-  function applyDirectAttackKeywords(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentEntityId: string, actualPlayerDamage: number): void {
-    if (actualPlayerDamage > 0 && !pc.attacker.isSilenced && pc.attacker.keywords.includes('lifesteal')) {
+  function applyDirectAttackKeywords(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId,
+    opponentEntityId: string,
+    actualPlayerDamage: number
+  ): void {
+    if (
+      actualPlayerDamage > 0 &&
+      !pc.attacker.isSilenced &&
+      pc.attacker.keywords.includes('lifesteal')
+    ) {
       const owner = state.players[currentPlayerId];
       owner.life += actualPlayerDamage;
       addKeywordTriggerAction(state, currentPlayerId, {
@@ -266,7 +300,11 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     }
   }
 
-  function handleStageAttacker(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId, opponentId: PlayerId): void {
+  function handleStageAttacker(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId,
+    opponentId: PlayerId
+  ): void {
     if (pc.target && pc.attackerRetaliationDamage && pc.attackerRetaliationDamage > 0) {
       if (pc.retaliatePortion && pc.retaliatePortion > 0) {
         addKeywordTriggerAction(state, opponentId, {
@@ -277,7 +315,7 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         });
       }
       const before = pc.attacker.currentHealth;
-  applyDamage(pc.attacker, pc.attackerRetaliationDamage);
+      applyDamageToCard(pc.attacker, pc.attackerRetaliationDamage);
       const after = pc.attacker.currentHealth;
       addTriggerEventAction(state, opponentId, {
         triggerType: 'on_damage_taken',
@@ -303,7 +341,10 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
     captureNewActions();
   }
 
-  function handleStageDeaths(pc: NonNullable<typeof pendingCombat>, currentPlayerId: PlayerId): void {
+  function handleStageDeaths(
+    pc: NonNullable<typeof pendingCombat>,
+    currentPlayerId: PlayerId
+  ): void {
     const destroyed: string[] = [];
     if (pc.target && pc.target.currentHealth <= 0) destroyed.push(pc.target.instanceId); // instanceIdを使用
     if (pc.attacker.currentHealth <= 0) destroyed.push(pc.attacker.instanceId); // instanceIdを使用
@@ -314,7 +355,12 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         values: { destroyed },
       });
       for (const id of destroyed) {
-        const card = id === pc.attacker.instanceId ? pc.attacker : (pc.target && id === pc.target.instanceId ? pc.target : undefined);
+        const card =
+          id === pc.attacker.instanceId
+            ? pc.attacker
+            : pc.target && id === pc.target.instanceId
+              ? pc.target
+              : undefined;
         if (card) handleCreatureDeath(state, card, 'combat', pc.attacker.instanceId); // instanceIdを使用
       }
     }
@@ -323,7 +369,9 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
   }
 
   return {
-    get context() { return ctx; },
+    get context() {
+      return ctx;
+    },
     next(): { done: false; action: GameAction } | { done: true } {
       // まだ返していない action があるならそれを1件ずつ返す
       if (attackerReturnedActions.length > 0) {
@@ -357,6 +405,6 @@ export function createBattleIterator(state: GameState): BattleIterator | null {
         }
         return this.next();
       }
-    }
+    },
   };
 }

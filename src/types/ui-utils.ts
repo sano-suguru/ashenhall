@@ -1,19 +1,15 @@
 /**
  * Ashenhall UI・ユーティリティ型定義
- * 
+ *
  * 設計方針:
  * - UI表示・ログフォーマット関連
  * - デッキビルディング機能
  * - 型安全性のためのユーティリティ型
  */
 
-import type {
-  Faction
-} from './core';
+import type { Faction } from './core';
 
-import type {
-  GameAction
-} from './game-state';
+import type { GameAction } from './game-state';
 
 // === ログ表示用拡張型定義 ===
 

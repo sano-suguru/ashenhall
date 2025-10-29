@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "../styles/game-effects.css";
+@import 'tailwindcss';
+@import '../styles/game-effects.css';
 
 :root {
   --background: #ffffff;

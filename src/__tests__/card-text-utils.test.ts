@@ -4,13 +4,13 @@ import type { Card, Keyword } from '../types/game';
 
 describe('card-text-utils', () => {
   describe('getEffectText', () => {
-  // 全カードの全効果をテストデータとして動的に生成
-  const allEffects: { card: Card; effect: Card['effects'][0] }[] = [];
-  ALL_CARDS.forEach(card => {
-    card.effects.forEach(effect => {
-      allEffects.push({ card, effect });
+    // 全カードの全効果をテストデータとして動的に生成
+    const allEffects: { card: Card; effect: Card['effects'][0] }[] = [];
+    ALL_CARDS.forEach((card) => {
+      card.effects.forEach((effect) => {
+        allEffects.push({ card, effect });
+      });
     });
-  });
 
     it.each(allEffects)(
       'カード「$card.name」の効果 ($effect.trigger, $effect.action) がエラーなくテキストに変換されること',
@@ -58,7 +58,7 @@ describe('card-text-utils', () => {
       it('《信仰の鎖》の条件付きドロー効果が正しく表示されること', () => {
         const card = getCardById('inq_chain_of_faith');
         expect(card).toBeDefined();
-        const drawEffect = card!.effects.find(e => e.action === 'draw_card');
+        const drawEffect = card!.effects.find((e) => e.action === 'draw_card');
         expect(drawEffect).toBeDefined();
         const text = getEffectText(drawEffect!, card!.type);
         expect(text).toBe('烙印を刻まれた敵がいる場合、使用時: カードを1枚引く。');
@@ -76,16 +76,20 @@ describe('card-text-utils', () => {
       it('《背水の狂戦士》のライフ比較条件が正しく表示されること', () => {
         const card = getCardById('ber_desperate_berserker');
         expect(card).toBeDefined();
-        const readyEffect = card!.effects.find(e => e.action === 'ready');
+        const readyEffect = card!.effects.find((e) => e.action === 'ready');
         expect(readyEffect).toBeDefined();
         const text = getEffectText(readyEffect!, card!.type);
-        expect(text).toBe('相手よりライフが少ない場合、このクリーチャーが攻撃する時: このターン、もう一度だけ攻撃できる。');
+        expect(text).toBe(
+          '相手よりライフが少ない場合、このクリーチャーが攻撃する時: このターン、もう一度だけ攻撃できる。'
+        );
       });
 
       it('《聖域の見張り》の否定条件が正しく表示されること', () => {
         const card = getCardById('inq_sanctuary_guard');
         expect(card).toBeDefined();
-        const damageEffect = card!.effects.find(e => e.action === 'damage' && e.target === 'self');
+        const damageEffect = card!.effects.find(
+          (e) => e.action === 'damage' && e.target === 'self'
+        );
         expect(damageEffect).toBeDefined();
         const text = getEffectText(damageEffect!, card!.type);
         expect(text).toBe('烙印を刻まれた敵がいない場合、ターン終了時: 自身に2ダメージを与える。');
@@ -94,19 +98,22 @@ describe('card-text-utils', () => {
       it('《囁きの書庫番》の墓地条件が正しく表示されること', () => {
         const card = getCardById('necro_librarian');
         expect(card).toBeDefined();
-        const resurrectEffect = card!.effects.find(e => e.action === 'resurrect');
+        const resurrectEffect = card!.effects.find((e) => e.action === 'resurrect');
         expect(resurrectEffect).toBeDefined();
         const text = getEffectText(resurrectEffect!, card!.type);
-        expect(text).toBe('墓地のカード数が4以上の場合、召喚時: あなたの墓地からコスト1以下のクリーチャーを1体戦場に戻す。');
+        expect(text).toBe(
+          '墓地のカード数が4以上の場合、召喚時: あなたの墓地からコスト1以下のクリーチャーを1体戦場に戻す。'
+        );
       });
 
       it('《団結の誓い》の味方数条件が正しく表示されること', () => {
         const card = getCardById('kni_vow_of_unity');
         expect(card).toBeDefined();
-        const highAllyEffect = card!.effects.find(e => 
-          e.activationCondition?.subject === 'allyCount' && 
-          e.activationCondition?.operator === 'gte' && 
-          e.activationCondition?.value === 3
+        const highAllyEffect = card!.effects.find(
+          (e) =>
+            e.activationCondition?.subject === 'allyCount' &&
+            e.activationCondition?.operator === 'gte' &&
+            e.activationCondition?.value === 3
         );
         expect(highAllyEffect).toBeDefined();
         const text = getEffectText(highAllyEffect!, card!.type);
@@ -128,17 +135,14 @@ describe('card-text-utils', () => {
 
   describe('KEYWORD_DEFINITIONS', () => {
     const allKeywords = new Set<Keyword>();
-    ALL_CARDS.forEach(card => {
-      card.keywords.forEach(kw => allKeywords.add(kw));
+    ALL_CARDS.forEach((card) => {
+      card.keywords.forEach((kw) => allKeywords.add(kw));
     });
 
-    it.each([...allKeywords])(
-      'キーワード「%s」に定義が存在すること',
-      (keyword) => {
-        expect(KEYWORD_DEFINITIONS[keyword]).toBeDefined();
-        expect(KEYWORD_DEFINITIONS[keyword].name).not.toBe('');
-        expect(KEYWORD_DEFINITIONS[keyword].description).not.toBe('');
-      }
-    );
+    it.each([...allKeywords])('キーワード「%s」に定義が存在すること', (keyword) => {
+      expect(KEYWORD_DEFINITIONS[keyword]).toBeDefined();
+      expect(KEYWORD_DEFINITIONS[keyword].name).not.toBe('');
+      expect(KEYWORD_DEFINITIONS[keyword].description).not.toBe('');
+    });
   });
 });

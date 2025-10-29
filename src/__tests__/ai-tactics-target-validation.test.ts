@@ -2,10 +2,7 @@
  * AI戦術ロジックの対象存在チェックテスト
  */
 
-import { 
-  canEffectFindValidTargets, 
-  evaluateCardForPlay 
-} from '../lib/game-engine/ai-tactics';
+import { canEffectFindValidTargets, evaluateCardForPlay } from '../lib/game-engine/ai-tactics';
 import { getCardById, necromancerCards } from '../data/cards/base-cards';
 import { createInitialGameState } from '../lib/game-engine/core';
 import { createCardInstance } from '../test-helpers/card-test-helpers';
@@ -18,7 +15,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
   const createTestDeck = (): Card[] => {
     const deck: Card[] = [];
     const availableCards = necromancerCards.slice(0, 4);
-    availableCards.forEach(card => {
+    availableCards.forEach((card) => {
       for (let i = 0; i < 5; i++) {
         deck.push(createCardInstance(card, `${i}`));
       }
@@ -43,10 +40,10 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('罪の重圧が相手場にクリーチャーがいない場合にfalseを返すこと', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
-      
+
       // 相手場を空にする
       gameState.players.player2.field = [];
-      
+
       const canFind = canEffectFindValidTargets(sinBurden!, gameState, 'player1');
       expect(canFind).toBe(false);
     });
@@ -54,26 +51,28 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('罪の重圧が相手場にクリーチャーがいる場合にtrueを返すこと', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
-      
+
       // 相手場にクリーチャーを配置
       const skeleton = getCardById('necro_skeleton')! as CreatureCard;
-      gameState.players.player2.field = [{
-        ...skeleton,
-        owner: 'player2',
-        currentHealth: skeleton.health,
-        attackModifier: 0,
-        healthModifier: 0,
-        passiveAttackModifier: 0,
-        passiveHealthModifier: 0,
-        summonTurn: 1,
-        position: 0,
-        hasAttacked: false,
-        isStealthed: false,
-        isSilenced: false,
-        statusEffects: [],
-        readiedThisTurn: false,
-      }];
-      
+      gameState.players.player2.field = [
+        {
+          ...skeleton,
+          owner: 'player2',
+          currentHealth: skeleton.health,
+          attackModifier: 0,
+          healthModifier: 0,
+          passiveAttackModifier: 0,
+          passiveHealthModifier: 0,
+          summonTurn: 1,
+          position: 0,
+          hasAttacked: false,
+          isStealthed: false,
+          isSilenced: false,
+          statusEffects: [],
+          readiedThisTurn: false,
+        },
+      ];
+
       const canFind = canEffectFindValidTargets(sinBurden!, gameState, 'player1');
       expect(canFind).toBe(true);
     });
@@ -81,9 +80,9 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('沈黙の令状が相手場が空の場合にfalseを返すこと', () => {
       const writOfSilence = getCardById('inq_writ_of_silence');
       expect(writOfSilence).toBeDefined();
-      
+
       gameState.players.player2.field = [];
-      
+
       const canFind = canEffectFindValidTargets(writOfSilence!, gameState, 'player1');
       expect(canFind).toBe(false);
     });
@@ -91,9 +90,9 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('クリーチャーカードは常にtrueを返すこと', () => {
       const skeleton = getCardById('necro_skeleton');
       expect(skeleton).toBeDefined();
-      
+
       gameState.players.player2.field = [];
-      
+
       const canFind = canEffectFindValidTargets(skeleton!, gameState, 'player1');
       expect(canFind).toBe(true);
     });
@@ -110,7 +109,7 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
         keywords: [],
         effects: [],
       };
-      
+
       const canFind = canEffectFindValidTargets(testSpell, gameState, 'player1');
       expect(canFind).toBe(true);
     });
@@ -118,26 +117,28 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('対象不可のクリーチャーは有効な対象として扱わないこと', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
-      
+
       // 対象不可のクリーチャーを配置
       const stoneGuardian = getCardById('inq_stone_guardian')! as CreatureCard;
-      gameState.players.player2.field = [{
-        ...stoneGuardian,
-        owner: 'player2',
-        currentHealth: stoneGuardian.health,
-        attackModifier: 0,
-        healthModifier: 0,
-        passiveAttackModifier: 0,
-        passiveHealthModifier: 0,
-        summonTurn: 1,
-        position: 0,
-        hasAttacked: false,
-        isStealthed: false,
-        isSilenced: false,
-        statusEffects: [],
-        readiedThisTurn: false,
-      }];
-      
+      gameState.players.player2.field = [
+        {
+          ...stoneGuardian,
+          owner: 'player2',
+          currentHealth: stoneGuardian.health,
+          attackModifier: 0,
+          healthModifier: 0,
+          passiveAttackModifier: 0,
+          passiveHealthModifier: 0,
+          summonTurn: 1,
+          position: 0,
+          hasAttacked: false,
+          isStealthed: false,
+          isSilenced: false,
+          statusEffects: [],
+          readiedThisTurn: false,
+        },
+      ];
+
       const canFind = canEffectFindValidTargets(sinBurden!, gameState, 'player1');
       expect(canFind).toBe(false);
     });
@@ -147,10 +148,10 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('相手場が空の場合、罪の重圧の評価スコアが大幅に下がること', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
-      
-  gameState.players.player1.faction = 'inquisitor';
+
+      gameState.players.player1.faction = 'inquisitor';
       gameState.players.player2.field = [];
-      
+
       const score = evaluateCardForPlay(sinBurden!, gameState, 'player1');
       expect(score).toBeLessThan(-500); // 大幅なペナルティが適用されている
     });
@@ -158,28 +159,30 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('相手場にクリーチャーがいる場合、罪の重圧の評価スコアが正常であること', () => {
       const sinBurden = getCardById('inq_sin_burden');
       expect(sinBurden).toBeDefined();
-      
-  gameState.players.player1.faction = 'inquisitor';
-      
+
+      gameState.players.player1.faction = 'inquisitor';
+
       // 相手場にクリーチャーを配置
       const skeleton = getCardById('necro_skeleton')! as CreatureCard;
-      gameState.players.player2.field = [{
-        ...skeleton,
-        owner: 'player2',
-        currentHealth: skeleton.health,
-        attackModifier: 0,
-        healthModifier: 0,
-        passiveAttackModifier: 0,
-        passiveHealthModifier: 0,
-        summonTurn: 1,
-        position: 0,
-        hasAttacked: false,
-        isStealthed: false,
-        isSilenced: false,
-        statusEffects: [],
-        readiedThisTurn: false,
-      }];
-      
+      gameState.players.player2.field = [
+        {
+          ...skeleton,
+          owner: 'player2',
+          currentHealth: skeleton.health,
+          attackModifier: 0,
+          healthModifier: 0,
+          passiveAttackModifier: 0,
+          passiveHealthModifier: 0,
+          summonTurn: 1,
+          position: 0,
+          hasAttacked: false,
+          isStealthed: false,
+          isSilenced: false,
+          statusEffects: [],
+          readiedThisTurn: false,
+        },
+      ];
+
       const score = evaluateCardForPlay(sinBurden!, gameState, 'player1');
       expect(score).toBeGreaterThan(0); // ペナルティが適用されていない
     });
@@ -187,10 +190,10 @@ describe('AI戦術ロジック - 対象存在チェック', () => {
     it('クリーチャーカードは相手場の状況に関係なく正常に評価されること', () => {
       const skeleton = getCardById('necro_skeleton');
       expect(skeleton).toBeDefined();
-      
-  gameState.players.player1.faction = 'necromancer';
+
+      gameState.players.player1.faction = 'necromancer';
       gameState.players.player2.field = [];
-      
+
       const score = evaluateCardForPlay(skeleton!, gameState, 'player1');
       expect(score).toBeGreaterThan(0);
     });

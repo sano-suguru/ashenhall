@@ -1,6 +1,6 @@
 /**
  * カードツールチップフック
- * 
+ *
  * カードツールチップの表示状態と位置計算ロジックを提供
  */
 
@@ -44,7 +44,7 @@ export function useCardTooltip() {
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    setTooltipStyle(prev => ({ ...prev, opacity: 0 }));
+    setTooltipStyle((prev) => ({ ...prev, opacity: 0 }));
     // A short delay to allow the fade-out animation to complete
     setTimeout(() => setShowTooltip(false), 200);
   }, []);

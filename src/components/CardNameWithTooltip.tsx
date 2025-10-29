@@ -1,6 +1,6 @@
 /**
  * カード名ツールチップコンポーネント
- * 
+ *
  * BattleLogModal等でカード名にホバーした際に
  * カード詳細情報をツールチップで表示
  */
@@ -24,16 +24,11 @@ export default function CardNameWithTooltip({
   cardId,
   children,
   className = '',
-  showBrackets = false
+  showBrackets = false,
 }: CardNameWithTooltipProps) {
-  const { 
-    showTooltip, 
-    tooltipStyle, 
-    tooltipRef, 
-    handleMouseEnter, 
-    handleMouseLeave 
-  } = useCardTooltip();
-  
+  const { showTooltip, tooltipStyle, tooltipRef, handleMouseEnter, handleMouseLeave } =
+    useCardTooltip();
+
   const [isMounted, setIsMounted] = useState(false);
   const card = getCardById(cardId);
 
@@ -56,16 +51,18 @@ export default function CardNameWithTooltip({
       >
         {showBrackets ? `《${children}》` : children}
       </span>
-      
-      {isMounted && showTooltip && createPortal(
-        <CardTooltip 
-          card={card} 
-          isFieldCard={false} 
-          fieldCard={null} 
-          tooltipStyle={tooltipStyle} 
-        />,
-        document.body
-      )}
+
+      {isMounted &&
+        showTooltip &&
+        createPortal(
+          <CardTooltip
+            card={card}
+            isFieldCard={false}
+            fieldCard={null}
+            tooltipStyle={tooltipStyle}
+          />,
+          document.body
+        )}
     </>
   );
 }

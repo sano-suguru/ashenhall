@@ -8,27 +8,23 @@
  * - 型安全でテスト可能な構造
  */
 
-import type {
-  GameState,
-  Card,
-  Faction,
-} from "@/types/game";
+import type { GameState, Card, Faction } from '@/types/game';
 import {
   createInitialGameState as createInitialGameStateImpl,
   cloneGameState,
   checkGameEnd,
-} from "./game-state";
-import { updateOptimizedLookups } from "./field-search-cache";
+} from './game-state';
+import { updateOptimizedLookups } from './field-search-cache';
 import {
   processDrawPhase,
   processEnergyPhase,
   processDeployPhase,
   processEndPhase,
-} from "./phase-processors";
+} from './phase-processors';
 // 旧battle-system.tsから統合
-import { advancePhase } from "./game-state";
-import { applyPassiveEffects } from "./card-effects";
-import { createBattleIterator } from "./battle-iterator";
+import { advancePhase } from './game-state';
+import { applyPassiveEffects } from './card-effects';
+import { createBattleIterator } from './battle-iterator';
 import { assertNoLingeringDeadCreatures } from './invariants';
 
 /**
@@ -43,7 +39,7 @@ export const createInitialGameState = createInitialGameStateImpl;
  */
 function processBattlePhase(state: GameState): void {
   applyPassiveEffects(state);
-  
+
   // battle_attack フェーズに直接移行（リスト作成不要）
   state.phase = 'battle_attack';
 }
@@ -70,22 +66,22 @@ export function processGameStep(state: GameState): GameState {
 
   // フェーズ処理
   switch (newState.phase) {
-    case "draw":
+    case 'draw':
       processDrawPhase(newState);
       break;
-    case "energy":
+    case 'energy':
       processEnergyPhase(newState);
       break;
-    case "deploy":
+    case 'deploy':
       processDeployPhase(newState);
       break;
-    case "battle":
+    case 'battle':
       processBattlePhase(newState);
       break;
-    case "battle_attack":
+    case 'battle_attack':
       consumeOneAttackerCombat(newState);
       break;
-    case "end":
+    case 'end':
       processEndPhase(newState);
       break;
   }
@@ -113,11 +109,13 @@ function consumeOneAttackerCombat(state: GameState): void {
     if (r.done) {
       // Iterator 終了 → まだ攻撃者がいるかチェック
       const currentPlayer = state.players[state.currentPlayer];
-      const hasMoreAttackers = currentPlayer.field.some(card =>
-        card.currentHealth > 0 &&
-        ((!card.isSilenced && card.keywords.includes("rush")) || card.summonTurn < state.turnNumber) &&
-        !card.hasAttacked &&
-        !card.statusEffects.some(e => e.type === 'stun')
+      const hasMoreAttackers = currentPlayer.field.some(
+        (card) =>
+          card.currentHealth > 0 &&
+          ((!card.isSilenced && card.keywords.includes('rush')) ||
+            card.summonTurn < state.turnNumber) &&
+          !card.hasAttacked &&
+          !card.statusEffects.some((e) => e.type === 'stun')
       );
       if (!hasMoreAttackers) {
         // 攻撃者がいない → フェーズ終了
@@ -173,7 +171,7 @@ export function executeFullGame(
   if (!gameState.result) {
     gameState.result = {
       winner: null,
-      reason: "timeout",
+      reason: 'timeout',
       totalTurns: gameState.turnNumber,
       durationSeconds: Math.floor((Date.now() - gameState.startTime) / 1000),
       endTime: Date.now(),

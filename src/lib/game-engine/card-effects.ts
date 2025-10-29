@@ -15,20 +15,14 @@ import type {
   PlayerId,
   EffectTrigger,
   EffectTarget,
-} from "@/types/game";
-import type { ConditionalEffect } from "@/types/cards";
+} from '@/types/game';
+import type { ConditionalEffect } from '@/types/cards';
 
-import { SeededRandom } from "./seeded-random";
-import {
-  addTriggerEventAction,
-  addCreatureDestroyedAction,
-} from "./action-logger";
-import {
-  effectHandlers,
-  resolveDynamicEffectParameters,
-} from "./effect-registry";
-import { selectTargets, checkEffectCondition } from "./core/game-logic-utils";
-import { filterTargets } from "./core/target-filter";
+import { SeededRandom } from './seeded-random';
+import { addTriggerEventAction, addCreatureDestroyedAction } from './action-logger';
+import { effectHandlers, resolveDynamicEffectParameters } from './effect-registry';
+import { selectTargets, checkEffectCondition } from './core/game-logic-utils';
+import { filterTargets } from './core/target-filter';
 import { evaluatePendingDeaths } from './death-sweeper';
 
 /**
@@ -41,16 +35,10 @@ function executeConditionalEffect(
   sourcePlayerId: PlayerId
 ): void {
   try {
-    const conditionMet = checkEffectCondition(
-      state,
-      sourcePlayerId,
-      conditionalEffect.condition
-    );
-    
-    const effectsToExecute = conditionMet 
-      ? conditionalEffect.ifTrue 
-      : conditionalEffect.ifFalse;
-    
+    const conditionMet = checkEffectCondition(state, sourcePlayerId, conditionalEffect.condition);
+
+    const effectsToExecute = conditionMet ? conditionalEffect.ifTrue : conditionalEffect.ifFalse;
+
     // 選択された効果群を順次実行
     effectsToExecute.forEach((effect: CardEffect) => {
       executeCardEffectWithoutConditionCheck(state, effect, sourceCard, sourcePlayerId);
@@ -62,7 +50,7 @@ function executeConditionalEffect(
 
 /**
  * クリーチャー死亡処理（統一アクションシステム互換版）
- * 
+ *
  * 統一アクションシステムと同じロジックで動作し、テスト互換性を保持
  */
 export function handleCreatureDeath(
@@ -75,7 +63,7 @@ export function handleCreatureDeath(
   const player = state.players[ownerId];
 
   // 既に場からいなくなっている場合は処理しない
-  const cardIndexOnField = player.field.findIndex(c => c.instanceId === deadCard.instanceId);
+  const cardIndexOnField = player.field.findIndex((c) => c.instanceId === deadCard.instanceId);
   if (cardIndexOnField === -1) {
     return;
   }
@@ -88,14 +76,14 @@ export function handleCreatureDeath(
   });
 
   // 死亡したカード自身の`on_death`効果を発動
-  processEffectTrigger(state, "on_death", deadCard, ownerId, deadCard);
+  processEffectTrigger(state, 'on_death', deadCard, ownerId, deadCard);
 
   // 場から取り除き、墓地へ送る
   const [removedCard] = player.field.splice(cardIndexOnField, 1);
   player.graveyard.push(removedCard);
 
   // 他の味方の`on_ally_death`効果を発動
-  processEffectTrigger(state, "on_ally_death", undefined, ownerId, removedCard);
+  processEffectTrigger(state, 'on_ally_death', undefined, ownerId, removedCard);
 
   // 場のカードの位置を再インデックス
   player.field.forEach((c, i) => (c.position = i));
@@ -104,7 +92,7 @@ export function handleCreatureDeath(
 /**
  * 条件判定なしで単一カード効果を実行（内部使用）
  */
-const RANDOM_TARGETS: EffectTarget[] = ["enemy_random", "ally_random"];
+const RANDOM_TARGETS: EffectTarget[] = ['enemy_random', 'ally_random'];
 
 function isRandomTarget(target: EffectTarget): boolean {
   return RANDOM_TARGETS.includes(target);
@@ -119,7 +107,7 @@ function determineInitialTargets(
 ): FieldCard[] {
   let initialTargets = selectTargets(state, sourcePlayerId, effect.target, random);
 
-  if (effect.target === "self" && sourceCard.type === "creature") {
+  if (effect.target === 'self' && sourceCard.type === 'creature') {
     const fieldCard = state.players[sourcePlayerId].field.find(
       (card) => card.templateId === sourceCard.templateId
     );
@@ -136,11 +124,11 @@ function collectRandomTargetCandidates(
   sourcePlayerId: PlayerId,
   targetType: EffectTarget
 ): FieldCard[] {
-  const opponentId: PlayerId = sourcePlayerId === "player1" ? "player2" : "player1";
+  const opponentId: PlayerId = sourcePlayerId === 'player1' ? 'player2' : 'player1';
 
-  if (targetType === "enemy_random") {
+  if (targetType === 'enemy_random') {
     return state.players[opponentId].field.filter(
-      (card) => card.currentHealth > 0 && !card.keywords.includes("untargetable")
+      (card) => card.currentHealth > 0 && !card.keywords.includes('untargetable')
     );
   }
 
@@ -162,20 +150,12 @@ function applySelectionRulesToTargets(
 
   if (isRandomTarget(target)) {
     const candidates = collectRandomTargetCandidates(state, sourcePlayerId, target);
-    const filteredCandidates = filterTargets(
-      candidates,
-      selectionRules,
-      sourceCard.templateId
-    );
+    const filteredCandidates = filterTargets(candidates, selectionRules, sourceCard.templateId);
     const selectedTarget = random.choice(filteredCandidates);
     return selectedTarget ? [selectedTarget] : [];
   }
 
-  return filterTargets(
-    currentTargets,
-    selectionRules,
-    sourceCard.templateId
-  );
+  return filterTargets(currentTargets, selectionRules, sourceCard.templateId);
 }
 
 function executeCardEffectWithoutConditionCheck(
@@ -185,9 +165,7 @@ function executeCardEffectWithoutConditionCheck(
   sourcePlayerId: PlayerId
 ): void {
   try {
-    const random = new SeededRandom(
-      state.randomSeed + state.turnNumber + sourceCard.templateId
-    );
+    const random = new SeededRandom(state.randomSeed + state.turnNumber + sourceCard.templateId);
 
     const initialTargets = determineInitialTargets(
       state,
@@ -259,9 +237,7 @@ export function executeAllCardEffects(
   trigger: string
 ): void {
   try {
-    const effectsToExecute = sourceCard.effects.filter(
-      (effect) => effect.trigger === trigger
-    );
+    const effectsToExecute = sourceCard.effects.filter((effect) => effect.trigger === trigger);
 
     // 効果実行前の初期状態で全発動条件を判定
     const effectConditions = effectsToExecute.map((effect) => ({
@@ -296,9 +272,7 @@ const processCardsEffects = (
 ) => {
   cards.forEach((card) => {
     if (card.isSilenced) return;
-    const effectsToExecute = card.effects.filter(
-      (effect) => effect.trigger === trigger
-    );
+    const effectsToExecute = card.effects.filter((effect) => effect.trigger === trigger);
     effectsToExecute.forEach((effect) => {
       executeCardEffect(state, effect, card, playerId);
     });
@@ -314,9 +288,7 @@ function handleSingleCardTrigger(
 ): void {
   if (!sourceCard || !sourcePlayerId) return;
 
-  const effectsToExecute = sourceCard.effects.filter(
-    (effect) => effect.trigger === trigger
-  );
+  const effectsToExecute = sourceCard.effects.filter((effect) => effect.trigger === trigger);
 
   if (effectsToExecute.length > 0) {
     addTriggerEventAction(state, sourcePlayerId, {
@@ -338,20 +310,12 @@ function handlePlayerScopedTrigger(
 ): void {
   if (!sourcePlayerId) return;
 
-  processCardsEffects(
-    state,
-    state.players[sourcePlayerId].field,
-    sourcePlayerId,
-    trigger
-  );
+  processCardsEffects(state, state.players[sourcePlayerId].field, sourcePlayerId, trigger);
 }
 
-function handleGlobalTrigger(
-  state: GameState,
-  trigger: EffectTrigger
-): void {
-  processCardsEffects(state, state.players.player1.field, "player1", trigger);
-  processCardsEffects(state, state.players.player2.field, "player2", trigger);
+function handleGlobalTrigger(state: GameState, trigger: EffectTrigger): void {
+  processCardsEffects(state, state.players.player1.field, 'player1', trigger);
+  processCardsEffects(state, state.players.player2.field, 'player2', trigger);
 }
 
 const triggerHandlers: Partial<Record<EffectTrigger, TriggerHandler>> = {
@@ -407,17 +371,15 @@ export function applyPassiveEffects(state: GameState): void {
     const player = state.players[playerId];
     player.field.forEach((card) => {
       if (card.isSilenced) return; // 沈黙状態のカードは効果を発動しない
-      const passiveEffects = card.effects.filter(
-        (effect) => effect.trigger === "passive"
-      );
+      const passiveEffects = card.effects.filter((effect) => effect.trigger === 'passive');
       passiveEffects.forEach((effect) => {
         executeCardEffect(state, effect, card, playerId);
       });
     });
   };
 
-  applyPassiveForPlayer("player1");
-  applyPassiveForPlayer("player2");
+  applyPassiveForPlayer('player1');
+  applyPassiveForPlayer('player2');
   // パッシブ再適用後に 0 HP へ落ちたカードを処理
   evaluatePendingDeaths(state, 'passive');
 }

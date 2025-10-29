@@ -1,6 +1,6 @@
-    /**
+/**
  * Ashenhall メインアプリケーション
- * 
+ *
  * 設計方針:
  * - GameSetup（勢力・戦術選択）とGameBoard（ゲーム画面）の切り替え
  * - AI対戦の統合とリアルタイム戦闘観戦
@@ -27,29 +27,32 @@ type AppState = 'setup' | 'playing' | 'finished';
 export default function Home() {
   const [appState, setAppState] = useState<AppState>('setup');
   const [gameState, setGameState] = useState<GameState | null>(null);
-  
+
   // フック責務分離
   const gameControls = useGameControls();
   const localStats = useLocalStats();
-  
+
   // useGameProgress用の安定化されたconfig（Phase C: 状態管理統一準備）
-  const gameProgressConfig = useMemo(() => ({
-    gameState,
-    isPlaying: gameControls.isPlaying,
-    currentTurn: gameControls.currentTurn,
-    gameSpeed: gameControls.gameSpeed,
-    onGameStateChange: setGameState,
-    onGameFinished: () => {
-      gameControls.setIsPlaying(false);
-      setAppState('finished');
-    },
-    onStatsUpdate: localStats.updateWithGameResult,
-  }), [
-    gameState,
-    gameControls, // Phase C: オブジェクト全体で安定性確保
-    localStats.updateWithGameResult
-  ]);
-  
+  const gameProgressConfig = useMemo(
+    () => ({
+      gameState,
+      isPlaying: gameControls.isPlaying,
+      currentTurn: gameControls.currentTurn,
+      gameSpeed: gameControls.gameSpeed,
+      onGameStateChange: setGameState,
+      onGameFinished: () => {
+        gameControls.setIsPlaying(false);
+        setAppState('finished');
+      },
+      onStatsUpdate: localStats.updateWithGameResult,
+    }),
+    [
+      gameState,
+      gameControls, // Phase C: オブジェクト全体で安定性確保
+      localStats.updateWithGameResult,
+    ]
+  );
+
   // useSequentialGameProgressに統一（Phase C: 状態管理統一完了）
   const gameProgress = useSequentialGameProgress(gameProgressConfig);
 
@@ -70,10 +73,10 @@ export default function Home() {
     // AI対戦相手の勢力をランダム選択
     const factions: Faction[] = ['necromancer', 'berserker', 'mage', 'knight', 'inquisitor'];
     const aiFaction = factions[Math.floor(Math.random() * factions.length)];
-    
+
     // AIデッキ生成
     const aiDeck = generateAIDeck(aiFaction);
-    
+
     // ゲーム状態初期化
     const randomSeed = `game-${Date.now()}-${Math.random()}`;
     const initialState = createInitialGameState(
@@ -84,10 +87,10 @@ export default function Home() {
       aiFaction,
       randomSeed
     );
-    
+
     setGameState(initialState);
     setAppState('playing');
-    
+
     // ゲーム制御の初期化
     gameControls.setIsPlaying(true);
     gameControls.setCurrentTurn(-1);
@@ -108,18 +111,21 @@ export default function Home() {
         <div className="relative min-h-screen">
           <GameSetup onGameStart={handleGameStart} stats={localStats.localStats} />
           <div className="absolute top-4 right-4">
-            <Link href="/stats" className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+            <Link
+              href="/stats"
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
               戦績を見る
             </Link>
           </div>
         </div>
       );
-    
+
     case 'playing':
     case 'finished':
       return gameState ? (
-        <GameBoard 
-          gameState={gameProgress.displayState || gameState} 
+        <GameBoard
+          gameState={gameProgress.displayState || gameState}
           onReturnToSetup={handleReturnToSetup}
           isPlaying={gameControls.isPlaying}
           setIsPlaying={gameControls.setIsPlaying}
@@ -140,7 +146,7 @@ export default function Home() {
           </div>
         </div>
       );
-    
+
     default:
       return (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex items-center justify-center">
@@ -149,7 +155,7 @@ export default function Home() {
               <AlertCircle size={96} className="text-red-400" />
             </div>
             <div className="text-xl font-bold">エラーが発生しました</div>
-            <button 
+            <button
               onClick={handleReturnToSetup}
               className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
             >

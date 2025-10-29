@@ -6,7 +6,7 @@ import { createCardInstance } from '@/test-helpers/card-test-helpers';
 function createTestDeck(): Card[] {
   const deck: Card[] = [];
   const subset = necromancerCards.slice(0, 2);
-  subset.forEach(card => {
+  subset.forEach((card) => {
     for (let i = 0; i < 10; i++) {
       deck.push(createCardInstance(card, `d${i}`));
     }
@@ -19,10 +19,17 @@ describe('creature_destroyed action snapshot', () => {
     const deck1 = createTestDeck();
     const deck2 = createTestDeck();
     const faction: Faction = 'necromancer';
-    const state = executeFullGame('destroy-snapshot', deck1, deck2, faction, faction, 'seed-destroy');
-    const destroyActions = state.actionLog.filter(a => a.type === 'creature_destroyed');
+    const state = executeFullGame(
+      'destroy-snapshot',
+      deck1,
+      deck2,
+      faction,
+      faction,
+      'seed-destroy'
+    );
+    const destroyActions = state.actionLog.filter((a) => a.type === 'creature_destroyed');
     expect(destroyActions.length).toBeGreaterThan(0);
-    const first = destroyActions[0] as Extract<GameAction,{type:'creature_destroyed'}>;
+    const first = destroyActions[0] as Extract<GameAction, { type: 'creature_destroyed' }>;
     expect(first.data.cardSnapshot).toBeDefined();
     if (first.data.cardSnapshot) {
       expect(first.data.cardSnapshot.id).toBe(first.data.destroyedCardId);
