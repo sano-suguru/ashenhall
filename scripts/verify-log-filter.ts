@@ -6,14 +6,8 @@
 import { executeFullGame } from '@/lib/game-engine/core';
 import { sampleDecks } from '@/data/decks/sample-decks';
 import { getCardById } from '@/data/cards/base-cards';
-import type { Card, GameAction } from '@/types/game';
-
-const INTERNAL_LOG_TYPES: GameAction['type'][] = [
-  'combat_stage',
-  'end_stage',
-  'energy_update',
-  'trigger_event',
-];
+import type { Card } from '@/types/game';
+import { INTERNAL_LOG_TYPES } from '@/constants/log-constants';
 
 const necromancerDeck = sampleDecks.find((d) => d.faction === 'necromancer')!;
 const berserkerDeck = sampleDecks.find((d) => d.faction === 'berserker')!;

@@ -10,19 +10,10 @@
 import type { GameState, GameAction, PlayerId, LogDisplayParts } from '@/types/game';
 import { createInitialGameState, processGameStep } from './game-engine/core';
 import { getCardById } from '@/data/cards/base-cards';
+import { INTERNAL_LOG_TYPES } from '@/constants/log-constants';
 
-// === ログフィルタリング定数 ===
-
-/**
- * 内部処理ログのアクションタイプ
- * ユーザー向け表示では除外され、デバッグ目的でのみ使用される
- */
-export const INTERNAL_LOG_TYPES: GameAction['type'][] = [
-  'combat_stage', // 戦闘サブステージ（card_attackで十分）
-  'end_stage', // 終了ステージ処理（結果は他ログで表現）
-  'energy_update', // エネルギー上限更新（energy_refillで十分）
-  'trigger_event', // トリガーイベント（effect_triggerで十分）
-];
+// 後方互換性のため再エクスポート
+export { INTERNAL_LOG_TYPES };
 
 // UIコンポーネントから移植された定数とヘルパー関数
 
