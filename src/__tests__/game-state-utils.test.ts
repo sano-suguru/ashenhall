@@ -1,15 +1,40 @@
 import { describe, it, expect } from "@jest/globals";
 import type { GameState, GameAction } from "@/types/game";
-import { formatActionAsText, findDecisiveAction, getTurnNumberForAction } from "@/lib/game-state-utils";
+import { formatActionAsText, findDecisiveAction, getTurnNumberForAction, getCardName } from "@/lib/game-state-utils";
 
 // Mock getCardById to avoid dependency on actual card data
 jest.mock("@/data/cards/base-cards", () => ({
   getCardById: (id: string) => {
     if (id === "mag_arcane_lightning") return { name: "秘術の連雷" };
     if (id === "necro_skeleton") return { name: "骸骨剣士" };
+    if (id === "necro_soul_offering") return { name: "魂の供物" };
     return { name: id };
   },
 }));
+
+describe("getCardName (extractTemplateId integration)", () => {
+  it("should extract template ID from deterministic instance ID", () => {
+    expect(getCardName("ber_fury-inst-1-6-player2-field-0")).toBe("ber_fury");
+  });
+
+  it("should extract template ID from deck instance ID", () => {
+    expect(getCardName("necro_skeleton-deck-0-5")).toBe("骸骨剣士");
+  });
+
+  it("should extract template ID from non-deterministic ID (timestamp-random)", () => {
+    expect(getCardName("necro_soul_offering-1761752317510-jw9a4jdno")).toBe("魂の供物");
+  });
+
+  it("should handle plain template ID", () => {
+    expect(getCardName("mag_arcane_lightning")).toBe("秘術の連雷");
+  });
+
+  it("should extract template ID and return it when card not found", () => {
+    // カードが見つからない場合、extractされたtemplateIdを返す
+    expect(getCardName("unknown_card-1234567890123-abc123xyz")).toBe("unknown_card");
+  });
+});
+
 
 describe("formatActionAsText", () => {
   const mockGameState = {
