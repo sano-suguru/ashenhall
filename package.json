@@ -26,6 +26,8 @@
     "metrics:check": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' -r tsconfig-paths/register ./scripts/check-metrics-drift.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.77.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",

@@ -52,8 +52,9 @@
 
 - Node.js 18以降
 - pnpm（推奨）
+- Supabaseアカウント（オンライン機能開発時）
 
-### セットアップ
+### ローカルAI対戦のセットアップ
 
 ```bash
 # リポジトリクローン
@@ -66,6 +67,29 @@ pnpm install
 # 開発サーバー起動
 pnpm dev
 ```
+
+ブラウザで `http://localhost:3000` を開いて、AI対戦をお楽しみください！
+
+### オンライン機能の開発セットアップ
+
+オンライン対戦機能の開発には、Supabaseのセットアップが必要です。
+
+```bash
+# 1. Supabaseプロジェクトを作成
+# https://supabase.com/dashboard でプロジェクト作成
+
+# 2. 環境変数を設定
+cp .env.local.example .env.local
+# .env.local を編集してSupabaseの認証情報を設定
+
+# 3. データベーススキーマをセットアップ
+# 詳細は docs/SUPABASE_SETUP.md を参照
+
+# 4. 開発サーバー起動
+pnpm dev
+```
+
+詳しいセットアップ手順は **[docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)** をご覧ください。
 
 ### 利用可能なコマンド
 
