@@ -17,6 +17,7 @@ import { getCardsByFaction } from '@/data/cards/base-cards';
 import { createInitialGameState } from '@/lib/game-engine/core';
 import GameSetup from '@/components/GameSetup';
 import GameBoard from '@/components/GameBoard';
+import UserMenu from '@/components/UserMenu';
 import { useGameControls } from '@/hooks/useGameControls';
 import { useLocalStats } from '@/hooks/useLocalStats';
 import { useSequentialGameProgress } from '@/hooks/useSequentialGameProgress';
@@ -110,7 +111,8 @@ export default function Home() {
       return (
         <div className="relative min-h-screen">
           <GameSetup onGameStart={handleGameStart} stats={localStats.localStats} />
-          <div className="absolute top-4 right-4">
+          <div className="absolute top-4 right-4 z-50 flex items-center space-x-4">
+            <UserMenu />
             <Link
               href="/stats"
               className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
