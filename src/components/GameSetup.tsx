@@ -16,10 +16,12 @@ import GameStatsDisplay from './GameStatsDisplay';
 import { GameSetupProvider, useGameSetup } from './game-setup/GameSetupProvider';
 // 統合により外部コンポーネント依存を削除
 // 旧GameSetupConstants.tsから統合
-import { Skull, Zap, Sparkles, Shield, Eye, PlusCircle, Edit } from 'lucide-react';
+import { Skull, Zap, Sparkles, Shield, Eye, PlusCircle, Edit, Cloud } from 'lucide-react';
 import { FACTION_DESCRIPTIONS, GAME_CONSTANTS } from '@/types/game';
 import { validateDeck } from '@/lib/deck-utils';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import OnlineDeckManager from './OnlineDeckManager';
+import { useAuth } from '@/hooks/useAuth';
 
 // === 統合された定数定義（旧GameSetupConstants.tsから） ===
 
@@ -130,10 +132,17 @@ function DeckManagement({
   onEditDeck: (deck: import('@/types/game').CustomDeck) => void;
   onSetActiveDeck: (deckId: string) => void;
 }) {
+  const [showOnlineManager, setShowOnlineManager] = useState(false);
+  const { isAuthenticated } = useAuth();
+
   const factionDecks = useMemo(() => {
     if (!selectedFaction) return [];
     return deckCollection.decks.filter((d) => d.faction === selectedFaction);
   }, [deckCollection.decks, selectedFaction]);
+
+  const handleLoadOnlineDeck = (deck: import('@/types/game').CustomDeck) => {
+    onEditDeck(deck);
+  };
 
   if (!selectedFaction) {
     return null;
@@ -141,7 +150,18 @@ function DeckManagement({
 
   return (
     <section className="animate-fade-in">
-      <h2 className="text-5xl font-bold text-center mb-12 text-amber-300 font-serif">デッキ選択</h2>
+      <div className="flex items-center justify-center mb-12">
+        <h2 className="text-5xl font-bold text-amber-300 font-serif">デッキ選択</h2>
+        {isAuthenticated && (
+          <button
+            onClick={() => setShowOnlineManager(true)}
+            className="ml-4 flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm"
+          >
+            <Cloud size={18} />
+            <span>オンラインデッキ</span>
+          </button>
+        )}
+      </div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {factionDecks.map((deck) => {
           const validation = validateDeck(deck);
@@ -194,6 +214,14 @@ function DeckManagement({
             {FACTION_DATA[selectedFaction].name}のデッキを管理できます
           </p>
         </div>
+      )}
+
+      {showOnlineManager && (
+        <OnlineDeckManager
+          onClose={() => setShowOnlineManager(false)}
+          onLoadDeck={handleLoadOnlineDeck}
+          currentDeck={activeDeckId ? factionDecks.find((d) => d.id === activeDeckId) : undefined}
+        />
       )}
     </section>
   );
