@@ -624,9 +624,15 @@ export function generateBattleReport(gameState: GameState): string {
     winnerText = '引き分け';
   }
 
-  const resultInfo = `勝者: ${winnerText} | ターン: ${
-    result.totalTurns
-  } | 理由: ${getReasonText(result.reason)}\n`;
+  const reasonTexts: Record<string, string> = {
+    life_zero: 'ライフ0',
+    timeout: '時間切れ',
+    deck_empty: 'デッキ切れ',
+    surrender: '降参',
+  };
+  const reasonText = reasonTexts[result.reason] || result.reason;
+
+  const resultInfo = `勝者: ${winnerText} | ターン: ${result.totalTurns} | 理由: ${reasonText}\n`;
 
   // 統計情報
   const stats = generateBattleStatistics(gameState);
@@ -803,48 +809,31 @@ function getFactionName(faction: string): string {
 }
 
 /**
- * 勝利理由の日本語表示
+ * 決定打アクションを特定する関数
+ * カード攻撃がプレイヤーを対象としてダメージを与えているか判定
  */
-function getReasonText(reason: string): string {
-  const reasons: Record<string, string> = {
-    life_zero: 'ライフ0',
-    timeout: '時間切れ',
-    deck_empty: 'デッキ切れ',
-    surrender: '降参',
-  };
-  return reasons[reason] || reason;
-}
-
-/**
- * カード攻撃がプレイヤーを対象としているかを判定する型ガード関数
- */
-function isCardAttackToPlayer(action: GameAction): action is GameAction & { type: 'card_attack' } {
+function isDecisiveCardAttack(action: GameAction): boolean {
   return (
     action.type === 'card_attack' &&
-    (action.data.targetId === 'player1' || action.data.targetId === 'player2')
+    (action.data.targetId === 'player1' || action.data.targetId === 'player2') &&
+    action.data.damage > 0
   );
 }
 
 /**
- * エフェクトがライフダメージを与えているかを判定する型ガード関数
+ * 決定打アクションを特定する関数
+ * エフェクトがライフダメージを与えているか判定
  */
-function isLifeDamageEffect(action: GameAction): action is GameAction & { type: 'effect_trigger' } {
-  if (action.type !== 'effect_trigger' || action.data.effectType !== 'damage') {
-    return false;
-  }
-
-  return Object.values(action.data.targets).some((t) => t.life && t.life.before > t.life.after);
+function isDecisiveLifeDamage(action: GameAction): boolean {
+  return (
+    action.type === 'effect_trigger' &&
+    action.data.effectType === 'damage' &&
+    Object.values(action.data.targets).some((t) => t.life && t.life.before > t.life.after)
+  );
 }
 
 /**
- * カード攻撃アクションがダメージを与えているかを判定するヘルパー関数
- */
-function hasDamage(action: GameAction & { type: 'card_attack' }): boolean {
-  return action.data.damage > 0;
-}
-
-/**
- * 決定打アクションを特定する関数（複雑度最適化済み）
+ * 決定打アクションを特定する関数
  */
 export function findDecisiveAction(gameState: GameState): GameAction | null {
   if (!gameState.result || gameState.result.reason !== 'life_zero') return null;
@@ -852,12 +841,7 @@ export function findDecisiveAction(gameState: GameState): GameAction | null {
   // 最後のライフダメージを与えたアクションを逆順検索
   for (let i = gameState.actionLog.length - 1; i >= 0; i--) {
     const action = gameState.actionLog[i];
-
-    if (isCardAttackToPlayer(action) && hasDamage(action)) {
-      return action;
-    }
-
-    if (isLifeDamageEffect(action)) {
+    if (isDecisiveCardAttack(action) || isDecisiveLifeDamage(action)) {
       return action;
     }
   }
