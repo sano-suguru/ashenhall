@@ -316,10 +316,40 @@ function GameStartSection({
   onGameStart: (faction: Faction, deck: Card[]) => void;
 }) {
   const { selectedFaction, activeDeckId, handleStart } = useGameSetup();
+  const { user } = useAuth();
+  const [isJoiningQueue, setIsJoiningQueue] = useState(false);
+  const [queueStatus, setQueueStatus] = useState<'idle' | 'waiting' | 'matched'>('idle');
 
   if (!selectedFaction || !activeDeckId) {
     return null;
   }
+
+  const handleJoinQueue = async () => {
+    if (!user) {
+      alert('オンライン対戦にはログインが必要です');
+      return;
+    }
+
+    setIsJoiningQueue(true);
+    try {
+      const response = await fetch('/api/match/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deckId: activeDeckId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('キューへの参加に失敗しました');
+      }
+
+      setQueueStatus('waiting');
+      alert('マッチングキューに参加しました！\n対戦相手が見つかるとバトルが自動的に開始されます。');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'エラーが発生しました');
+    } finally {
+      setIsJoiningQueue(false);
+    }
+  };
 
   return (
     <section className="text-center animate-fade-in relative z-10">
@@ -330,14 +360,57 @@ function GameStartSection({
         </div>
       </div>
 
-      <button
-        onClick={() => handleStart(onGameStart)}
-        className="relative px-20 py-5 text-2xl font-bold font-serif tracking-wide rounded-2xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:via-amber-400 hover:to-amber-500 text-black shadow-2xl hover:shadow-amber-400/40 hover:scale-105 transition-all duration-300 border-2 border-amber-400/50 overflow-hidden group"
-      >
-        <span className="relative z-10">バトル開始</span>
-        {/* シマー効果 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-      </button>
+      <div className="flex flex-col items-center space-y-4">
+        {/* ローカル対戦ボタン */}
+        <button
+          onClick={() => handleStart(onGameStart)}
+          className="relative px-20 py-5 text-2xl font-bold font-serif tracking-wide rounded-2xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:via-amber-400 hover:to-amber-500 text-black shadow-2xl hover:shadow-amber-400/40 hover:scale-105 transition-all duration-300 border-2 border-amber-400/50 overflow-hidden group"
+        >
+          <span className="relative z-10">ローカルバトル開始</span>
+          {/* シマー効果 */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+        </button>
+
+        {/* オンライン対戦ボタン */}
+        {user && queueStatus === 'idle' && (
+          <button
+            onClick={handleJoinQueue}
+            disabled={isJoiningQueue}
+            className="relative px-16 py-4 text-xl font-bold font-serif tracking-wide rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:via-blue-400 hover:to-blue-500 text-white shadow-2xl hover:shadow-blue-400/40 hover:scale-105 transition-all duration-300 border-2 border-blue-400/50 overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="relative z-10">
+              {isJoiningQueue ? '参加中...' : 'オンライン対戦を申請'}
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+          </button>
+        )}
+
+        {/* 待機中表示 */}
+        {queueStatus === 'waiting' && (
+          <div className="p-4 bg-blue-900/30 border border-blue-400/40 rounded-xl">
+            <div className="text-blue-300 font-bold mb-2">マッチング待機中...</div>
+            <div className="text-sm text-gray-400">
+              対戦相手が見つかるとバトルが自動的に開始されます
+            </div>
+            <button
+              onClick={() => setQueueStatus('idle')}
+              className="mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+            >
+              キャンセル
+            </button>
+          </div>
+        )}
+
+        {!user && (
+          <p className="text-sm text-gray-400">
+            オンライン対戦を利用するには
+            <a href="/auth/login" className="text-blue-400 hover:text-blue-300 ml-1">
+              ログイン
+            </a>
+            が必要です
+          </p>
+        )}
+      </div>
     </section>
   );
 }
