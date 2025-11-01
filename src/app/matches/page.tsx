@@ -163,7 +163,9 @@ function MatchCard({
             {match.status === 'completed' && (
               <>
                 {isWinner && <span className="font-bold text-green-500">🏆 勝利</span>}
-                {!isWinner && match.winner_id && <span className="font-bold text-red-500">敗北</span>}
+                {!isWinner && match.winner_id && (
+                  <span className="font-bold text-red-500">敗北</span>
+                )}
                 {!match.winner_id && <span className="font-bold text-gray-400">引き分け</span>}
               </>
             )}

@@ -10,10 +10,7 @@ type Match = Database['public']['Tables']['matches']['Row'];
  * GET /api/replay/[matchId]
  * 完了したマッチの replay_log を返します。
  */
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ matchId: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ matchId: string }> }) {
   try {
     const { matchId } = await params;
     const supabase = await createServerSupabaseClient();
