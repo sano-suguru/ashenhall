@@ -1,0 +1,13 @@
+###
+# Cron Job のテスト用 REST Client
+# VS Code の REST Client 拡張機能で使用
+# または curl コマンドに変換して使用
+
+# 環境変数 (ご自身の .env.local から取得)
+@baseUrl = http://localhost:3000
+@cronSecret = 8KTF7xdObYtKKeN9SVcCePbaSFCymi5nTFgogyg9k4Y=
+
+### Cron Job を手動実行
+GET {{baseUrl}}/api/cron/process-matches
+Authorization: Bearer {{cronSecret}}
+
